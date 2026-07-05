@@ -1,0 +1,8 @@
+namespace Persistence;
+
+interface IUserProfileStore
+{
+    Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct);
+    Task CreateAsync(UserProfileEntity profile, CancellationToken ct);
+    Task ActivateByEmailAsync(string email, CancellationToken ct);
+}

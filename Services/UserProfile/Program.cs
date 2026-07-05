@@ -1,0 +1,78 @@
+using Common.StorageProvider;
+using Contracts.UserIdentity;
+using Contracts.UserProfile;
+using MongoDB.Driver;
+using Scalar.AspNetCore;
+using Subscriptions.UserIdentity.Registration;
+using Subscriptions.UserIdentity.Verification;
+using UserIdentityService = Contracts.UserIdentity.Service;
+using UserProfileService = Contracts.UserProfile.Service;
+
+#if DEBUG
+using Xunit.Runner.InProc.SystemConsole;
+
+if (args.Contains("@@"))
+    return await ConsoleRunner.Run(args);
+#endif
+
+var bld = WebApplication.CreateBuilder(args);
+
+if (bld.Environment.IsEnvironment("Testing"))
+    bld.Configuration.AddUserSecrets<Program>(optional: true);
+
+bld.WebHost.ConfigureKestrel(
+    o =>
+    {
+        o.ListenInterProcess(UserProfileService.Name);                               // grpc transport
+        o.ListenLocalhost(bld.Configuration.GetValue("UserProfile:HttpPort", 5001)); // http endpoints
+    });
+
+bld.Services
+   .AddFastEndpoints()
+   .AddEventSubscriberStorageProvider<EventRecord, EventStorageProvider>()
+   .AddSingleton<IUserProfileStore, MongoUserProfileStore>()
+   .AddHandlerServer();
+
+if (!bld.Environment.IsProduction())
+{
+    bld.Services.OpenApiDocument(
+        o =>
+        {
+            o.DocumentName = "v1";
+            o.Version = "v1";
+        });
+}
+
+var app = bld.Build();
+
+var db = await DB.InitAsync(
+             bld.Configuration.GetValue<string>("UserProfile:DatabaseName") ?? "HelpDesk_UserProfile",
+             MongoClientSettings.FromConnectionString(bld.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017"));
+await UserProfileDatabase.InitializeAsync(db);
+
+app.UseFastEndpoints(c => c.Errors.UseProblemDetails());
+app.MapHandlers<EventRecord, EventStorageProvider>(h => h.RegisterEventHub<UserProfileRegisteredEvent>());
+app.MapRemote(
+    UserIdentityService.Name,
+    c =>
+    {
+        c.Subscribe<UserIdentityRegisteredEvent, UserIdentityRegisteredEventHandler>();
+        c.Subscribe<UserIdentityVerifiedEvent, UserIdentityVerifiedEventHandler>();
+    });
+
+if (!app.Environment.IsProduction())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
+await app.RunAsync();
+
+return 0;
+
+[HttpGet("/")]
+sealed class DummyEndpoint : EndpointWithoutRequest
+{
+    public override Task HandleAsync(CancellationToken c)
+        => Send.OkAsync();
+}

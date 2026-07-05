@@ -1,0 +1,32 @@
+<Solution>
+  <Folder Name="/Common/" />
+  <Folder Name="/Common/StorageProvider/">
+    <Project Path="Common/StorageProvider/Common.StorageProvider.csproj" />
+  </Folder>
+  <Folder Name="/Common/Tools/">
+    <Project Path="Common/Tools/Common.Tools.csproj" />
+  </Folder>
+  <Folder Name="/Contracts/" />
+  <Folder Name="/Contracts/Notifications/">
+    <Project Path="Contracts/Notifications/Contracts.Notifications.csproj" />
+  </Folder>
+  <Folder Name="/Contracts/UserIdentity/">
+    <Project Path="Contracts/UserIdentity/Contracts.UserIdentity.csproj" />
+  </Folder>
+  <Folder Name="/Contracts/UserProfile/">
+    <Project Path="Contracts/UserProfile/Contracts.UserProfile.csproj" />
+  </Folder>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/Notifications/">
+    <Project Path="Services/Notifications/Services.Notifications.csproj" />
+  </Folder>
+  <Folder Name="/Services/UserIdentity/">
+    <Project Path="Services/UserIdentity/Services.UserIdentity.csproj" />
+  </Folder>
+  <Folder Name="/Services/UserProfile/">
+    <Project Path="Services/UserProfile/Services.UserProfile.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Packages.props" />
+  </Folder>
+</Solution>
