@@ -10,9 +10,9 @@ namespace Email;
 /// <summary>
 /// SMTP email service that sends emails using MailKit with connection reuse.
 /// </summary>
-public sealed partial class SmtpService(IOptions<SmtpSettings> settings, ILogger<SmtpService> logger) : IEmailSender, IAsyncDisposable
+public sealed partial class SmtpService(IOptions<NotificationSettings> settings, ILogger<SmtpService> logger) : IEmailSender, IAsyncDisposable
 {
-    readonly SmtpSettings _settings = settings.Value;
+    readonly SmtpSettings _settings = settings.Value.Smtp;
     readonly SemaphoreSlim _gate = new(1, 1);
     readonly CancellationTokenSource _shutdown = new();
     readonly TimeSpan _idleTimeout = TimeSpan.FromSeconds(30);

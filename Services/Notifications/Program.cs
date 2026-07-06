@@ -16,11 +16,12 @@ var bld = WebApplication.CreateBuilder(args);
 if (bld.Environment.IsEnvironment("Testing"))
     bld.Configuration.AddUserSecrets<Program>(optional: true);
 
+var settings = bld.Configuration.Get<NotificationSettings>() ?? new();
+bld.Services.Configure<NotificationSettings>(bld.Configuration);
+
 bld.WebHost.ConfigureKestrel(o => o.ListenInterProcess(NotificationService.Name));
 
-bld.Services.Configure<SmtpSettings>(bld.Configuration.GetSection(SmtpSettings.SectionName));
-
-if (bld.Environment.IsProduction() && bld.Configuration.GetValue<bool>($"{SmtpSettings.SectionName}:Enabled"))
+if (bld.Environment.IsProduction() && settings.Smtp.Enabled)
     bld.Services.AddSingleton<IEmailSender, SmtpService>();
 else
     bld.Services.AddSingleton<IEmailSender, NullEmailSender>();
@@ -33,9 +34,7 @@ bld.Services
 
 var app = bld.Build();
 
-var db = await DB.InitAsync(
-             bld.Configuration.GetValue<string>("Notifications:DatabaseName") ?? "HelpDesk_Notifications",
-             MongoClientSettings.FromConnectionString(bld.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017"));
+var db = await DB.InitAsync(settings.Notifications.DatabaseName, MongoClientSettings.FromConnectionString(settings.ConnectionStrings.MongoDB));
 await NotificationsDatabase.InitializeAsync(db);
 
 app.UseFastEndpoints(c => c.Errors.UseProblemDetails());

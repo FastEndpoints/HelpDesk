@@ -1,12 +1,15 @@
 using Common.Tools;
 using FastEndpoints.Security;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Endpoints.Identities.Login;
 
-sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEntity> hasher) : Endpoint<Request, Response>
+sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEntity> hasher, IOptions<UserIdentitySettings> options) : Endpoint<Request, Response>
 {
+    readonly UserIdentitySettings.JwtSettings _jwtSettings = options.Value.UserIdentity.Jwt;
+
     public override void Configure()
     {
         Post("identities/login");
@@ -28,15 +31,15 @@ sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEnti
         if (identity.Status != UserIdentityStatus.Active)
             ThrowError("Account not verified.");
 
-        var expiresAt = DateTime.UtcNow.AddDays(Config.GetValue("UserIdentity:Jwt:AccessTokenDays", 7));
+        var expiresAt = DateTime.UtcNow.AddDays(_jwtSettings.AccessTokenDays);
         var accessToken = JwtBearer.CreateToken(
             o =>
             {
-                o.SigningKey = Config.GetValue("UserIdentity:Jwt:PrivateKeyPem", "");
+                o.SigningKey = _jwtSettings.PrivateKeyPem;
                 o.SigningStyle = TokenSigningStyle.Asymmetric;
                 o.SigningAlgorithm = SecurityAlgorithms.RsaSha256;
-                o.Issuer = Config.GetValue("UserIdentity:Jwt:Issuer", "HelpDesk.UserIdentity");
-                o.Audience = Config.GetValue("UserIdentity:Jwt:Audience", "HelpDesk.Services");
+                o.Issuer = _jwtSettings.Issuer;
+                o.Audience = _jwtSettings.Audience;
                 o.ExpireAt = expiresAt;
                 o.User["sub"] = identity.ID;
             });

@@ -20,11 +20,14 @@ var bld = WebApplication.CreateBuilder(args);
 if (bld.Environment.IsEnvironment("Testing"))
     bld.Configuration.AddUserSecrets<Program>(optional: true);
 
+var settings = bld.Configuration.Get<UserProfileSettings>() ?? new();
+bld.Services.Configure<UserProfileSettings>(bld.Configuration);
+
 bld.WebHost.ConfigureKestrel(
     o =>
     {
-        o.ListenInterProcess(UserProfileService.Name);                               // grpc transport
-        o.ListenLocalhost(bld.Configuration.GetValue("UserProfile:HttpPort", 5001)); // http endpoints
+        o.ListenInterProcess(UserProfileService.Name);    // grpc transport
+        o.ListenLocalhost(settings.UserProfile.HttpPort); // http endpoints
     });
 
 bld.Services
@@ -45,13 +48,13 @@ if (!bld.Environment.IsProduction())
 
 var app = bld.Build();
 
-var db = await DB.InitAsync(
-             bld.Configuration.GetValue<string>("UserProfile:DatabaseName") ?? "HelpDesk_UserProfile",
-             MongoClientSettings.FromConnectionString(bld.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017"));
+var db = await DB.InitAsync(settings.UserProfile.DatabaseName, MongoClientSettings.FromConnectionString(settings.ConnectionStrings.MongoDB));
 await UserProfileDatabase.InitializeAsync(db);
 
 app.UseFastEndpoints(c => c.Errors.UseProblemDetails());
+
 app.MapHandlers<EventRecord, EventStorageProvider>(h => h.RegisterEventHub<UserProfileRegisteredEvent>());
+
 app.MapRemote(
     UserIdentityService.Name,
     c =>

@@ -15,12 +15,12 @@ public sealed class SmtpSettings
     /// <summary>
     /// The SMTP server hostname.
     /// </summary>
-    public required string Host { get; set; }
+    public string Host { get; set; } = string.Empty;
 
     /// <summary>
     /// The SMTP server port.
     /// </summary>
-    public required int Port { get; set; }
+    public int Port { get; set; } = 587;
 
     /// <summary>
     /// Whether to use SSL/TLS for the connection.
@@ -30,30 +30,30 @@ public sealed class SmtpSettings
     /// <summary>
     /// The SMTP authentication username.
     /// </summary>
-    public required string Username { get; set; }
+    public string Username { get; set; } = string.Empty;
 
     /// <summary>
     /// The SMTP authentication password.
     /// </summary>
-    public required string Password { get; set; }
+    public string Password { get; set; } = string.Empty;
 
     /// <summary>
     /// The sender's display name.
     /// </summary>
-    public required string SenderName { get; set; }
+    public string SenderName { get; set; } = "HelpDesk";
 
     /// <summary>
     /// The sender's email address.
     /// </summary>
-    public required string SenderEmail { get; set; }
+    public string SenderEmail { get; set; } = string.Empty;
 
     /// <summary>
     /// The name of the administrator.
     /// </summary>
-    public required string AdminName { get; set; }
+    public string AdminName { get; set; } = string.Empty;
 
     /// <summary>
     /// The email address of the administrator.
     /// </summary>
-    public required string AdminEmail { get; set; }
+    public string AdminEmail { get; set; } = string.Empty;
 }
