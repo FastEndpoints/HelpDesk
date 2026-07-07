@@ -1,8 +1,8 @@
 ---
 type: Reference
 title: Code Map
-description: Repository layout, project locations, important modules, generated files, and edit guidance.
-tags: [code-map, layout, navigation]
+description: Repository layout, important project locations, and edit guidance.
+tags: [code-map, navigation]
 ---
 
 # Code Map
@@ -11,66 +11,63 @@ tags: [code-map, layout, navigation]
 
 | Path | Purpose |
 | --- | --- |
-| `README.md` | Canonical architecture and workflow documentation. |
-| `HelpDesk.slnx` | Solution file listing Common, Contracts, and Services projects. |
+| `README.md` | Canonical architecture and workflow overview. |
+| `AGENTS.md` | Repo-local agent instructions, including OKF use/maintenance. |
+| `.okf/` | Operational knowledge for agents. |
+| `HelpDesk.slnx` | Solution file listing all projects. |
 | `Directory.Packages.props` | Central NuGet package versions. |
-| `Common/StorageProvider/` | Shared MongoDB storage provider for FastEndpoints remote event infrastructure. |
-| `Common/Tools/` | Generic helpers, currently string lookup normalization. |
-| `Contracts/` | Public contract projects by service. |
-| `Services/` | Independently deployable service implementations. |
+| `Common/` | Reusable infrastructure/helpers only after they are truly generic. |
+| `Contracts/` | Public cross-service service names/events/DTOs. |
+| `Services/` | Deployable service implementations. |
+| `.run/RunAll.run.xml` | JetBrains multi-launch config for all current services. |
 
 ## Projects
 
-| Project | Purpose |
-| --- | --- |
-| `Common/StorageProvider/Common.StorageProvider.csproj` | Event storage over MongoDB for remote messaging. |
-| `Common/Tools/Common.Tools.csproj` | Generic helper library. |
-| `Contracts/UserIdentity/Contracts.UserIdentity.csproj` | UserIdentity service name and identity events. |
-| `Contracts/UserProfile/Contracts.UserProfile.csproj` | UserProfile service name and profile events. |
-| `Contracts/Notifications/Contracts.Notifications.csproj` | Notifications service name. |
-| `Services/UserIdentity/Services.UserIdentity.csproj` | FastEndpoints identity service. |
-| `Services/UserProfile/Services.UserProfile.csproj` | FastEndpoints profile service. |
-| `Services/Notifications/Services.Notifications.csproj` | FastEndpoints notification/job service. |
+| Path | Type | Notes |
+| --- | --- | --- |
+| `Common/StorageProvider/Common.StorageProvider.csproj` | class library | MongoDB event storage provider and `EventRecord`. |
+| `Common/Tools/Common.Tools.csproj` | class library | `NormalizeForLookup()` helper. |
+| `Contracts/UserIdentity/Contracts.UserIdentity.csproj` | class library | UserIdentity service name and identity events. |
+| `Contracts/UserProfile/Contracts.UserProfile.csproj` | class library | UserProfile service name and profile events. |
+| `Contracts/Notifications/Contracts.Notifications.csproj` | class library | Notifications service name; no events currently. |
+| `Services/UserIdentity/Services.UserIdentity.csproj` | web app | Identity endpoints, auth, persistence, event hubs, tests. |
+| `Services/UserProfile/Services.UserProfile.csproj` | web app | Profile persistence, identity subscriptions, profile event hub, tests. |
+| `Services/Notifications/Services.Notifications.csproj` | web app | Notification settings/email/jobs/subscription, tests. |
 
 ## Service layout
 
-Typical folders under `Services/<Service>`:
+Typical service directories:
 
-| Path | Purpose |
-| --- | --- |
-| `Program.cs` | Startup, DI, Kestrel listeners, event hub/subscription mapping. |
-| `Meta.cs` | Service-local global usings. |
-| `Configuration/` | Strongly typed appsettings classes. |
-| `Endpoints/` | Public REST endpoints owned by the service. UserIdentity has identity endpoints. |
-| `Persistence/` | Private MongoDB entities, stores, database/index initialization. |
-| `Subscriptions/<Publisher>/<Event>/` | Event handlers for consumed contract events. |
-| `Jobs/` | Notifications durable job records/storage. |
-| `Email/` | Notifications email abstractions, templates, SMTP/null sender. |
-| `Tests/` | Shared service-local test fixture/config; behavior tests are colocated under endpoint/subscription folders. |
-| `appsettings*.json` | Service runtime/test configuration. |
-| `Properties/launchSettings.json` | Local launch profiles. |
+- `Program.cs` - startup, DI, Kestrel IPC/HTTP, event hubs/subscriptions.
+- `Meta.cs` - service-level global usings/metadata.
+- `Configuration/` - strongly typed settings classes.
+- `appsettings*.json` - service-local configuration.
+- `Properties/launchSettings.json` - development launch profile.
+- `Endpoints/<Area>/<Action>/` - public REST endpoints owned by the service.
+- `Persistence/` - private entities, stores, database/index initialization.
+- `Subscriptions/<Publisher>/<Event>/` - event handlers and colocated tests.
+- `Tests/` - shared service-local fixtures and xUnit config.
+- Service-specific folders such as `Email/` and `Jobs/` stay inside the owning service.
 
-Do not force empty folders into every service; match the service responsibility.
+## Where to add behavior
 
-## Important locations
-
-- Identity endpoints: `Services/UserIdentity/Endpoints/Identities/{Register,Login,Verify}/`.
-- Identity subscription consumers: `Services/UserProfile/Subscriptions/UserIdentity/{Registration,Verification}/`.
-- Profile registration consumer: `Services/Notifications/Subscriptions/UserProfile/Registration/`.
-- Event contracts: `Contracts/UserIdentity/Events.cs`, `Contracts/UserProfile/Events.cs`.
-- Service names: `Contracts/*/Service.cs`.
-- MongoDB indexes: `Services/*/Persistence/*Database.cs`.
-- Local config: `Services/*/appsettings.json` and `appsettings.Testing.json`.
-
-## Generated and ignored files
-
-- `bin/`, `obj/`, build outputs, coverage outputs, user files, `.env`, and `Generated Files/` are ignored by `.gitignore`.
-- FastEndpoints generator outputs are build artifacts; edit source files, not generated outputs.
-- Release builds remove `**/Tests/**` from service projects.
+- New public API behavior: owning service under `Services/<Service>/Endpoints/...` plus colocated `Tests/`.
+- New event contract: owning `Contracts/<Service>/` project.
+- New event publication: owning service after local persistence succeeds.
+- New subscription: consuming service under `Subscriptions/<Publisher>/<Event>/` plus `Program.cs` `MapRemote(...)` registration.
+- Reusable infrastructure: `Common/` only when generic and not domain behavior.
 
 ## Edit guidance
 
-- Add behavior inside the owning service project.
-- Add cross-service facts to the owning contract project.
-- Add reusable infrastructure to `Common/` only when it is genuinely generic and domain-free.
-- Keep tests beside the endpoint/subscription behavior being changed.
+- Do not edit build outputs under `bin/` or `obj/` if present.
+- Do not move service-local persistence/entities into contracts or common projects.
+- Do not create empty service folders just to match a template.
+- Release builds remove `**/Tests/**` from service web projects via csproj conditions.
+
+## Sources
+
+- `README.md`
+- `HelpDesk.slnx`
+- `*.csproj`
+- `Services/*/Program.cs`
+- `Services/*/Tests/Sut.cs`

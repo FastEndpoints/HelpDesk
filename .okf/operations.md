@@ -1,78 +1,82 @@
 ---
 type: Reference
 title: Operations
-description: Runtime processes, databases, messaging, API docs, notification delivery, configuration, and observability.
-tags: [operations, configuration, runtime]
+description: Local runtime processes, ports, configuration, storage, messaging, jobs, and observability.
+tags: [operations, runtime]
 ---
 
 # Operations
 
 ## Runtime processes
 
-Each service is a separate .NET web application:
+Current deployable services:
 
-| Service | Project | Transport/listeners |
-| --- | --- | --- |
-| UserIdentity | `Services/UserIdentity/Services.UserIdentity.csproj` | IPC `USER_IDENTITY_SERVICE`; HTTP localhost port from `UserIdentity:HttpPort` default `5000`. |
-| UserProfile | `Services/UserProfile/Services.UserProfile.csproj` | IPC `USER_PROFILE_SERVICE`; HTTP localhost port from `UserProfile:HttpPort` default `5001`. |
-| Notifications | `Services/Notifications/Services.Notifications.csproj` | IPC `NOTIFICATIONS_SERVICE`; no configured HTTP port. |
+| Service | Project | Local HTTP | IPC service name source |
+| --- | --- | --- | --- |
+| UserIdentity | `Services/UserIdentity/Services.UserIdentity.csproj` | `http://localhost:5000` | `Contracts.UserIdentity.Service.Name` |
+| UserProfile | `Services/UserProfile/Services.UserProfile.csproj` | `http://localhost:5001` | `Contracts.UserProfile.Service.Name` |
+| Notifications | `Services/Notifications/Services.Notifications.csproj` | none configured | `Contracts.Notifications.Service.Name` |
 
-UserProfile and Notifications include dummy root endpoints to satisfy app shape, but they have no public business APIs currently.
+`UserProfile` and `Notifications` include dummy root endpoints in `Program.cs`, but they do not expose public business APIs.
+
+## Messaging topology
+
+- Each service listens over FastEndpoints IPC via `ListenInterProcess(...)`.
+- `UserIdentity` registers hubs for `UserIdentityRegisteredEvent` and `UserIdentityVerifiedEvent`.
+- `UserProfile` maps remote `UserIdentity` and subscribes to both identity events; it registers a hub for `UserProfileRegisteredEvent`.
+- `Notifications` maps remote `UserProfile` and subscribes to `UserProfileRegisteredEvent`.
+- Remote event storage uses MongoDB-backed `EventRecord` through `Common/StorageProvider`.
 
 ## Databases
 
-MongoDB is required for service state, event records, and notification jobs.
+Default local MongoDB connection string: `mongodb://localhost:27017`.
 
-Default connection:
+| Service | Default database | Testing database | Main collections/indexes |
+| --- | --- | --- | --- |
+| UserIdentity | `HelpDesk_UserIdentity` | `HelpDesk_UserIdentity_TESTING` | `UserIdentities`; unique normalized email; sparse unique verification code; event records. |
+| UserProfile | `HelpDesk_UserProfile` | `HelpDesk_UserProfile_TESTING` | `UserProfiles`; unique normalized email; event records. |
+| Notifications | `HelpDesk_Notifications` | `HelpDesk_Notifications_TESTING` | event records; job records by queue/completion/schedule/expiry and tracking ID. |
 
-```text
-mongodb://localhost:27017
-```
+## Configuration
 
-Default database names:
+Config files live under each service:
 
-- `HelpDesk_UserIdentity`
-- `HelpDesk_UserProfile`
-- `HelpDesk_Notifications`
+- `appsettings.json` - non-secret defaults.
+- `appsettings.Development.json` - currently empty overrides.
+- `appsettings.Testing.json` - testing database names.
+- `Properties/launchSettings.json` - Development launch profile.
 
-Testing database names add `_TESTING` suffixes in `appsettings.Testing.json`.
-
-Indexes are created on service startup by `*Database.InitializeAsync(...)`; there are no migration files.
-
-## Messaging
-
-- Current topology uses local IPC via `ListenInterProcess(...)` and `MapRemote(...)`.
-- Event durability uses MongoDB-backed `EventRecord` through `Common/StorageProvider`.
-- There is no central message broker.
-- Deployment may change remote endpoints/topology, but business workflows should remain contract/event-based.
-
-## HTTP/API docs
-
-- UserIdentity exposes identity REST endpoints on port `5000` by default.
-- UserProfile listens on HTTP port `5001` by default but currently has no public business API.
-- UserIdentity and UserProfile map OpenAPI and Scalar when not Production.
-- Notifications does not configure OpenAPI/Scalar.
-
-## Notification delivery
-
-- Notifications queues `SendEmailCommand` jobs in MongoDB-backed job storage.
-- Job queue limit for `SendEmailCommand`: max concurrency `1`, time limit `2 minutes`.
-- `JobStorageProvider.DistributedJobProcessingEnabled` is currently `false`; notification job processing is not configured for distributed competing workers.
-- Production with `Smtp:Enabled=true` uses `SmtpService`.
-- Non-production or disabled SMTP uses `NullEmailSender`.
-- SMTP settings live under `Smtp:*` and must be supplied securely for real email delivery.
-
-## Configuration and secrets
-
-Important sections:
+Important config keys:
 
 - `ConnectionStrings:MongoDB`
-- `UserIdentity:Jwt:Issuer`, `Audience`, `AccessTokenDays`, `PrivateKeyPem`
-- `Smtp:Enabled`, `Host`, `Port`, `UseSsl`, `Username`, `Password`, sender fields
-- `Smtp:AdminName` and `Smtp:AdminEmail` exist in committed config but are currently unused/reserved by delivery code.
+- `UserIdentity:HttpPort`, `UserIdentity:DatabaseName`, `UserIdentity:Jwt:*`
+- `UserProfile:HttpPort`, `UserProfile:DatabaseName`
+- `Notifications:DatabaseName`
+- `Smtp:*`
+- `Logging:LogLevel:*`
 
-Do not commit secrets. The repo ignores `.env`; use environment variables, user secrets, or deployment secret storage.
+Do not copy secret values into source or OKF.
+
+## Email/jobs
+
+- Notifications queues `SendEmailCommand` jobs when profile registration events arrive.
+- Job queue limits `SendEmailCommand` to max concurrency 1 and 2 minute time limit.
+- SMTP delivery uses `SmtpService` only when environment is Production and `Smtp.Enabled` is true.
+- Non-production or disabled SMTP uses `NullEmailSender`, which logs suppressed email delivery.
+- SMTP failures log a warning, reconnect, retry once, then log an error and rethrow.
+- Failed jobs are rescheduled one minute later by `JobStorageProvider`.
 
 ## Observability
 
-Only standard ASP.NET Core logging configuration is present in appsettings. No metrics, tracing, external logging sinks, health checks, Docker, Kubernetes, or CI deployment config exists in the repo at OKF initialization time.
+- ASP.NET logging defaults are `Default=Information`, `Microsoft.AspNetCore=Warning`.
+- Non-production `UserIdentity` and `UserProfile` map OpenAPI and Scalar UI.
+- Notifications does not map OpenAPI/Scalar in current startup.
+
+## Sources
+
+- `Services/*/Program.cs`
+- `Services/*/appsettings*.json`
+- `Services/*/Properties/launchSettings.json`
+- `Services/*/Persistence/*Database.cs`
+- `Services/Notifications/Email/*.cs`
+- `Services/Notifications/Jobs/JobStorageProvider.cs`

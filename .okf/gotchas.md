@@ -1,25 +1,32 @@
 ---
 type: Reference
 title: Gotchas
-description: Practical traps, common failure modes, and non-obvious repository constraints.
-tags: [gotchas, constraints, troubleshooting]
+description: Practical traps and non-obvious constraints for future agents.
+tags: [gotchas, constraints]
 ---
 
 # Gotchas
 
-- `HelpDesk.slnx` is the solution file. Some tools may not support `.slnx`; use specific `.csproj` paths when needed.
-- The repo targets `net10.0` and has no `global.json`; local SDK compatibility matters.
-- MongoDB must be running for app startup and tests that use fixtures.
-- `UserIdentity:Jwt:PrivateKeyPem` is empty in committed config; successful login runtime behavior and UserIdentity login tests need a real RSA private key configured securely.
-- Do not introduce direct service project references or internal REST calls for business workflows.
-- Contracts must not contain persistence, endpoints, handlers, stores, SMTP, or service-local rules.
-- Events must be facts published after local persistence succeeds, not commands.
-- Email lookup normalization is `Trim().ToUpperInvariant()`; preserve it for duplicate and activation behavior.
-- Release builds remove `**/Tests/**`; do not put runtime code under a `Tests` folder.
-- Notifications uses `NullEmailSender` unless Production and `Smtp:Enabled=true`, so local runs will not send real email by default.
-- Notifications job storage has distributed job processing disabled; do not assume multiple service instances safely compete for the same email jobs.
-- UserProfile and Notifications currently have no public business APIs even though app projects may include dummy endpoints.
-- FastEndpoints generated/build artifacts should not be edited manually.
-- There are no migration files; schema/index changes happen in startup database initialization code.
-- All current service projects share one user-secrets store; avoid accidental cross-service config key collisions.
-- Debug builds support an in-process xUnit runner when args contain `@@`; normal workflows should still use `dotnet test` unless intentionally invoking that path.
+- `.okf/` may be referenced by `AGENTS.md`; keep it present and conformant.
+- The solution file is `HelpDesk.slnx`, not traditional `.sln`; some tools need individual `.csproj` paths.
+- Cross-service business behavior must not use REST/RPC or service implementation references; use contract events only.
+- Contract projects must stay small: service name, event records, and simple DTOs only.
+- `Common/` is not a shared domain layer; avoid moving service-specific behavior there.
+- Events should be published only after local persistence succeeds. The registration/verification endpoints follow this pattern.
+- Tests live inside service web projects and are excluded from Release builds; run tests in Debug/default configuration.
+- Tests require MongoDB at the configured connection string unless a test explicitly replaces storage.
+- `UserIdentity` login JWT creation needs a valid `UserIdentity:Jwt:PrivateKeyPem`; the committed default is empty.
+- Notifications will not send real email unless environment is Production and `Smtp:Enabled` is true.
+- `UserProfile` and `Notifications` have dummy endpoints in `Program.cs`; do not treat them as public business APIs.
+- Email lookup normalization is `Trim().ToUpperInvariant()`; preserve this for uniqueness and duplicate checks.
+- Do not commit real MongoDB credentials, JWT private keys, SMTP usernames/passwords, or customer data.
+
+## Sources
+
+- `AGENTS.md`
+- `README.md`
+- `HelpDesk.slnx`
+- `Services/*/*.csproj`
+- `Services/*/Program.cs`
+- `Services/*/appsettings*.json`
+- `Common/Tools/StringExtensions.cs`

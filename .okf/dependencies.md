@@ -1,48 +1,63 @@
 ---
 type: Reference
 title: Dependencies
-description: Runtime, package management, key libraries, version notes, and dependency update rules.
-tags: [dependencies, packages, runtime]
+description: Runtime, package management, key libraries, and compatibility notes.
+tags: [dependencies, dotnet]
 ---
 
 # Dependencies
 
-## Runtime and package management
+## Runtime and language
 
 - Target framework: `net10.0` for all projects.
-- No `global.json` pins a SDK version.
-- NuGet versions are centrally managed in `Directory.Packages.props` via `ManagePackageVersionsCentrally=true`.
-- Solution file: `HelpDesk.slnx`.
+- C# nullable reference types enabled.
+- Implicit usings enabled.
+- Web service projects use `Microsoft.NET.Sdk.Web`; common/contracts use `Microsoft.NET.Sdk`.
+
+## Package management
+
+- NuGet versions are centrally managed in `Directory.Packages.props` with `ManagePackageVersionsCentrally=true`.
+- Project files reference packages without versions.
+- Update package versions in `Directory.Packages.props`, not individual csproj files.
 
 ## Key packages
 
-| Package | Use |
-| --- | --- |
-| `FastEndpoints` | REST endpoints and application framework. |
-| `FastEndpoints.Generator` | Source generation during build. |
-| `FastEndpoints.Messaging.Core` | `IEvent` contract base for contract projects. |
-| `FastEndpoints.Messaging.Remote` | Brokerless remote event hubs/subscriptions and job queues. |
-| `FastEndpoints.Messaging.Remote.Testing` | Test event receiver support. |
-| `FastEndpoints.OpenApi` | OpenAPI for non-production UserIdentity/UserProfile services. |
-| `FastEndpoints.Security` | JWT creation in UserIdentity login. |
-| `FastEndpoints.Testing` | Endpoint/app fixture testing. |
-| `MongoDB.Entities` | MongoDB persistence and index management. |
-| `MongoDB.Driver` | Used transitively/directly in service code for Mongo client/settings and exceptions. |
-| `MailKit` | SMTP email delivery in Notifications. |
-| `Scalar.AspNetCore` | Scalar API reference in non-production UserIdentity/UserProfile services. |
-| `Microsoft.OpenApi` | OpenAPI support. |
-| `Microsoft.NET.Test.Sdk`, `xunit.v3`, `xunit.runner.visualstudio`, `Shouldly` | Test execution and assertions. |
+| Package | Version | Use |
+| --- | --- | --- |
+| `FastEndpoints` | `8.3.0-beta.9` | Endpoint framework and event abstractions. |
+| `FastEndpoints.Generator` | `8.3.0-beta.9` | FastEndpoints source generation/analyzers. |
+| `FastEndpoints.Messaging.Core` | `8.3.0-beta.9` | Contract event interfaces. |
+| `FastEndpoints.Messaging.Remote` | `8.3.0-beta.9` | Remote event hubs/subscriptions and handler server. |
+| `FastEndpoints.Messaging.Remote.Testing` | `8.3.0-beta.9` | Test event receivers. |
+| `FastEndpoints.OpenApi` | `8.3.0-beta.9` | OpenAPI docs for non-production services. |
+| `FastEndpoints.Security` | `8.3.0-beta.9` | JWT bearer token creation in UserIdentity. |
+| `FastEndpoints.Testing` | `8.3.0-beta.9` | App fixtures and endpoint test helpers. |
+| `MongoDB.Entities` | `25.1.0` | MongoDB persistence abstraction. |
+| `MailKit` | `4.17.0` | SMTP delivery in Notifications. |
+| `Scalar.AspNetCore` | `2.16.7` | Scalar OpenAPI UI for non-production identity/profile services. |
+| `Shouldly` | `4.3.0` | Assertions. |
+| `xunit.v3` | `3.2.2` | Test framework. |
+| `xunit.runner.visualstudio` | `3.1.5` | Visual Studio/.NET test runner integration. |
+| `Microsoft.NET.Test.Sdk` | `18.7.0` | Test SDK for service test projects. |
+| `Microsoft.OpenApi` | `2.9.0` | OpenAPI model support. |
 
-## Version notes at initialization
+## Project references
 
-- FastEndpoints packages are `8.3.0-beta.9`; keep related FastEndpoints packages aligned.
-- MailKit is `4.17.0`.
-- MongoDB.Entities is `25.1.0`.
-- Scalar.AspNetCore is `2.16.7`.
+- `Services/UserIdentity` references `Contracts/UserIdentity`, `Common/StorageProvider`, and `Common/Tools`.
+- `Services/UserProfile` references `Contracts/UserProfile`, `Contracts/UserIdentity`, `Common/StorageProvider`, and `Common/Tools`.
+- `Services/Notifications` references `Contracts/Notifications`, `Contracts/UserProfile`, and `Common/StorageProvider`.
+- Contracts do not reference common or service implementation projects.
 
-## Dependency update rules
+## Compatibility notes
 
-- Change package versions in `Directory.Packages.props`, not individual projects.
-- Keep package references in `.csproj` free of explicit versions unless central management changes.
-- Preserve conditional test package references in service projects unless changing Release build behavior intentionally.
-- Re-run relevant build/tests after framework, FastEndpoints, MongoDB, MailKit, or test package changes.
+- The repository uses `HelpDesk.slnx`; if a tool cannot load `.slnx`, load individual `.csproj` files.
+- FastEndpoints packages are beta versions; verify API changes before dependency upgrades.
+- Service tests are part of service web projects in non-Release builds; Release excludes `**/Tests/**`.
+
+## Sources
+
+- `Directory.Packages.props`
+- `HelpDesk.slnx`
+- `Common/*/*.csproj`
+- `Contracts/*/*.csproj`
+- `Services/*/*.csproj`

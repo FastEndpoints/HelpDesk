@@ -1,66 +1,74 @@
 ---
 type: Reference
 title: Conventions
-description: Project-specific coding, FastEndpoints, event, persistence, notifications, and testing conventions.
-tags: [conventions, patterns, testing]
+description: Coding, service-boundary, event, persistence, configuration, and testing conventions.
+tags: [conventions, style]
 ---
 
 # Conventions
 
-## C# and project style
+## Service and contract boundaries
 
-- Projects target `net10.0`, enable implicit usings and nullable reference types.
-- Web services use `Microsoft.NET.Sdk.Web`; common/contracts use `Microsoft.NET.Sdk`.
-- Program startup uses top-level statements in `Program.cs`.
-- Service projects keep common global usings in `Meta.cs`.
-- Classes are commonly `sealed` when not intended for inheritance.
-- Namespaces are short/service-local via file-scoped declarations and global usings.
-- Keep solutions simple; prefer existing patterns over new abstractions.
+- Keep deployable service implementation under `Services/<ServiceName>/`.
+- Keep public cross-service language under `Contracts/<ServiceName>/`.
+- Services may reference other services' contract projects only when consuming their events/DTOs.
+- Services must not reference other service implementation projects.
+- Keep domain behavior, persistence, stores, endpoints, and handlers out of `Common/` and `Contracts/`.
 
-## FastEndpoints patterns
+## Event design
 
-- Endpoints live under `Endpoints/<Area>/<Action>/` with `Endpoint.cs`, `Request.cs`, `Response.cs` when needed.
-- Endpoint classes inherit `Endpoint<TRequest, TResponse>` or `EndpointWithoutRequest`.
-- Request validators are nested `Validator<Request>` classes using FluentValidation.
-- Current public identity endpoints call `AllowAnonymous()`.
-- Non-production UserIdentity/UserProfile services expose OpenAPI and Scalar.
+- Event records are `public sealed record ... : IEvent` in the owning contract project.
+- Event names describe facts already completed: `...RegisteredEvent`, `...VerifiedEvent`.
+- Publish with `.Broadcast()` only after local state commits.
+- Register publisher hubs in `Program.cs` with `RegisterEventHub<TEvent>()`.
+- Register subscribers in `Program.cs` with `MapRemote(...).Subscribe<TEvent, THandler>()`.
+- Subscriber handlers implement `IEventHandler<TEvent>` and mutate only their own service state or queue local work.
 
-## Event and service patterns
+## Endpoint design
 
-- Contract events are `sealed record` types implementing `IEvent`.
-- Service name constants live in `Contracts/<Service>/Service.cs`.
-- Publishers call `RegisterEventHub<TEvent>()` in `Program.cs`.
-- Subscribers call `MapRemote(<publisher service name>, c => c.Subscribe<TEvent, THandler>())`.
-- Event handlers implement `IEventHandler<TEvent>` and live under `Subscriptions/<Publisher>/<Event>/`.
-- Events describe completed facts and are broadcast only after local persistence succeeds.
+- Use FastEndpoints endpoint classes under `Endpoints/<Area>/<Action>/`.
+- Keep request/response DTOs beside the endpoint.
+- Configure routes in `Configure()` and prefer explicit `AllowAnonymous()` where intended.
+- Use FastEndpoints `ThrowError(...)`/problem details for validation/business errors.
+- `UserProfile` and `Notifications` currently have no public business APIs; dummy endpoints exist only inside `Program.cs`.
 
-## Persistence patterns
+## Persistence and data modeling
 
-- MongoDB.Entities is used for entities and startup index creation.
-- Persistence models stay private to their owning service.
-- Stores hide MongoDB write concerns and translate duplicate key write errors into service-local exceptions.
-- Lookup emails use `Common.Tools.NormalizeForLookup()` (`Trim().ToUpperInvariant()`).
-- UserIdentity creates deactivated identities, hashes passwords, and generates 32-byte hex verification codes.
-- UserProfile creates deactivated profiles and activates by normalized email after verification.
+- Use MongoDB.Entities for service-local entities and stores.
+- Initialize required indexes in `Persistence/*Database.cs` before app run.
+- Normalize lookup email values with `Common.Tools.NormalizeForLookup()` (`Trim().ToUpperInvariant()`).
+- Model unique email constraints with unique normalized email indexes.
+- Catch Mongo duplicate key exceptions in stores and convert to service-local exceptions.
+- Keep entity status enums service-local.
 
-## Notifications patterns
+## Configuration and dependency injection
 
-- `IEmailSender` abstracts delivery.
-- Production with `Smtp:Enabled=true` uses `SmtpService`; other scenarios use `NullEmailSender` unless tests override it.
-- Email sending is queued through FastEndpoints job queues with `JobRecord` storage.
-- Welcome email merge fields must match template markers; mismatch throws.
+- Bind whole service settings from configuration into strongly typed settings classes and `IOptions<T>`.
+- Default local MongoDB connection string is `mongodb://localhost:27017`.
+- Testing environment adds optional user secrets and uses `appsettings.Testing.json` database names.
+- `UserIdentity` JWT signing uses `UserIdentity.Jwt.PrivateKeyPem`; keep real keys out of source.
+- `Notifications` uses `NullEmailSender` unless environment is Production and `Smtp.Enabled` is true.
 
-## Error handling and validation
+## Code style
 
-- Endpoint validation uses FluentValidation and FastEndpoints problem details.
-- Duplicate identity/profile emails are treated as bad/ignored according to owner behavior:
-  - UserIdentity duplicate registration returns validation error.
-  - UserProfile duplicate event reaction is ignored for idempotence.
-- Login returns generic invalid credential errors and rejects non-active accounts.
+- Projects target `net10.0`, nullable enabled, implicit usings enabled.
+- Many service classes are internal/sealed by omission or `sealed` where no inheritance is needed.
+- Prefer small single-purpose classes near the behavior they support.
+- Preserve current namespaces by feature folder, e.g. `Identities.Register`, `Subscriptions.UserIdentity.Registration`.
+- Keep changes minimal; avoid speculative abstractions.
 
 ## Testing conventions
 
-- Tests are colocated with endpoint/subscription behavior.
-- Shared fixtures live in `Services/<Service>/Tests/Sut.cs`.
-- Tests use xUnit v3, FastEndpoints.Testing, Shouldly, and test event receivers when event publication matters.
-- Test fixture environment is `Testing`; testing appsettings use `_TESTING` database names.
+- Tests are colocated under `Tests/` inside endpoint/subscription folders.
+- Shared fixture per service lives in `Services/<Service>/Tests/Sut.cs` and derives from `AppFixture<Program>`.
+- Use xUnit v3, FastEndpoints.Testing, Shouldly, and test event receivers where events are published.
+- Validate public boundaries: REST endpoints, event subscriptions/reactions, and event publication.
+
+## Sources
+
+- `README.md`
+- `Services/UserIdentity/Endpoints/Identities/*/Endpoint.cs`
+- `Services/UserProfile/Subscriptions/UserIdentity/*/*.cs`
+- `Services/Notifications/Subscriptions/UserProfile/Registration/*.cs`
+- `Services/*/Persistence/*.cs`
+- `Services/*/Tests/Sut.cs`

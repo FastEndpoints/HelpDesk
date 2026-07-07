@@ -2,28 +2,28 @@
 okf_version: "0.1"
 ---
 
-# HelpDesk OKF Knowledge Set
+# OKF Knowledge Set
 
-This directory contains compact operational knowledge for agents working in HelpDesk. Read relevant files before editing. Keep these files synchronized with source, tests, configuration, and `README.md`.
+This directory contains compact operational knowledge for agents working in HelpDesk. Read relevant files before editing. Keep these files synchronized with source, tests, docs, manifests, and configuration.
 
 ## Core reading order
 
-* [Project Overview](project-overview.md) - Product scope, current services, onboarding flow, and terms.
-* [Architecture](architecture.md) - Brokerless FastEndpoints remote messaging architecture and dependency rules.
-* [Code Map](code-map.md) - Repository layout, important module locations, and edit guidance.
-* [Conventions](conventions.md) - Project-specific patterns for C#, FastEndpoints, events, persistence, and tests.
+- [Project Overview](project-overview.md) - Project purpose, scope, capabilities, and glossary.
+- [Architecture](architecture.md) - Service boundaries, event mesh rules, persistence, and invariants.
+- [Code Map](code-map.md) - Repository layout and where to add behavior.
+- [Conventions](conventions.md) - Coding, contracts, events, persistence, and testing conventions.
 
 ## Workflow and validation
 
-* [Workflows](workflows.md) - Setup, build, run, format, generation, service, and event workflows.
-* [Testing](testing.md) - Test frameworks, layout, fixtures, commands, and test expectations.
+- [Workflows](workflows.md) - Build, run, format, and local development workflows.
+- [Testing](testing.md) - Test layout, commands, fixtures, and expectations.
 
 ## Task-specific references
 
-* [Dependencies](dependencies.md) - Runtime, package management, key libraries, and compatibility notes.
-* [Operations](operations.md) - Runtime services, ports, MongoDB, SMTP, OpenAPI, and configuration.
-* [Gotchas](gotchas.md) - Practical traps and non-obvious constraints.
-* [Maintenance](maintenance.md) - When and how to update OKF.
+- [Dependencies](dependencies.md) - Runtime, package management, and key libraries.
+- [Operations](operations.md) - Local runtime services, ports, config, persistence, and delivery behavior.
+- [Gotchas](gotchas.md) - Non-obvious constraints and traps.
+- [Maintenance](maintenance.md) - OKF maintenance and conformance rules.
 
 ## Authority rule
 
@@ -31,4 +31,4 @@ If OKF conflicts with source code, tests, generated artifacts, project manifests
 
 ## Maintenance rule
 
-Before finishing work, update OKF if the change affects architecture, behavior, commands, dependencies, tests, deployment, operations, or conventions. If no update is needed, state why in the final response.
+Before finishing work, update OKF if the change affects architecture, behavior, commands, dependencies, tests, deployment, configuration, or conventions. If no update is needed, state why in the final response.

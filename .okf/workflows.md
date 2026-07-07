@@ -1,22 +1,13 @@
 ---
-type: Reference
+type: Playbook
 title: Workflows
-description: Setup, build, run, test, format, configuration, service, event, and generation workflows.
-tags: [workflows, commands, configuration]
+description: Setup, build, run, format, and local development commands.
+tags: [workflow, commands]
 ---
 
 # Workflows
 
 Run commands from the repository root unless noted.
-
-## Prerequisites
-
-- .NET SDK compatible with `net10.0`.
-- MongoDB reachable at `mongodb://localhost:27017` for local runs and tests unless configuration overrides it.
-- JWT private key configuration for successful UserIdentity login token generation, including UserIdentity login tests that exercise token creation.
-- SMTP configuration only if real notification delivery is desired.
-
-No `global.json`, Dockerfile, compose file, CI config, or Makefile exists at OKF initialization time.
 
 ## Restore, build, test, format
 
@@ -27,7 +18,21 @@ dotnet test
 dotnet format
 ```
 
-The solution file is `HelpDesk.slnx`. If a tool does not support `.slnx`, run commands against specific `.csproj` files.
+Targeted examples:
+
+```bash
+dotnet build HelpDesk.slnx
+dotnet test Services/UserIdentity/Services.UserIdentity.csproj
+dotnet test Services/UserProfile/Services.UserProfile.csproj
+dotnet test Services/Notifications/Services.Notifications.csproj
+```
+
+Notes:
+
+- Projects target `net10.0`; use an SDK that supports .NET 10.
+- Package versions are centrally managed by `Directory.Packages.props`.
+- Service projects include tests only when configuration is not `Release`.
+- The repository uses `.slnx`; some tools may need a specific `.csproj` instead of the solution file.
 
 ## Run services locally
 
@@ -37,55 +42,50 @@ dotnet run --project Services/UserProfile/Services.UserProfile.csproj
 dotnet run --project Services/Notifications/Services.Notifications.csproj
 ```
 
-Local appsettings:
+Local ports/topology:
 
-- UserIdentity HTTP: `http://localhost:5000`; IPC service name `USER_IDENTITY_SERVICE`.
-- UserProfile HTTP: `http://localhost:5001`; IPC service name `USER_PROFILE_SERVICE`.
-- Notifications listens on IPC service name `NOTIFICATIONS_SERVICE`; no configured HTTP port.
+- `UserIdentity`: IPC service name from `Contracts.UserIdentity.Service.Name`, HTTP `http://localhost:5000`.
+- `UserProfile`: IPC service name from `Contracts.UserProfile.Service.Name`, HTTP `http://localhost:5001`.
+- `Notifications`: IPC service name from `Contracts.Notifications.Service.Name`; no public HTTP port in settings.
+- JetBrains users can use `.run/RunAll.run.xml` to start all three current services.
 
-Run multiple services together when exercising the event flow through IPC.
+## Local dependencies
+
+- MongoDB must be reachable at the configured `ConnectionStrings:MongoDB`; defaults use `mongodb://localhost:27017`.
+- Default database names are `HelpDesk_UserIdentity`, `HelpDesk_UserProfile`, and `HelpDesk_Notifications`.
+- Testing database names add `_TESTING` via `appsettings.Testing.json`.
 
 ## Configuration workflow
 
-- Default config lives in `Services/*/appsettings.json`.
-- Development files currently contain `{}` and inherit defaults.
-- Testing files override database names with `_TESTING` suffixes.
-- Do not commit secrets. `.env` is ignored. Use user secrets, environment variables, or deployment secret management for values such as JWT private keys and SMTP passwords.
-- All current service projects share the same `UserSecretsId` (`f4709213-ea5b-483f-b487-370fc40b9db1`), so user-secrets are shared across UserIdentity, UserProfile, and Notifications.
+- Edit non-secret defaults in each service's `appsettings.json`.
+- Put secrets in user secrets, environment variables, or another secret manager; do not commit real secrets.
+- `UserIdentity` login requires `UserIdentity:Jwt:PrivateKeyPem` to contain a valid RSA private key for JWT signing.
+- `Notifications` SMTP delivery requires Production environment plus `Smtp:Enabled=true`; otherwise email is logged/suppressed by `NullEmailSender`.
 
-Key config sections:
+## Adding a service
 
-- `ConnectionStrings:MongoDB`
-- `UserIdentity:HttpPort`, `UserIdentity:DatabaseName`, `UserIdentity:Jwt:*`
-- `UserProfile:HttpPort`, `UserProfile:DatabaseName`
-- `Notifications:DatabaseName`
-- `Smtp:*`
-
-## Add a service
-
-1. Create `Contracts/<ServiceName>/` with stable `Service.Name` and owned event contracts.
-2. Create `Services/<ServiceName>/` as a standalone FastEndpoints app.
-3. Reference the service's own contract project.
-4. Reference `Common/StorageProvider` if publishing/subscribing to events.
+1. Create `Contracts/<ServiceName>/` and add a stable `Service.Name`.
+2. Add owned event records that implement `IEvent`.
+3. Create standalone `Services/<ServiceName>/` FastEndpoints app.
+4. Reference own contract project and `Common/StorageProvider` if publishing/subscribing.
 5. Reference other contract projects only for consumed events.
 6. Configure IPC/remote messaging in `Program.cs`.
-7. Add service-owned persistence under `Persistence/`.
-8. Add public REST endpoints only if the service exposes an external API.
-9. Add subscriptions under `Subscriptions/<Publisher>/<Event>/`.
-10. Add colocated endpoint/subscription tests.
+7. Add service-local persistence, endpoints/subscriptions, and colocated tests.
 
-## Add an event
+## Adding an event
 
-1. Add the event record to the owning service's contract project and implement `IEvent`.
-2. Register the event hub in the owning service.
-3. Publish the event only after local persistence succeeds.
-4. In each subscriber, reference the owning contract project.
-5. Add a handler under `Subscriptions/<Publisher>/<Event>/`.
-6. Register the subscription with `MapRemote(...)`.
-7. Add/update publication and reaction tests.
+1. Add the event record to the owning contract project.
+2. Register the event hub in the owner.
+3. Publish only after local persistence succeeds.
+4. In each subscriber, reference the owner contract project.
+5. Add handler and `MapRemote(...).Subscribe<...>()` registration.
+6. Add/update tests for publication and reaction behavior.
 
-## Code generation and migrations
+## Sources
 
-- FastEndpoints generator runs through build via package reference.
-- No explicit code-generation command is documented.
-- No migration command or migration system exists; MongoDB indexes are created at service startup.
+- `README.md`
+- `Directory.Packages.props`
+- `HelpDesk.slnx`
+- `Services/*/appsettings*.json`
+- `Services/*/Properties/launchSettings.json`
+- `.run/RunAll.run.xml`
