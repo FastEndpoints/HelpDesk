@@ -43,9 +43,10 @@ tags: [dependencies, dotnet]
 
 ## Project references
 
-- `Services/UserIdentity` references `Contracts/UserIdentity`, `Common/StorageProvider`, and `Common/Tools`.
-- `Services/UserProfile` references `Contracts/UserProfile`, `Contracts/UserIdentity`, `Common/StorageProvider`, and `Common/Tools`.
+- `Services/UserIdentity` references `Contracts/UserIdentity`, `Contracts/UserProfile`, `Common/StorageProvider`, and `Common/Tools`.
+- `Services/UserProfile` references `Contracts/UserProfile`, `Contracts/UserIdentity`, `Contracts/Notifications`, `Common/StorageProvider`, and `Common/Tools`.
 - `Services/Notifications` references `Contracts/Notifications`, `Contracts/UserProfile`, and `Common/StorageProvider`.
+- Publisher services may reference subscriber contract projects only to reuse subscriber `Service.Name` constants for FastEndpoints known subscriber IDs.
 - Contracts do not reference common or service implementation projects.
 
 ## Compatibility notes
@@ -56,8 +57,8 @@ tags: [dependencies, dotnet]
 
 ## Local library docs
 
-- FastEndpoints library docs are available at `/home/SOURCE-CONTROL/FE-Docs/src/content/docs/`.
-- MongoDB.Entities docs are available at `/home/SOURCE-CONTROL/MongoDB.Entities/Documentation/wiki/`.
+- FastEndpoints library docs are available at `../FE-Docs/src/content/docs/`.
+- MongoDB.Entities docs are available at `../MongoDB.Entities/Documentation/wiki/`.
 
 ## Sources
 

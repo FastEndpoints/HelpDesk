@@ -49,7 +49,7 @@ app.MapRemote(
     UserProfileService.Name,
     c =>
     {
-        c.Subscribe<UserProfileRegisteredEvent, UserProfileRegisteredEventHandler>();
+        c.SubscribeWithExplicitId<UserProfileRegisteredEvent, UserProfileRegisteredEventHandler>(NotificationService.Name);
     });
 
 await app.RunAsync();

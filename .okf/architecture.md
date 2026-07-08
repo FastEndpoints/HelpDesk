@@ -54,7 +54,9 @@ Forbidden:
 - Publish events only after the owning service commits local state.
 - Subscribers update only their own local state or queue internal work.
 - Current local topology uses `ListenInterProcess(Service.Name)` and `MapRemote(Service.Name, ...)`.
-- Publisher event hubs are registered with `RegisterEventHub<TEvent>()`.
+- Subscribers use `SubscribeWithExplicitId<TEvent, THandler>(SubscriberService.Name)` so subscriber IDs are stable and match contract service names.
+- Publisher event hubs are registered with known subscriber IDs via `RegisterEventHub<TEvent>([SubscriberService.Name])` to queue events from startup before subscribers first connect.
+- When adding a new subscriber, update both the subscriber's `MapRemote(...)` registration and the publisher's event hub known-subscriber list.
 
 ## Persistence rules
 

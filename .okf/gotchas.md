@@ -13,6 +13,7 @@ tags: [gotchas, constraints]
 - Contract projects must stay small: service name, event records, and simple DTOs only.
 - `Common/` is not a shared domain layer; avoid moving service-specific behavior there.
 - Events should be published only after local persistence succeeds. The registration/verification endpoints follow this pattern.
+- Durable startup/offline remote events require matching known subscriber IDs on both sides: `SubscribeWithExplicitId(..., SubscriberService.Name)` in the subscriber and `RegisterEventHub<TEvent>([SubscriberService.Name])` in the publisher.
 - Tests live inside service web projects and are excluded from Release builds; run tests in Debug/default configuration.
 - Tests require MongoDB at the configured connection string unless a test explicitly replaces storage.
 - `UserIdentity` login JWT creation needs a valid `UserIdentity:Jwt:PrivateKeyPem`; the committed default is empty.

@@ -1,5 +1,6 @@
 using Common.StorageProvider;
 using Contracts.UserIdentity;
+using UserProfileService = Contracts.UserProfile.Service;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
@@ -53,8 +54,8 @@ app.UseFastEndpoints(c => c.Errors.UseProblemDetails());
 app.MapHandlers<EventRecord, EventStorageProvider>(
     h =>
     {
-        h.RegisterEventHub<UserIdentityRegisteredEvent>();
-        h.RegisterEventHub<UserIdentityVerifiedEvent>();
+        h.RegisterEventHub<UserIdentityRegisteredEvent>([UserProfileService.Name]);
+        h.RegisterEventHub<UserIdentityVerifiedEvent>([UserProfileService.Name]);
     });
 
 if (!app.Environment.IsProduction())
