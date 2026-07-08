@@ -30,7 +30,7 @@ tags: [dependencies, dotnet]
 | `FastEndpoints.Messaging.Remote` | `8.3.0-beta.9` | Remote event hubs/subscriptions and handler server. |
 | `FastEndpoints.Messaging.Remote.Testing` | `8.3.0-beta.9` | Test event receivers. |
 | `FastEndpoints.OpenApi` | `8.3.0-beta.9` | OpenAPI docs for non-production services. |
-| `FastEndpoints.Security` | `8.3.0-beta.9` | JWT bearer token creation in UserIdentity. |
+| `FastEndpoints.Security` | `8.3.0-beta.9` | JWT bearer token creation in UserIdentity and JWT auth dependencies for UserProfile. |
 | `FastEndpoints.Testing` | `8.3.0-beta.9` | App fixtures and endpoint test helpers. |
 | `MongoDB.Entities` | `25.1.0` | MongoDB persistence abstraction. |
 | `MailKit` | `4.17.0` | SMTP delivery in Notifications. |
@@ -53,6 +53,11 @@ tags: [dependencies, dotnet]
 - The repository uses `HelpDesk.slnx`; if a tool cannot load `.slnx`, load individual `.csproj` files.
 - FastEndpoints packages are beta versions; verify API changes before dependency upgrades.
 - Service tests are part of service web projects in non-Release builds; Release excludes `**/Tests/**`.
+
+## Local library docs
+
+- FastEndpoints library docs are available at `/home/SOURCE-CONTROL/FE-Docs/src/content/docs/`.
+- MongoDB.Entities docs are available at `/home/SOURCE-CONTROL/MongoDB.Entities/Documentation/wiki/`.
 
 ## Sources
 
