@@ -17,6 +17,7 @@ tags: [gotchas, constraints]
 - Tests require MongoDB at the configured connection string unless a test explicitly replaces storage.
 - `UserIdentity` login JWT creation needs a valid `UserIdentity:Jwt:PrivateKeyPem`; the committed default is empty.
 - Notifications will not send real email unless environment is Production and `Smtp:Enabled` is true.
+- Verification email links derive their base URL from the registration request's scheme/host/path base; account for reverse proxies or public host headers.
 - `UserProfile` and `Notifications` have dummy endpoints in `Program.cs`; do not treat them as public business APIs.
 - Email lookup normalization is `Trim().ToUpperInvariant()`; preserve this for uniqueness and duplicate checks.
 - Do not commit real MongoDB credentials, JWT private keys, SMTP usernames/passwords, or customer data.
@@ -29,4 +30,6 @@ tags: [gotchas, constraints]
 - `Services/*/*.csproj`
 - `Services/*/Program.cs`
 - `Services/*/appsettings*.json`
+- `Services/UserIdentity/Endpoints/Identities/Register/Endpoint.cs`
+- `Services/Notifications/Subscriptions/UserProfile/Registration/UserProfileRegisteredEventHandler.cs`
 - `Common/Tools/StringExtensions.cs`

@@ -36,6 +36,34 @@ public sealed class UserProfileSettings
         /// The MongoDB database name.
         /// </summary>
         public string DatabaseName { get; set; } = "HelpDesk_UserProfile";
+
+        /// <summary>
+        /// JWT token validation configuration shared with UserIdentity token issuance.
+        /// </summary>
+        public JwtSettings Jwt { get; set; } = new();
+    }
+
+    public sealed class JwtSettings
+    {
+        /// <summary>
+        /// The expected JWT issuer.
+        /// </summary>
+        public string Issuer { get; set; } = "HelpDesk.UserIdentity";
+
+        /// <summary>
+        /// The expected JWT audience.
+        /// </summary>
+        public string Audience { get; set; } = "HelpDesk.Services";
+
+        /// <summary>
+        /// PKCS#1 RSA private key used by tests to issue JWTs matching the configured public key.
+        /// </summary>
+        public string PrivateKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Base64-encoded RSA public key used to validate JWTs issued by UserIdentity.
+        /// </summary>
+        public string PublicKey { get; set; } = string.Empty;
     }
 
     public sealed class ConnectionStringsSettings

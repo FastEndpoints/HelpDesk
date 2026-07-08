@@ -20,6 +20,10 @@ static class UserProfileDatabase
                 .Option(o => o.Unique = true)
                 .CreateAsync();
 
+        await db.Index<UserProfileEntity>()
+                .Key(p => p.UserIdentityId, KeyType.Ascending)
+                .CreateAsync();
+
         await db.Index<EventRecord>()
                 .Key(r => r.EventType, KeyType.Ascending)
                 .Key(r => r.SubscriberID, KeyType.Ascending)

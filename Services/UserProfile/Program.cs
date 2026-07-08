@@ -31,6 +31,20 @@ bld.WebHost.ConfigureKestrel(
     });
 
 bld.Services
+   .AddAuthenticationJwtBearer(
+       o =>
+       {
+           o.SigningKey = settings.UserProfile.Jwt.PublicKey;
+           o.SigningStyle = TokenSigningStyle.Asymmetric;
+       },
+       b =>
+       {
+           b.TokenValidationParameters.ValidIssuer = settings.UserProfile.Jwt.Issuer;
+           b.TokenValidationParameters.ValidAudience = settings.UserProfile.Jwt.Audience;
+       })
+   .AddAuthorization();
+
+bld.Services
    .AddFastEndpoints()
    .AddEventSubscriberStorageProvider<EventRecord, EventStorageProvider>()
    .AddSingleton<IUserProfileStore, MongoUserProfileStore>()
@@ -51,7 +65,9 @@ var app = bld.Build();
 var db = await DB.InitAsync(settings.UserProfile.DatabaseName, MongoClientSettings.FromConnectionString(settings.ConnectionStrings.MongoDB));
 await UserProfileDatabase.InitializeAsync(db);
 
-app.UseFastEndpoints(c => c.Errors.UseProblemDetails());
+app.UseAuthentication()
+   .UseAuthorization()
+   .UseFastEndpoints(c => c.Errors.UseProblemDetails());
 
 app.MapHandlers<EventRecord, EventStorageProvider>(h => h.RegisterEventHub<UserProfileRegisteredEvent>());
 

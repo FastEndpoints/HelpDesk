@@ -34,6 +34,7 @@ Test package references are included only for non-Release configurations in each
 | `Services/UserIdentity/Endpoints/Identities/Register/Tests/` | Registration endpoint tests, including event publication. |
 | `Services/UserIdentity/Endpoints/Identities/Login/Tests/` | Login endpoint tests. |
 | `Services/UserIdentity/Endpoints/Identities/Verify/Tests/` | Verification endpoint tests, including event publication. |
+| `Services/UserProfile/Endpoints/Profiles/GetCurrent/Tests/` | Current authenticated profile endpoint tests. |
 | `Services/UserProfile/Subscriptions/UserIdentity/Registration/Tests/` | Reaction to identity registration and profile event publication. |
 | `Services/UserProfile/Subscriptions/UserIdentity/Verification/Tests/` | Reaction to identity verification. |
 | `Services/Notifications/Subscriptions/UserProfile/Registration/Tests/` | Reaction to profile registration and email/job behavior. |
@@ -54,13 +55,15 @@ dotnet test Services/UserProfile/Services.UserProfile.csproj
 dotnet test Services/Notifications/Services.Notifications.csproj
 ```
 
+In Debug builds, each service `Program.cs` runs the xUnit in-process console runner when arguments contain `@@`.
+
 ## Test fixtures and data
 
 - Fixtures set `ASPNETCORE_ENVIRONMENT` to `Testing` through `UseEnvironment("Testing")`.
 - Testing settings use service-specific `_TESTING` database names.
 - Fixture disposal drops relevant MongoDB collections, not whole MongoDB servers.
 - `UserIdentity` tests register test event receivers and inspect stored identities.
-- `UserProfile` tests register test event receivers for published profile events.
+- `UserProfile` tests register test event receivers for published profile events and use a test JWT key pair for authenticated profile endpoint coverage.
 - `Notifications` tests replace `IEmailSender` with `TestEmailSender` and drop job/event collections.
 
 ## Integration dependencies
@@ -80,6 +83,7 @@ dotnet test Services/Notifications/Services.Notifications.csproj
 
 - `README.md`
 - `Services/*/*.csproj`
+- `Services/*/Program.cs`
 - `Services/*/Tests/Sut.cs`
 - `Services/*/Tests/xunit.runner.json`
 - `Services/*/**/Tests/Cases.cs`

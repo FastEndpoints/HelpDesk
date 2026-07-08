@@ -22,6 +22,7 @@
         <PackageReference Include="FastEndpoints.Generator" PrivateAssets="all" IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive"/>
         <PackageReference Include="FastEndpoints.Messaging.Remote"/>
         <PackageReference Include="FastEndpoints.OpenApi"/>
+        <PackageReference Include="FastEndpoints.Security"/>
         <PackageReference Include="Microsoft.OpenApi"/>
         <PackageReference Include="MongoDB.Entities"/>
         <PackageReference Include="Scalar.AspNetCore"/>

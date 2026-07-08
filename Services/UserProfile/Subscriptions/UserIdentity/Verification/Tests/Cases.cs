@@ -9,7 +9,7 @@ public class Cases
     public async Task Activates_Profile_From_UserIdentityVerifiedEvent()
     {
         var store = new FakeUserProfileStore();
-        var profile = UserProfileEntity.Create("user@example.com", "user", DateTime.UtcNow);
+        var profile = UserProfileEntity.Create("identity-id", "user@example.com", "user", DateTime.UtcNow);
         await store.CreateAsync(profile, CancellationToken.None);
 
         var handler = new UserIdentityVerifiedEventHandler(store);
@@ -28,9 +28,13 @@ public class Cases
         public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct)
             => Task.FromResult(profiles.Any(p => p.NormalizedEmail == normalizedEmail));
 
+        public Task<UserProfileEntity?> FindByUserIdentityIdAsync(string userIdentityId, CancellationToken ct)
+            => Task.FromResult(profiles.SingleOrDefault(p => p.UserIdentityId == userIdentityId));
+
         public Task CreateAsync(UserProfileEntity profile, CancellationToken ct)
         {
             profiles.Add(profile);
+
             return Task.CompletedTask;
         }
 

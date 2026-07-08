@@ -17,6 +17,7 @@ public class Cases(Sut App) : TestBase<Sut>
         await handler.HandleAsync(eventModel, Cancellation);
 
         var profile = store.Created.Single();
+        profile.UserIdentityId.ShouldBe(eventModel.UserIdentityId);
         profile.Email.ShouldBe(eventModel.Email);
         profile.NormalizedEmail.ShouldBe(eventModel.Email.ToUpperInvariant());
         profile.DisplayName.ShouldBe("user");
@@ -79,12 +80,16 @@ public class Cases(Sut App) : TestBase<Sut>
         public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct)
             => Task.FromResult(Created.Any(p => p.NormalizedEmail == normalizedEmail));
 
+        public Task<UserProfileEntity?> FindByUserIdentityIdAsync(string userIdentityId, CancellationToken ct)
+            => Task.FromResult(Created.SingleOrDefault(p => p.UserIdentityId == userIdentityId));
+
         public Task CreateAsync(UserProfileEntity profile, CancellationToken ct)
         {
             if (ThrowDuplicateEmail)
                 throw new DuplicateEmailException(profile.NormalizedEmail);
 
             Created.Add(profile);
+
             return Task.CompletedTask;
         }
 

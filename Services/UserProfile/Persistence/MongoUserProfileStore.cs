@@ -11,6 +11,17 @@ sealed class MongoUserProfileStore : IUserProfileStore
                    .Match(p => p.NormalizedEmail == normalizedEmail)
                    .ExecuteAnyAsync(ct);
 
+    public async Task<UserProfileEntity?> FindByUserIdentityIdAsync(string userIdentityId, CancellationToken ct)
+    {
+        var profiles = await DB.Default
+                               .Find<UserProfileEntity>()
+                               .Match(p => p.UserIdentityId == userIdentityId)
+                               .Limit(1)
+                               .ExecuteAsync(ct);
+
+        return profiles.SingleOrDefault();
+    }
+
     public async Task CreateAsync(UserProfileEntity profile, CancellationToken ct)
     {
         try

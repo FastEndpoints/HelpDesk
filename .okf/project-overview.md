@@ -42,7 +42,7 @@ The implemented product scope is the user onboarding path:
 | Service | Public API | Publishes | Subscribes |
 | --- | --- | --- | --- |
 | `UserIdentity` | `POST /identities/register`, `POST /identities/login`, `GET /identities/verify/{VerificationCode}` | `UserIdentityRegisteredEvent`, `UserIdentityVerifiedEvent` | none |
-| `UserProfile` | no public business API | `UserProfileRegisteredEvent` | `UserIdentityRegisteredEvent`, `UserIdentityVerifiedEvent` |
+| `UserProfile` | `GET /profiles/me` | `UserProfileRegisteredEvent` | `UserIdentityRegisteredEvent`, `UserIdentityVerifiedEvent` |
 | `Notifications` | no public business API | none | `UserProfileRegisteredEvent` |
 
 ## Non-goals and constraints

@@ -9,6 +9,7 @@ sealed class UserIdentityRegisteredEventHandler(IUserProfileStore profiles)
     public async Task HandleAsync(UserIdentityRegisteredEvent eventModel, CancellationToken ct)
     {
         var profile = UserProfileEntity.Create(
+            eventModel.UserIdentityId,
             eventModel.Email,
             GetDefaultDisplayName(eventModel.Email),
             eventModel.RegisteredAt);

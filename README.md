@@ -36,7 +36,7 @@ Current projects:
 | Contracts | `Contracts/UserProfile` | UserProfile service name and profile events. |
 | Contracts | `Contracts/Notifications` | Notifications service name. |
 | Service | `Services/UserIdentity` | Public identity REST API, identity persistence, identity event hubs. |
-| Service | `Services/UserProfile` | Profile persistence and reactions to identity events. |
+| Service | `Services/UserProfile` | Authenticated profile REST API, profile persistence, and reactions to identity events. |
 | Service | `Services/Notifications` | Reactions to profile events and email job processing. |
 
 Projects currently target .NET 10. Package versions are centrally managed in `Directory.Packages.props`.
@@ -187,7 +187,13 @@ POST /identities/login
 GET  /identities/verify/{VerificationCode}
 ```
 
-UserProfile and Notifications currently react to events and do not expose public business APIs.
+UserProfile public endpoints:
+
+```text
+GET  /profiles/me
+```
+
+Notifications currently reacts to events and does not expose public business APIs.
 
 ## Service responsibilities
 
@@ -211,13 +217,14 @@ Publishes:
 
 ### UserProfile
 
-Owns profile data. Profiles are derived from identity events and kept private to the profile service.
+Owns profile data and the authenticated profile API. Profiles are derived from identity events and kept private to the profile service.
 
 Responsibilities:
 
 - create a deactivated profile when an identity is registered;
 - publish profile registration events;
 - activate a profile when the corresponding identity is verified;
+- return the authenticated user's local active profile from `GET /profiles/me`;
 - keep profile persistence and profile rules service-local.
 
 Subscribes to:
@@ -304,6 +311,7 @@ Endpoint tests live beside endpoints:
 Services/UserIdentity/Endpoints/Identities/Register/Tests/
 Services/UserIdentity/Endpoints/Identities/Login/Tests/
 Services/UserIdentity/Endpoints/Identities/Verify/Tests/
+Services/UserProfile/Endpoints/Profiles/GetCurrent/Tests/
 ```
 
 Subscription tests live beside event handlers:
@@ -331,7 +339,7 @@ With this architecture, cross-service integration tests are not required for bas
 This keeps tests fast, local, and aligned with service ownership:
 
 - UserIdentity tests its registration/login/verify endpoints and its published identity events.
-- UserProfile tests its reactions to identity events and its published profile event.
+- UserProfile tests its `GET /profiles/me` endpoint, reactions to identity events, and published profile event.
 - Notifications tests its reaction to profile registration and email job/sending behavior.
 
 A full end-to-end test can still be added later for smoke testing a deployed environment, but it is not the primary correctness strategy for this codebase.

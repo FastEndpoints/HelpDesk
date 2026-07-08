@@ -17,7 +17,7 @@ Current deployable services:
 | UserProfile | `Services/UserProfile/Services.UserProfile.csproj` | `http://localhost:5001` | `Contracts.UserProfile.Service.Name` |
 | Notifications | `Services/Notifications/Services.Notifications.csproj` | none configured | `Contracts.Notifications.Service.Name` |
 
-`UserProfile` and `Notifications` include dummy root endpoints in `Program.cs`, but they do not expose public business APIs.
+`UserProfile` exposes `GET /profiles/me` on its local HTTP port and may include a dummy root endpoint in `Program.cs`. `Notifications` includes a dummy root endpoint but does not expose public business APIs.
 
 ## Messaging topology
 
@@ -34,7 +34,7 @@ Default local MongoDB connection string: `mongodb://localhost:27017`.
 | Service | Default database | Testing database | Main collections/indexes |
 | --- | --- | --- | --- |
 | UserIdentity | `HelpDesk_UserIdentity` | `HelpDesk_UserIdentity_TESTING` | `UserIdentities`; unique normalized email; sparse unique verification code; event records. |
-| UserProfile | `HelpDesk_UserProfile` | `HelpDesk_UserProfile_TESTING` | `UserProfiles`; unique normalized email; event records. |
+| UserProfile | `HelpDesk_UserProfile` | `HelpDesk_UserProfile_TESTING` | `UserProfiles`; unique normalized email; user identity id index; event records. |
 | Notifications | `HelpDesk_Notifications` | `HelpDesk_Notifications_TESTING` | event records; job records by queue/completion/schedule/expiry and tracking ID. |
 
 ## Configuration
@@ -50,7 +50,7 @@ Important config keys:
 
 - `ConnectionStrings:MongoDB`
 - `UserIdentity:HttpPort`, `UserIdentity:DatabaseName`, `UserIdentity:Jwt:*`
-- `UserProfile:HttpPort`, `UserProfile:DatabaseName`
+- `UserProfile:HttpPort`, `UserProfile:DatabaseName`, `UserProfile:Jwt:PublicKey`, `UserProfile:Jwt:PrivateKey` (test JWT minting only)
 - `Notifications:DatabaseName`
 - `Smtp:*`
 - `Logging:LogLevel:*`
@@ -60,6 +60,8 @@ Do not copy secret values into source or OKF.
 ## Email/jobs
 
 - Notifications queues `SendEmailCommand` jobs when profile registration events arrive.
+- Welcome email verification links use `UserProfileRegisteredEvent.BaseUrl` plus `/identities/verify/{escapedCode}`; `BaseUrl` originates from the incoming registration request's scheme/host/path base.
+- Public/proxy host configuration for registration therefore affects emailed verification links.
 - Job queue limits `SendEmailCommand` to max concurrency 1 and 2 minute time limit.
 - SMTP delivery uses `SmtpService` only when environment is Production and `Smtp.Enabled` is true.
 - Non-production or disabled SMTP uses `NullEmailSender`, which logs suppressed email delivery.
@@ -78,5 +80,7 @@ Do not copy secret values into source or OKF.
 - `Services/*/appsettings*.json`
 - `Services/*/Properties/launchSettings.json`
 - `Services/*/Persistence/*Database.cs`
+- `Services/UserIdentity/Endpoints/Identities/Register/Endpoint.cs`
+- `Services/Notifications/Subscriptions/UserProfile/Registration/UserProfileRegisteredEventHandler.cs`
 - `Services/Notifications/Email/*.cs`
 - `Services/Notifications/Jobs/JobStorageProvider.cs`

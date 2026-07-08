@@ -31,7 +31,7 @@ tags: [code-map, navigation]
 | `Contracts/UserProfile/Contracts.UserProfile.csproj` | class library | UserProfile service name and profile events. |
 | `Contracts/Notifications/Contracts.Notifications.csproj` | class library | Notifications service name; no events currently. |
 | `Services/UserIdentity/Services.UserIdentity.csproj` | web app | Identity endpoints, auth, persistence, event hubs, tests. |
-| `Services/UserProfile/Services.UserProfile.csproj` | web app | Profile persistence, identity subscriptions, profile event hub, tests. |
+| `Services/UserProfile/Services.UserProfile.csproj` | web app | Authenticated profile endpoint, profile persistence, identity subscriptions, profile event hub, tests. |
 | `Services/Notifications/Services.Notifications.csproj` | web app | Notification settings/email/jobs/subscription, tests. |
 
 ## Service layout

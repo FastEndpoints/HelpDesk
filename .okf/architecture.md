@@ -60,7 +60,7 @@ Forbidden:
 
 - Each service initializes and owns its MongoDB database name from its settings.
 - `UserIdentity` stores `UserIdentities`, with unique normalized email and sparse unique verification code indexes.
-- `UserProfile` stores `UserProfiles`, with unique normalized email index.
+- `UserProfile` stores `UserProfiles`, with unique normalized email and user identity id indexes.
 - Notifications stores FastEndpoints job records and event records.
 - Every service initializes an `EventRecord` index for remote event subscriber storage.
 - Persistence classes/entities/stores stay private to the owning service.
@@ -69,7 +69,8 @@ Forbidden:
 
 - `UserIdentity` hashes passwords with ASP.NET Core Identity `IPasswordHasher<UserIdentityEntity>`.
 - Login issues asymmetric JWT bearer tokens using `UserIdentity.Jwt.PrivateKeyPem`, issuer, audience, and expiry settings.
-- Registration/login/verification endpoints currently allow anonymous access.
+- `UserProfile` validates JWT bearer tokens with `UserProfile.Jwt.PublicKey` and uses the token subject to load local profile state.
+- Registration/login/verification endpoints allow anonymous access; `GET /profiles/me` requires authentication.
 - Do not commit real JWT private keys, SMTP credentials, or MongoDB credentials.
 
 ## Invariants agents must preserve

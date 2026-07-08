@@ -30,7 +30,7 @@ tags: [conventions, style]
 - Keep request/response DTOs beside the endpoint.
 - Configure routes in `Configure()` and prefer explicit `AllowAnonymous()` where intended.
 - Use FastEndpoints `ThrowError(...)`/problem details for validation/business errors.
-- `UserProfile` and `Notifications` currently have no public business APIs; dummy endpoints exist only inside `Program.cs`.
+- `UserProfile` exposes authenticated profile API endpoints under `Endpoints/Profiles/*`; `Notifications` currently has no public business API. Dummy root endpoints may exist only inside `Program.cs`.
 
 ## Persistence and data modeling
 
