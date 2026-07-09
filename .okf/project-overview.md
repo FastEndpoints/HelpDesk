@@ -54,10 +54,11 @@ The implemented product scope is the user onboarding path:
 
 ## Glossary
 
-- **Contract project**: public cross-service language for a service: service name, event records, and simple DTOs if needed.
+- **Contract project**: public cross-service language for a service: service name, event records, known-subscriber ID arrays (`EventSubscribers`), and simple DTOs if needed.
 - **Service implementation**: deployable FastEndpoints app under `Services/<ServiceName>/` with private endpoints, handlers, persistence, and tests.
 - **IPC mesh**: local FastEndpoints remote messaging topology using `ListenInterProcess(...)` and `MapRemote(...)`.
-- **Event hub**: publisher-side remote messaging hub registered with `RegisterEventHub<TEvent>()`.
+- **Event hub**: publisher-side remote messaging hub registered with `RegisterEventHub<TEvent>(EventSubscribers.SomeEvent)`.
+- **EventSubscribers**: data-only publisher-contract arrays of subscriber service name string literals for durable startup/offline delivery.
 
 ## Sources
 

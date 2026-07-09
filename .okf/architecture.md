@@ -23,7 +23,7 @@ Internal RPC     -> forbidden for business workflows
 
 | Area | Projects | Responsibility |
 | --- | --- | --- |
-| `Contracts/` | `Contracts.UserIdentity`, `Contracts.UserProfile`, `Contracts.Notifications` | Stable service names and public event contracts. |
+| `Contracts/` | `Contracts.UserIdentity`, `Contracts.UserProfile`, `Contracts.Notifications` | Stable service names, public event contracts, and data-only `EventSubscribers` known-subscriber arrays. |
 | `Common/StorageProvider` | class library | MongoDB-backed `IEventHubStorageProvider`/`IEventSubscriberStorageProvider` using `EventRecord`. |
 | `Common/Tools` | class library | Generic helpers, currently lookup string normalization. |
 | `Services/UserIdentity` | web app | Identity HTTP API, credentials/status persistence, JWTs, identity events. |
@@ -55,8 +55,9 @@ Forbidden:
 - Subscribers update only their own local state or queue internal work.
 - Current local topology uses `ListenInterProcess(Service.Name)` and `MapRemote(Service.Name, ...)`.
 - Subscribers set `c.SubscriberID = SubscriberService.Name` inside `MapRemote(...)`, then call `c.Subscribe<TEvent, THandler>()`, so subscriber IDs are stable and match contract service names.
-- Publisher event hubs are registered with known subscriber IDs via `RegisterEventHub<TEvent>([SubscriberService.Name])` to queue events from startup before subscribers first connect.
-- When adding a new subscriber, update both the subscriber's `MapRemote(...)` registration and the publisher's event hub known-subscriber list.
+- Known subscriber IDs for durable startup/offline delivery live as data-only `string[]` fields on the publisher contract's `EventSubscribers` type (string literals matching subscriber `Service.Name`; no contract→contract references).
+- Publisher services register hubs with those arrays: `RegisterEventHub<TEvent>(EventSubscribers.SomeEvent)`.
+- When adding a new subscriber, update the publisher contract `EventSubscribers` array and the subscriber's process-local `MapRemote(...)` registration (`SubscriberID` + `Subscribe`).
 
 ## Persistence rules
 

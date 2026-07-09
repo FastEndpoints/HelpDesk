@@ -6,7 +6,6 @@ using Scalar.AspNetCore;
 using Services.UserProfile;
 using Subscriptions.UserIdentity.Registration;
 using Subscriptions.UserIdentity.Verification;
-using NotificationService = Contracts.Notifications.Service;
 using UserIdentityService = Contracts.UserIdentity.Service;
 using UserProfileService = Contracts.UserProfile.Service;
 
@@ -79,7 +78,7 @@ app.UseAuthentication()
 app.MapHandlers<EventRecord, EventStorageProvider>(
     h =>
     {
-        h.RegisterEventHub<UserProfileRegisteredEvent>([NotificationService.Name]);
+        h.RegisterEventHub<UserProfileRegisteredEvent>(Contracts.UserProfile.EventSubscribers.UserProfileRegistered);
     });
 
 app.MapRemote(

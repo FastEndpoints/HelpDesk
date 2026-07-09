@@ -19,8 +19,9 @@ tags: [conventions, style]
 
 - Event records are `public sealed record ... : IEvent` in the owning contract project.
 - Event names describe facts already completed: `...RegisteredEvent`, `...VerifiedEvent`.
+- Known subscriber IDs for each published event live as data-only `string[]` on the publisher contract's `EventSubscribers` type (literals matching subscriber `Service.Name`; no contract→contract refs).
 - Publish with `.Broadcast()` only after local state commits.
-- Register publisher hubs in `Program.cs` with `RegisterEventHub<TEvent>()`.
+- Register publisher hubs in `Program.cs` with `RegisterEventHub<TEvent>(EventSubscribers.SomeEvent)`.
 - Register subscribers in `Program.cs` by setting `c.SubscriberID = SubscriberService.Name` inside `MapRemote(...)`, then calling `c.Subscribe<TEvent, THandler>()`.
 - Subscriber handlers implement `IEventHandler<TEvent>` and mutate only their own service state or queue local work.
 

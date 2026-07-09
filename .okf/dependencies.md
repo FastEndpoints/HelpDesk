@@ -43,11 +43,11 @@ tags: [dependencies, dotnet]
 
 ## Project references
 
-- `Services/UserIdentity` references `Contracts/UserIdentity`, `Contracts/UserProfile`, `Common/StorageProvider`, and `Common/Tools`.
-- `Services/UserProfile` references `Contracts/UserProfile`, `Contracts/UserIdentity`, `Contracts/Notifications`, `Common/StorageProvider`, and `Common/Tools`.
+- `Services/UserIdentity` references `Contracts/UserIdentity`, `Common/StorageProvider`, and `Common/Tools`.
+- `Services/UserProfile` references `Contracts/UserProfile`, `Contracts/UserIdentity`, `Common/StorageProvider`, and `Common/Tools`.
 - `Services/Notifications` references `Contracts/Notifications`, `Contracts/UserProfile`, and `Common/StorageProvider`.
-- Publisher services may reference subscriber contract projects only to reuse subscriber `Service.Name` constants for FastEndpoints known subscriber IDs.
-- Contracts do not reference common or service implementation projects.
+- Known subscriber IDs for event hubs live as data-only `string[]` on the publisher contract (`EventSubscribers`); publishers do not reference subscriber contract projects solely for hub registration.
+- Contracts do not reference common, other contracts, or service implementation projects.
 
 ## Compatibility notes
 

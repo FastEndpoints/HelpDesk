@@ -27,8 +27,8 @@ tags: [code-map, navigation]
 | --- | --- | --- |
 | `Common/StorageProvider/Common.StorageProvider.csproj` | class library | MongoDB event storage provider and `EventRecord`. |
 | `Common/Tools/Common.Tools.csproj` | class library | `NormalizeForLookup()` helper. |
-| `Contracts/UserIdentity/Contracts.UserIdentity.csproj` | class library | UserIdentity service name and identity events. |
-| `Contracts/UserProfile/Contracts.UserProfile.csproj` | class library | UserProfile service name and profile events. |
+| `Contracts/UserIdentity/Contracts.UserIdentity.csproj` | class library | UserIdentity service name, identity events, and `EventSubscribers` known-subscriber arrays. |
+| `Contracts/UserProfile/Contracts.UserProfile.csproj` | class library | UserProfile service name, profile events, and `EventSubscribers` known-subscriber arrays. |
 | `Contracts/Notifications/Contracts.Notifications.csproj` | class library | Notifications service name; no events currently. |
 | `Services/UserIdentity/Services.UserIdentity.csproj` | web app | Identity endpoints, auth, persistence, event hubs, tests. |
 | `Services/UserProfile/Services.UserProfile.csproj` | web app | Authenticated profile endpoint, profile persistence, identity subscriptions, profile event hub, tests. |
@@ -52,9 +52,9 @@ Typical service directories:
 ## Where to add behavior
 
 - New public API behavior: owning service under `Services/<Service>/Endpoints/...` plus colocated `Tests/`.
-- New event contract: owning `Contracts/<Service>/` project.
-- New event publication: owning service after local persistence succeeds.
-- New subscription: consuming service under `Subscriptions/<Publisher>/<Event>/` plus `Program.cs` `MapRemote(...)` registration that sets `c.SubscriberID = SubscriberService.Name` before `c.Subscribe<TEvent, THandler>()`; also add the subscriber service name to the publisher's `RegisterEventHub<TEvent>([...])` known-subscriber list.
+- New event contract: owning `Contracts/<Service>/` project (event record + `EventSubscribers` array when known subscribers exist).
+- New event publication: owning service after local persistence succeeds; register hub with `RegisterEventHub<TEvent>(EventSubscribers.SomeEvent)`.
+- New subscription: consuming service under `Subscriptions/<Publisher>/<Event>/` plus `Program.cs` `MapRemote(...)` registration that sets `c.SubscriberID = SubscriberService.Name` before `c.Subscribe<TEvent, THandler>()`; also add the subscriber service name string literal to the publisher contract's `EventSubscribers` array.
 - Reusable infrastructure: `Common/` only when generic and not domain behavior.
 
 ## Edit guidance
