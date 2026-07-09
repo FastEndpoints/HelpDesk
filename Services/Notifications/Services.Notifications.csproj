@@ -12,7 +12,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Contracts\Notifications\Contracts.Notifications.csproj"/>
-        <ProjectReference Include="..\..\Contracts\UserProfile\Contracts.UserProfile.csproj"/>
+        <ProjectReference Include="..\..\Contracts\UserIdentity\Contracts.UserIdentity.csproj"/>
         <ProjectReference Include="..\..\Common\StorageProvider\Common.StorageProvider.csproj"/>
     </ItemGroup>
 

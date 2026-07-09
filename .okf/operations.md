@@ -22,9 +22,9 @@ Current deployable services:
 ## Messaging topology
 
 - Each service listens over FastEndpoints IPC via `ListenInterProcess(...)`.
-- `UserIdentity` registers hubs for `UserIdentityRegisteredEvent` and `UserIdentityVerifiedEvent`.
-- `UserProfile` maps remote `UserIdentity` and subscribes to both identity events; it registers a hub for `UserProfileRegisteredEvent`.
-- `Notifications` maps remote `UserProfile` and subscribes to `UserProfileRegisteredEvent`.
+- `UserIdentity` registers hubs for `UserIdentityRegisteredEvent`, `UserIdentityVerificationIssuedEvent`, and `UserIdentityVerifiedEvent`.
+- `UserProfile` maps remote `UserIdentity` and subscribes to registered/verified identity events; it registers a hub for `UserProfileRegisteredEvent` (no known subscribers currently).
+- `Notifications` maps remote `UserIdentity` and subscribes to `UserIdentityVerificationIssuedEvent` only, so verification secrets never enter Profile event storage.
 - Remote event storage uses MongoDB-backed `EventRecord` through `Common/StorageProvider`.
 
 ## Databases
@@ -59,8 +59,8 @@ Do not copy secret values into source or OKF.
 
 ## Email/jobs
 
-- Notifications queues `SendEmailCommand` jobs when profile registration events arrive.
-- Welcome email verification links use `UserProfileRegisteredEvent.BaseUrl` plus `/identities/verify/{escapedCode}`; `BaseUrl` originates from the incoming registration request's scheme/host/path base.
+- Notifications queues `SendEmailCommand` jobs when `UserIdentityVerificationIssuedEvent` arrives.
+- Welcome email verification links use `UserIdentityVerificationIssuedEvent.BaseUrl` plus `/identities/verify/{escapedCode}`; `BaseUrl` originates from the incoming registration request's scheme/host/path base.
 - Public/proxy host configuration for registration therefore affects emailed verification links.
 - Job queue limits `SendEmailCommand` to max concurrency 1 and 2 minute time limit.
 - SMTP delivery uses `SmtpService` only when environment is Production and `Smtp.Enabled` is true.
@@ -81,6 +81,6 @@ Do not copy secret values into source or OKF.
 - `Services/*/Properties/launchSettings.json`
 - `Services/*/Persistence/*Database.cs`
 - `Services/UserIdentity/Endpoints/Identities/Register/Endpoint.cs`
-- `Services/Notifications/Subscriptions/UserProfile/Registration/UserProfileRegisteredEventHandler.cs`
+- `Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/UserIdentityVerificationIssuedEventHandler.cs`
 - `Services/Notifications/Email/*.cs`
 - `Services/Notifications/Jobs/JobStorageProvider.cs`

@@ -28,7 +28,7 @@ Internal RPC     -> forbidden for business workflows
 | `Common/Tools` | class library | Generic helpers, currently lookup string normalization. |
 | `Services/UserIdentity` | web app | Identity HTTP API, credentials/status persistence, JWTs, identity events. |
 | `Services/UserProfile` | web app | Profile persistence and reactions to identity events. |
-| `Services/Notifications` | web app | Profile-event reaction, durable email jobs, SMTP/null email sending. |
+| `Services/Notifications` | web app | Identity verification-issued reaction, durable email jobs, SMTP/null email sending. |
 
 ## Dependency rules
 

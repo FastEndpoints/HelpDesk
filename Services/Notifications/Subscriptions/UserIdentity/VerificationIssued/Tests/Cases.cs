@@ -1,19 +1,18 @@
-using Contracts.UserProfile;
+using Contracts.UserIdentity;
 using Notifications.Tests;
 
-namespace Subscriptions.UserProfile.Registration.Tests;
+namespace Subscriptions.UserIdentity.VerificationIssued.Tests;
 
 public class Cases(Sut App) : TestBase<Sut>
 {
     [Fact]
-    public async Task Sends_Welcome_Email_From_UserProfileRegisteredEvent()
+    public async Task Sends_Welcome_Email_From_UserIdentityVerificationIssuedEvent()
     {
         var sender = App.Services.GetRequiredService<TestEmailSender>();
-        var handler = new UserProfileRegisteredEventHandler();
-        var eventModel = new UserProfileRegisteredEvent(
-            "profile-id",
+        var handler = new UserIdentityVerificationIssuedEventHandler();
+        var eventModel = new UserIdentityVerificationIssuedEvent(
+            "identity-id",
             "user@example.com",
-            "Jane User",
             "verification code/with symbols?",
             "https://helpdesk.test/",
             DateTime.UtcNow);
@@ -22,10 +21,10 @@ public class Cases(Sut App) : TestBase<Sut>
 
         var email = await sender.WaitForEmailAsync(Cancellation);
         email.ToEmail.ShouldBe(eventModel.Email);
-        email.ToName.ShouldBe(eventModel.DisplayName);
+        email.ToName.ShouldBe("user");
         email.Subject.ShouldBe("Welcome to HelpDesk");
         email.HtmlTemplate.ShouldBe(EmailTemplate.Welcome);
-        email.MergeFields["DisplayName"].ShouldBe(eventModel.DisplayName);
+        email.MergeFields["DisplayName"].ShouldBe("user");
         email.MergeFields["VerificationLink"].ShouldBe(
             "https://helpdesk.test/identities/verify/verification%20code%2Fwith%20symbols%3F");
     }
@@ -34,11 +33,10 @@ public class Cases(Sut App) : TestBase<Sut>
     public async Task Builds_Verification_Link_When_BaseUrl_Has_No_Trailing_Slash()
     {
         var sender = App.Services.GetRequiredService<TestEmailSender>();
-        var handler = new UserProfileRegisteredEventHandler();
-        var eventModel = new UserProfileRegisteredEvent(
-            "profile-id",
+        var handler = new UserIdentityVerificationIssuedEventHandler();
+        var eventModel = new UserIdentityVerificationIssuedEvent(
+            "identity-id",
             "user@example.com",
-            "Jane User",
             "abc123",
             "https://helpdesk.test",
             DateTime.UtcNow);

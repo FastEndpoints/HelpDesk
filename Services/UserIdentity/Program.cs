@@ -60,6 +60,7 @@ app.MapHandlers<EventRecord, EventStorageProvider>(
     h =>
     {
         h.RegisterEventHub<UserIdentityRegisteredEvent>(EventSubscribers.UserIdentityRegistered);
+        h.RegisterEventHub<UserIdentityVerificationIssuedEvent>(EventSubscribers.UserIdentityVerificationIssued);
         h.RegisterEventHub<UserIdentityVerifiedEvent>(EventSubscribers.UserIdentityVerified);
     });
 

@@ -37,7 +37,7 @@ Test package references are included only for non-Release configurations in each
 | `Services/UserProfile/Endpoints/Profiles/GetCurrent/Tests/` | Current authenticated profile endpoint tests. |
 | `Services/UserProfile/Subscriptions/UserIdentity/Registration/Tests/` | Reaction to identity registration and profile event publication. |
 | `Services/UserProfile/Subscriptions/UserIdentity/Verification/Tests/` | Reaction to identity verification. |
-| `Services/Notifications/Subscriptions/UserProfile/Registration/Tests/` | Reaction to profile registration and email/job behavior. |
+| `Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/Tests/` | Reaction to identity verification-issued events and email/job behavior. |
 | `Services/<Service>/Tests/Sut.cs` | Shared service fixture. |
 | `Services/<Service>/Tests/xunit.runner.json` | xUnit parallelization settings. |
 

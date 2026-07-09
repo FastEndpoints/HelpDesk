@@ -23,7 +23,7 @@ sealed class UserIdentityRegisteredEventHandler(IUserProfileStore profiles)
             return;
         }
 
-        new UserProfileRegisteredEvent(profile.ID, profile.Email, profile.DisplayName, eventModel.VerificationCode, eventModel.BaseUrl, profile.CreatedAt)
+        new UserProfileRegisteredEvent(profile.ID, profile.Email, profile.DisplayName, profile.CreatedAt)
             .Broadcast();
     }
 

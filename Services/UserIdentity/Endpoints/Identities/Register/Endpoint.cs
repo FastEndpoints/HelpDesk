@@ -29,7 +29,10 @@ sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEnti
         var request = HttpContext.Request;
         var baseUrl = $"{request.Scheme}://{request.Host}{request.PathBase}".TrimEnd('/');
 
-        new UserIdentityRegisteredEvent(identity.ID, identity.Email, identity.VerificationCode, baseUrl, identity.CreatedAt)
+        new UserIdentityRegisteredEvent(identity.ID, identity.Email, identity.CreatedAt)
+            .Broadcast();
+
+        new UserIdentityVerificationIssuedEvent(identity.ID, identity.Email, identity.VerificationCode, baseUrl, identity.CreatedAt)
             .Broadcast();
 
         await Send.OkAsync("Signup successful. Please check your email for a verification link.", ct);

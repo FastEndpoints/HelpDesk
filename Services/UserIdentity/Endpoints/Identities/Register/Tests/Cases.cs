@@ -53,9 +53,17 @@ public class Cases(Sut App) : TestBase<Sut>
             .Single();
 
         published.Email.ShouldBe(stored.Email);
-        published.VerificationCode.ShouldBe(stored.VerificationCode);
-        published.BaseUrl.ShouldBe(App.Client.BaseAddress!.ToString().TrimEnd('/'));
         published.RegisteredAt.ShouldBe(stored.CreatedAt, TimeSpan.FromMilliseconds(1));
+
+        var verificationIssued = (await App.Services
+                                           .GetTestEventReceiver<UserIdentityVerificationIssuedEvent>()
+                                           .WaitForMatchAsync(e => e.UserIdentityId == stored.ID, ct: Cancellation))
+            .Single();
+
+        verificationIssued.Email.ShouldBe(stored.Email);
+        verificationIssued.VerificationCode.ShouldBe(stored.VerificationCode);
+        verificationIssued.BaseUrl.ShouldBe(App.Client.BaseAddress!.ToString().TrimEnd('/'));
+        verificationIssued.IssuedAt.ShouldBe(stored.CreatedAt, TimeSpan.FromMilliseconds(1));
     }
 
     [Fact]

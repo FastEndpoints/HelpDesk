@@ -32,7 +32,7 @@ tags: [code-map, navigation]
 | `Contracts/Notifications/Contracts.Notifications.csproj` | class library | Notifications service name; no events currently. |
 | `Services/UserIdentity/Services.UserIdentity.csproj` | web app | Identity endpoints, auth, persistence, event hubs, tests. |
 | `Services/UserProfile/Services.UserProfile.csproj` | web app | Authenticated profile endpoint, profile persistence, identity subscriptions, profile event hub, tests. |
-| `Services/Notifications/Services.Notifications.csproj` | web app | Notification settings/email/jobs/subscription, tests. |
+| `Services/Notifications/Services.Notifications.csproj` | web app | Notification settings/email/jobs/identity verification-issued subscription, tests. |
 
 ## Service layout
 

@@ -1,9 +1,9 @@
-using Contracts.UserProfile;
+using Contracts.UserIdentity;
 using MongoDB.Driver;
 using Services.Notifications;
-using Subscriptions.UserProfile.Registration;
+using Subscriptions.UserIdentity.VerificationIssued;
 using NotificationService = Contracts.Notifications.Service;
-using UserProfileService = Contracts.UserProfile.Service;
+using UserIdentityService = Contracts.UserIdentity.Service;
 
 #if DEBUG
 using Xunit.Runner.InProc.SystemConsole;
@@ -52,11 +52,11 @@ app.UseJobQueues(
     });
 
 app.MapRemote(
-    UserProfileService.Name,
+    UserIdentityService.Name,
     c =>
     {
         c.SubscriberID = NotificationService.Name;
-        c.Subscribe<UserProfileRegisteredEvent, UserProfileRegisteredEventHandler>();
+        c.Subscribe<UserIdentityVerificationIssuedEvent, UserIdentityVerificationIssuedEventHandler>();
     });
 
 await app.RunAsync();

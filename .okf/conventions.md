@@ -32,6 +32,7 @@ tags: [conventions, style]
 - Configure routes in `Configure()` and prefer explicit `AllowAnonymous()` where intended.
 - Use FastEndpoints `ThrowError(...)`/problem details for validation/business errors.
 - `UserProfile` exposes authenticated profile API endpoints under `Endpoints/Profiles/*`; `Notifications` currently has no public business API. Dummy root endpoints may exist only inside `Program.cs`.
+- Keep verification secrets (`VerificationCode`, verify `BaseUrl`) off general lifecycle events. Put them only on `UserIdentityVerificationIssuedEvent` consumed by `Notifications`.
 
 ## Persistence and data modeling
 

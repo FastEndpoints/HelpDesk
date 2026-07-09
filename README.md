@@ -9,6 +9,7 @@ register identity
   -> publish UserIdentityRegisteredEvent
   -> create deactivated user profile
   -> publish UserProfileRegisteredEvent
+  -> publish UserIdentityVerificationIssuedEvent
   -> send welcome/verification email
   -> verify identity
   -> publish UserIdentityVerifiedEvent
@@ -118,6 +119,7 @@ Current event contracts:
 ```text
 Contracts.UserIdentity
 ├── UserIdentityRegisteredEvent
+├── UserIdentityVerificationIssuedEvent
 └── UserIdentityVerifiedEvent
 
 Contracts.UserProfile
@@ -153,17 +155,15 @@ UserIdentity service
   - creates a deactivated identity
   - stores normalized email and password hash
   - publishes UserIdentityRegisteredEvent
+  - publishes UserIdentityVerificationIssuedEvent
   │
-  ▼
-UserProfile service
-  - subscribes to UserIdentityRegisteredEvent
-  - creates a deactivated profile
-  - publishes UserProfileRegisteredEvent
-  │
-  ▼
-Notifications service
-  - subscribes to UserProfileRegisteredEvent
-  - queues/sends welcome email with verification link
+  ├────────────────────────────────────────────┐
+  ▼                                           ▼
+UserProfile service                       Notifications service
+  - subscribes to                           - subscribes to
+    UserIdentityRegisteredEvent               UserIdentityVerificationIssuedEvent
+  - creates a deactivated profile           - queues/sends welcome email
+  - publishes UserProfileRegisteredEvent      with verification link
   │
   │ GET /identities/verify/{verificationCode}
   ▼
@@ -213,6 +213,7 @@ Responsibilities:
 Publishes:
 
 - `UserIdentityRegisteredEvent`
+- `UserIdentityVerificationIssuedEvent`
 - `UserIdentityVerifiedEvent`
 
 ### UserProfile
@@ -242,7 +243,7 @@ Owns notification delivery and email job processing.
 
 Responsibilities:
 
-- react to profile events;
+- react to identity verification-issued events;
 - build notification email content;
 - queue durable email jobs;
 - send through SMTP only when configured;
@@ -250,7 +251,7 @@ Responsibilities:
 
 Subscribes to:
 
-- `UserProfileRegisteredEvent`
+- `UserIdentityVerificationIssuedEvent`
 
 ## Typical service layout
 
@@ -340,7 +341,7 @@ This keeps tests fast, local, and aligned with service ownership:
 
 - UserIdentity tests its registration/login/verify endpoints and its published identity events.
 - UserProfile tests its `GET /profiles/me` endpoint, reactions to identity events, and published profile event.
-- Notifications tests its reaction to profile registration and email job/sending behavior.
+- Notifications tests its reaction to identity verification-issued events and email job/sending behavior.
 
 A full end-to-end test can still be added later for smoke testing a deployed environment, but it is not the primary correctness strategy for this codebase.
 

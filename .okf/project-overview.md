@@ -16,9 +16,9 @@ HelpDesk is a brokerless, event-driven microservice mesh built with .NET and Fas
 The implemented product scope is the user onboarding path:
 
 1. External client registers an identity.
-2. `UserIdentity` stores a deactivated identity and publishes `UserIdentityRegisteredEvent`.
-3. `UserProfile` creates a deactivated profile and publishes `UserProfileRegisteredEvent`.
-4. `Notifications` queues/sends a welcome verification email.
+2. `UserIdentity` stores a deactivated identity and publishes `UserIdentityRegisteredEvent` plus `UserIdentityVerificationIssuedEvent`.
+3. `UserProfile` creates a deactivated profile from `UserIdentityRegisteredEvent` and publishes `UserProfileRegisteredEvent`.
+4. `Notifications` queues/sends a welcome verification email from `UserIdentityVerificationIssuedEvent`.
 5. External client verifies the identity.
 6. `UserIdentity` activates the identity and publishes `UserIdentityVerifiedEvent`.
 7. `UserProfile` activates the matching profile and marks email verified.
@@ -41,9 +41,9 @@ The implemented product scope is the user onboarding path:
 
 | Service | Public API | Publishes | Subscribes |
 | --- | --- | --- | --- |
-| `UserIdentity` | `POST /identities/register`, `POST /identities/login`, `GET /identities/verify/{VerificationCode}` | `UserIdentityRegisteredEvent`, `UserIdentityVerifiedEvent` | none |
+| `UserIdentity` | `POST /identities/register`, `POST /identities/login`, `GET /identities/verify/{VerificationCode}` | `UserIdentityRegisteredEvent`, `UserIdentityVerificationIssuedEvent`, `UserIdentityVerifiedEvent` | none |
 | `UserProfile` | `GET /profiles/me` | `UserProfileRegisteredEvent` | `UserIdentityRegisteredEvent`, `UserIdentityVerifiedEvent` |
-| `Notifications` | no public business API | none | `UserProfileRegisteredEvent` |
+| `Notifications` | no public business API | none | `UserIdentityVerificationIssuedEvent` |
 
 ## Non-goals and constraints
 

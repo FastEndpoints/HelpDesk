@@ -32,5 +32,5 @@ tags: [gotchas, constraints]
 - `Services/*/Program.cs`
 - `Services/*/appsettings*.json`
 - `Services/UserIdentity/Endpoints/Identities/Register/Endpoint.cs`
-- `Services/Notifications/Subscriptions/UserProfile/Registration/UserProfileRegisteredEventHandler.cs`
+- `Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/UserIdentityVerificationIssuedEventHandler.cs`
 - `Common/Tools/StringExtensions.cs`
