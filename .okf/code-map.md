@@ -54,7 +54,7 @@ Typical service directories:
 - New public API behavior: owning service under `Services/<Service>/Endpoints/...` plus colocated `Tests/`.
 - New event contract: owning `Contracts/<Service>/` project.
 - New event publication: owning service after local persistence succeeds.
-- New subscription: consuming service under `Subscriptions/<Publisher>/<Event>/` plus `Program.cs` `MapRemote(...)` registration with `SubscribeWithExplicitId(..., SubscriberService.Name)`; also add the subscriber service name to the publisher's `RegisterEventHub<TEvent>([...])` known-subscriber list.
+- New subscription: consuming service under `Subscriptions/<Publisher>/<Event>/` plus `Program.cs` `MapRemote(...)` registration that sets `c.SubscriberID = SubscriberService.Name` before `c.Subscribe<TEvent, THandler>()`; also add the subscriber service name to the publisher's `RegisterEventHub<TEvent>([...])` known-subscriber list.
 - Reusable infrastructure: `Common/` only when generic and not domain behavior.
 
 ## Edit guidance

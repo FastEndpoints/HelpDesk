@@ -3,6 +3,7 @@ using Contracts.UserIdentity;
 using Contracts.UserProfile;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
+using Services.UserProfile;
 using Subscriptions.UserIdentity.Registration;
 using Subscriptions.UserIdentity.Verification;
 using NotificationService = Contracts.Notifications.Service;
@@ -68,16 +69,26 @@ await UserProfileDatabase.InitializeAsync(db);
 
 app.UseAuthentication()
    .UseAuthorization()
-   .UseFastEndpoints(c => c.Errors.UseProblemDetails());
+   .UseFastEndpoints(
+       c =>
+       {
+           c.Binding.ReflectionCache.AddFromServicesUserProfile();
+           c.Errors.UseProblemDetails();
+       });
 
-app.MapHandlers<EventRecord, EventStorageProvider>(h => h.RegisterEventHub<UserProfileRegisteredEvent>([NotificationService.Name]));
+app.MapHandlers<EventRecord, EventStorageProvider>(
+    h =>
+    {
+        h.RegisterEventHub<UserProfileRegisteredEvent>([NotificationService.Name]);
+    });
 
 app.MapRemote(
     UserIdentityService.Name,
     c =>
     {
-        c.SubscribeWithExplicitId<UserIdentityRegisteredEvent, UserIdentityRegisteredEventHandler>(UserProfileService.Name);
-        c.SubscribeWithExplicitId<UserIdentityVerifiedEvent, UserIdentityVerifiedEventHandler>(UserProfileService.Name);
+        c.SubscriberID = UserProfileService.Name;
+        c.Subscribe<UserIdentityRegisteredEvent, UserIdentityRegisteredEventHandler>();
+        c.Subscribe<UserIdentityVerifiedEvent, UserIdentityVerifiedEventHandler>();
     });
 
 if (!app.Environment.IsProduction())

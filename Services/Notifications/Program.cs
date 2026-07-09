@@ -1,5 +1,6 @@
 using Contracts.UserProfile;
 using MongoDB.Driver;
+using Services.Notifications;
 using Subscriptions.UserProfile.Registration;
 using NotificationService = Contracts.Notifications.Service;
 using UserProfileService = Contracts.UserProfile.Service;
@@ -37,7 +38,12 @@ var app = bld.Build();
 var db = await DB.InitAsync(settings.Notifications.DatabaseName, MongoClientSettings.FromConnectionString(settings.ConnectionStrings.MongoDB));
 await NotificationsDatabase.InitializeAsync(db);
 
-app.UseFastEndpoints(c => c.Errors.UseProblemDetails());
+app.UseFastEndpoints(
+    c =>
+    {
+        c.Binding.ReflectionCache.AddFromServicesNotifications();
+        c.Errors.UseProblemDetails();
+    });
 
 app.UseJobQueues(
     o =>
@@ -49,7 +55,8 @@ app.MapRemote(
     UserProfileService.Name,
     c =>
     {
-        c.SubscribeWithExplicitId<UserProfileRegisteredEvent, UserProfileRegisteredEventHandler>(NotificationService.Name);
+        c.SubscriberID = NotificationService.Name;
+        c.Subscribe<UserProfileRegisteredEvent, UserProfileRegisteredEventHandler>();
     });
 
 await app.RunAsync();

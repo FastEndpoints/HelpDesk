@@ -4,6 +4,7 @@ using UserProfileService = Contracts.UserProfile.Service;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
+using Services.UserIdentity;
 
 #if DEBUG
 using Xunit.Runner.InProc.SystemConsole;
@@ -49,7 +50,12 @@ var app = bld.Build();
 var db = await DB.InitAsync(settings.UserIdentity.DatabaseName, MongoClientSettings.FromConnectionString(settings.ConnectionStrings.MongoDB));
 await UserIdentityDatabase.InitializeAsync(db);
 
-app.UseFastEndpoints(c => c.Errors.UseProblemDetails());
+app.UseFastEndpoints(
+    c =>
+    {
+        c.Binding.ReflectionCache.AddFromServicesUserIdentity();
+        c.Errors.UseProblemDetails();
+    });
 
 app.MapHandlers<EventRecord, EventStorageProvider>(
     h =>

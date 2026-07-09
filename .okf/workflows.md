@@ -69,7 +69,7 @@ Local ports/topology:
 3. Create standalone `Services/<ServiceName>/` FastEndpoints app.
 4. Reference own contract project and `Common/StorageProvider` if publishing/subscribing.
 5. Reference other contract projects only for consumed events or known subscriber `Service.Name` constants.
-6. Configure IPC/remote messaging in `Program.cs`; use explicit subscriber IDs matching `SubscriberService.Name`, and register those names on publisher event hubs for durable startup/offline delivery.
+6. Configure IPC/remote messaging in `Program.cs`; set `c.SubscriberID = SubscriberService.Name` before subscriber `c.Subscribe<...>()` calls, and register those names on publisher event hubs for durable startup/offline delivery.
 7. Add service-local persistence, endpoints/subscriptions, and colocated tests.
 
 ## Adding an event
@@ -78,7 +78,7 @@ Local ports/topology:
 2. Register the event hub in the owner with known subscriber IDs: `RegisterEventHub<TEvent>([SubscriberService.Name])`.
 3. Publish only after local persistence succeeds.
 4. In each subscriber, reference the owner contract project.
-5. Add handler and `MapRemote(...).SubscribeWithExplicitId<...>(SubscriberService.Name)` registration.
+5. Add handler and `MapRemote(...)` registration that sets `c.SubscriberID = SubscriberService.Name` before calling `c.Subscribe<TEvent, THandler>()`.
 6. If the publisher needs the subscriber service name constant, reference the subscriber contract project only; do not reference service implementation projects.
 7. Add/update tests for publication and reaction behavior.
 

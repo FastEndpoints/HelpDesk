@@ -24,14 +24,14 @@ tags: [dependencies, dotnet]
 
 | Package | Version | Use |
 | --- | --- | --- |
-| `FastEndpoints` | `8.3.0-beta.9` | Endpoint framework and event abstractions. |
-| `FastEndpoints.Generator` | `8.3.0-beta.9` | FastEndpoints source generation/analyzers. |
-| `FastEndpoints.Messaging.Core` | `8.3.0-beta.9` | Contract event interfaces. |
-| `FastEndpoints.Messaging.Remote` | `8.3.0-beta.9` | Remote event hubs/subscriptions and handler server. |
-| `FastEndpoints.Messaging.Remote.Testing` | `8.3.0-beta.9` | Test event receivers. |
-| `FastEndpoints.OpenApi` | `8.3.0-beta.9` | OpenAPI docs for non-production services. |
-| `FastEndpoints.Security` | `8.3.0-beta.9` | JWT bearer token creation in UserIdentity and JWT auth dependencies for UserProfile. |
-| `FastEndpoints.Testing` | `8.3.0-beta.9` | App fixtures and endpoint test helpers. |
+| `FastEndpoints` | `8.3.0-beta.10` | Endpoint framework and event abstractions. |
+| `FastEndpoints.Generator` | `8.3.0-beta.10` | FastEndpoints source generation/analyzers. |
+| `FastEndpoints.Messaging.Core` | `8.3.0-beta.10` | Contract event interfaces. |
+| `FastEndpoints.Messaging.Remote` | `8.3.0-beta.10` | Remote event hubs/subscriptions and handler server. |
+| `FastEndpoints.Messaging.Remote.Testing` | `8.3.0-beta.10` | Test event receivers. |
+| `FastEndpoints.OpenApi` | `8.3.0-beta.10` | OpenAPI docs for non-production services. |
+| `FastEndpoints.Security` | `8.3.0-beta.10` | JWT bearer token creation in UserIdentity and JWT auth dependencies for UserProfile. |
+| `FastEndpoints.Testing` | `8.3.0-beta.10` | App fixtures and endpoint test helpers. |
 | `MongoDB.Entities` | `25.1.0` | MongoDB persistence abstraction. |
 | `MailKit` | `4.17.0` | SMTP delivery in Notifications. |
 | `Scalar.AspNetCore` | `2.16.7` | Scalar OpenAPI UI for non-production identity/profile services. |

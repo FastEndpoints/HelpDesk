@@ -21,7 +21,7 @@ tags: [conventions, style]
 - Event names describe facts already completed: `...RegisteredEvent`, `...VerifiedEvent`.
 - Publish with `.Broadcast()` only after local state commits.
 - Register publisher hubs in `Program.cs` with `RegisterEventHub<TEvent>()`.
-- Register subscribers in `Program.cs` with `MapRemote(...).Subscribe<TEvent, THandler>()`.
+- Register subscribers in `Program.cs` by setting `c.SubscriberID = SubscriberService.Name` inside `MapRemote(...)`, then calling `c.Subscribe<TEvent, THandler>()`.
 - Subscriber handlers implement `IEventHandler<TEvent>` and mutate only their own service state or queue local work.
 
 ## Endpoint design
@@ -44,6 +44,7 @@ tags: [conventions, style]
 ## Configuration and dependency injection
 
 - Bind whole service settings from configuration into strongly typed settings classes and `IOptions<T>`.
+- Register the generated FastEndpoints reflection cache in each service's `UseFastEndpoints(...)` options, e.g. `c.Binding.ReflectionCache.AddFromServicesUserIdentity()`.
 - Default local MongoDB connection string is `mongodb://localhost:27017`.
 - Testing environment adds optional user secrets and uses `appsettings.Testing.json` database names.
 - `UserIdentity` JWT signing uses `UserIdentity.Jwt.PrivateKeyPem`; keep real keys out of source.
