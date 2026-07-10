@@ -1,86 +1,48 @@
 ---
-type: Reference
+type: Playbook
 title: Operations
-description: Local runtime processes, ports, configuration, storage, messaging, jobs, and observability.
-tags: [operations, runtime]
+description: Local runtime topology, ports, databases, and configuration keys (names only) for HelpDesk services.
+tags: [ops]
+resource: Services/UserIdentity/appsettings.json
 ---
 
 # Operations
 
-## Runtime processes
+## Deploy model
 
-Current deployable services:
+Independently deployable service processes. Local default: IPC mesh on one machine. Remote: change listen/target topology only—contracts/handlers unchanged. No Docker/compose in repo today.
 
-| Service | Project | Local HTTP | IPC service name source |
+## Services and ports
+
+| Service | HTTP | IPC name | Notes |
 | --- | --- | --- | --- |
-| UserIdentity | `Services/UserIdentity/Services.UserIdentity.csproj` | `http://localhost:5000` | `Contracts.UserIdentity.Service.Name` |
-| UserProfile | `Services/UserProfile/Services.UserProfile.csproj` | `http://localhost:5001` | `Contracts.UserProfile.Service.Name` |
-| Notifications | `Services/Notifications/Services.Notifications.csproj` | none configured | `Contracts.Notifications.Service.Name` |
+| UserIdentity | `UserIdentity:HttpPort` (5000) | `USER_IDENTITY_SERVICE` | OpenAPI/Scalar non-prod |
+| UserProfile | `UserProfile:HttpPort` (5001) | `USER_PROFILE_SERVICE` | JWT auth; OpenAPI/Scalar non-prod |
+| Notifications | none in Program | `NOTIFICATIONS_SERVICE` | Job queue + event subscriber |
 
-`UserProfile` exposes `GET /profiles/me` on its local HTTP port and may include a dummy root endpoint in `Program.cs`. `Notifications` includes a dummy root endpoint but does not expose public business APIs.
+## Data stores
 
-## Messaging topology
+- MongoDB via `ConnectionStrings:MongoDB` (default `mongodb://localhost:27017`)
+- DBs: `HelpDesk_UserIdentity`, `HelpDesk_UserProfile`, `HelpDesk_Notifications` (+ `_TESTING` variants)
 
-- Each service listens over FastEndpoints IPC via `ListenInterProcess(...)`.
-- `UserIdentity` registers hubs for `UserIdentityRegisteredEvent`, `UserIdentityVerificationIssuedEvent`, and `UserIdentityVerifiedEvent`.
-- `UserProfile` maps remote `UserIdentity` and subscribes to registered/verified identity events; it registers a hub for `UserProfileRegisteredEvent` (no known subscribers currently).
-- `Notifications` maps remote `UserIdentity` and subscribes to `UserIdentityVerificationIssuedEvent` only, so verification secrets never enter Profile event storage.
-- Remote event storage uses MongoDB-backed `EventRecord` through `Common/StorageProvider`.
+## Config and observability
 
-## Databases
+Config keys (names only—never commit real secrets):
 
-Default local MongoDB connection string: `mongodb://localhost:27017`.
+| Key area | Examples |
+| --- | --- |
+| Mongo | `ConnectionStrings:MongoDB`, `*:DatabaseName` |
+| JWT issue | `UserIdentity:Jwt:Issuer`, `Audience`, `AccessTokenDays`, `PrivateKeyPem` |
+| JWT validate | `UserProfile:Jwt:Issuer`, `Audience`, `PublicKey` (tests may use `PrivateKey`) |
+| SMTP | `Smtp:Enabled`, `Host`, `Port`, `UseSsl`, `Username`, `Password`, `SenderName`, `SenderEmail`, `AdminName`, `AdminEmail` |
+| Logging | `Logging:LogLevel:*` |
 
-| Service | Default database | Testing database | Main collections/indexes |
-| --- | --- | --- | --- |
-| UserIdentity | `HelpDesk_UserIdentity` | `HelpDesk_UserIdentity_TESTING` | `UserIdentities`; unique normalized email; sparse unique verification code; event records. |
-| UserProfile | `HelpDesk_UserProfile` | `HelpDesk_UserProfile_TESTING` | `UserProfiles`; unique normalized email; user identity id index; event records. |
-| Notifications | `HelpDesk_Notifications` | `HelpDesk_Notifications_TESTING` | event records; job records by queue/completion/schedule/expiry and tracking ID. |
-
-## Configuration
-
-Config files live under each service:
-
-- `appsettings.json` - non-secret defaults.
-- `appsettings.Development.json` - currently empty overrides.
-- `appsettings.Testing.json` - testing database names.
-- `Properties/launchSettings.json` - Development launch profile.
-
-Important config keys:
-
-- `ConnectionStrings:MongoDB`
-- `UserIdentity:HttpPort`, `UserIdentity:DatabaseName`, `UserIdentity:Jwt:*`
-- `UserProfile:HttpPort`, `UserProfile:DatabaseName`, `UserProfile:Jwt:PublicKey`, `UserProfile:Jwt:PrivateKey` (test JWT minting only)
-- `Notifications:DatabaseName`
-- `Smtp:*`
-- `Logging:LogLevel:*`
-
-Do not copy secret values into source or OKF.
-
-## Email/jobs
-
-- Notifications queues `SendEmailCommand` jobs when `UserIdentityVerificationIssuedEvent` arrives.
-- Welcome email verification links use `UserIdentityVerificationIssuedEvent.BaseUrl` plus `/identities/verify/{escapedCode}`; `BaseUrl` originates from the incoming registration request's scheme/host/path base.
-- Public/proxy host configuration for registration therefore affects emailed verification links.
-- Job queue limits `SendEmailCommand` to max concurrency 1 and 2 minute time limit.
-- SMTP delivery uses `SmtpService` only when environment is Production and `Smtp.Enabled` is true.
-- Non-production or disabled SMTP uses `NullEmailSender`, which logs suppressed email delivery.
-- SMTP failures log a warning, reconnect, retry once, then log an error and rethrow.
-- Failed jobs are rescheduled one minute later by `JobStorageProvider`.
-
-## Observability
-
-- ASP.NET logging defaults are `Default=Information`, `Microsoft.AspNetCore=Warning`.
-- Non-production `UserIdentity` and `UserProfile` map OpenAPI and Scalar UI.
-- Notifications does not map OpenAPI/Scalar in current startup.
+- User secrets IDs present on service csprojs for local/test secrets
+- SMTP live only Production **and** `Smtp:Enabled`; otherwise null/log sender
+- Standard ASP.NET Core logging; no separate APM package in tree
 
 ## Sources
 
+- `Services/*/appsettings.json`
 - `Services/*/Program.cs`
-- `Services/*/appsettings*.json`
 - `Services/*/Properties/launchSettings.json`
-- `Services/*/Persistence/*Database.cs`
-- `Services/UserIdentity/Endpoints/Identities/Register/Endpoint.cs`
-- `Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/UserIdentityVerificationIssuedEventHandler.cs`
-- `Services/Notifications/Email/*.cs`
-- `Services/Notifications/Jobs/JobStorageProvider.cs`

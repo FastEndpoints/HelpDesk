@@ -1,73 +1,66 @@
 ---
 type: Reference
 title: Code Map
-description: Repository layout, important project locations, and edit guidance.
-tags: [code-map, navigation]
+description: Top-level and per-service layout for Common, Contracts, and Services projects.
+tags: [layout]
+resource: HelpDesk.slnx
 ---
 
 # Code Map
 
-## Top-level layout
+## Layout
 
-| Path | Purpose |
+```text
+HelpDesk/
+├── Common/
+│   ├── StorageProvider/     # EventRecord, EventStorageProvider
+│   └── Tools/               # StringExtensions.NormalizeForLookup
+├── Contracts/
+│   ├── UserIdentity/        # Service, Events, EventSubscribers
+│   ├── UserProfile/
+│   └── Notifications/       # Service name only (no events yet)
+├── Services/
+│   ├── UserIdentity/
+│   ├── UserProfile/
+│   └── Notifications/
+├── Directory.Packages.props # central package versions
+├── HelpDesk.slnx
+└── README.md
+```
+
+## Modules
+
+| Path | Contents |
 | --- | --- |
-| `README.md` | Canonical architecture and workflow overview. |
-| `AGENTS.md` | Repo-local agent instructions, including OKF use/maintenance. |
-| `.okf/` | Operational knowledge for agents. |
-| `HelpDesk.slnx` | Solution file listing all projects. |
-| `Directory.Packages.props` | Central NuGet package versions. |
-| `Common/` | Reusable infrastructure/helpers only after they are truly generic. |
-| `Contracts/` | Public cross-service service names/events/DTOs. |
-| `Services/` | Deployable service implementations. |
-| `.run/RunAll.run.xml` | JetBrains multi-launch config for all current services. |
+| `Common/StorageProvider` | Mongo-backed FE remote event hub/subscriber storage |
+| `Common/Tools` | Generic helpers only |
+| `Contracts/<Name>` | `Service.cs`, `Events.cs`, `EventSubscribers.cs` as needed |
+| `Services/<Name>/Program.cs` | Host, Kestrel IPC/HTTP, DI, hubs, MapRemote |
+| `Services/<Name>/Meta.cs` | Global usings |
+| `Services/<Name>/Configuration/` | Typed settings bound from configuration |
+| `Services/<Name>/Endpoints/` | Public REST (area/action folders) |
+| `Services/<Name>/Persistence/` | Entities, stores, DB init |
+| `Services/<Name>/Subscriptions/<Publisher>/<Event>/` | Handlers + Tests |
+| `Services/<Name>/Tests/` | `Sut` fixture, assembly Meta, xunit.runner.json |
+| `Services/Notifications/Email/`, `Jobs/` | SMTP/null sender, job storage |
 
-## Projects
+## Entry points
 
-| Path | Type | Notes |
-| --- | --- | --- |
-| `Common/StorageProvider/Common.StorageProvider.csproj` | class library | MongoDB event storage provider and `EventRecord`. |
-| `Common/Tools/Common.Tools.csproj` | class library | `NormalizeForLookup()` helper. |
-| `Contracts/UserIdentity/Contracts.UserIdentity.csproj` | class library | UserIdentity service name, identity events, and `EventSubscribers` known-subscriber arrays. |
-| `Contracts/UserProfile/Contracts.UserProfile.csproj` | class library | UserProfile service name, profile events, and `EventSubscribers` known-subscriber arrays. |
-| `Contracts/Notifications/Contracts.Notifications.csproj` | class library | Notifications service name; no events currently. |
-| `Services/UserIdentity/Services.UserIdentity.csproj` | web app | Identity endpoints, auth, persistence, event hubs, tests. |
-| `Services/UserProfile/Services.UserProfile.csproj` | web app | Authenticated profile endpoint, profile persistence, identity subscriptions, profile event hub, tests. |
-| `Services/Notifications/Services.Notifications.csproj` | web app | Notification settings/email/jobs/identity verification-issued subscription, tests. |
+| Service | Host entry | HTTP (local) | IPC name |
+| --- | --- | --- | --- |
+| UserIdentity | `Services/UserIdentity/Program.cs` | port from `UserIdentity:HttpPort` (5000) | `USER_IDENTITY_SERVICE` |
+| UserProfile | `Services/UserProfile/Program.cs` | `UserProfile:HttpPort` (5001) | `USER_PROFILE_SERVICE` |
+| Notifications | `Services/Notifications/Program.cs` | IPC only (no public HTTP listen in Program) | `NOTIFICATIONS_SERVICE` |
 
-## Service layout
+IDE multi-run: `.run/RunAll.run.xml` launches all three profiles.
 
-Typical service directories:
+## Generated code
 
-- `Program.cs` - startup, DI, Kestrel IPC/HTTP, event hubs/subscriptions.
-- `Meta.cs` - service-level global usings/metadata.
-- `Configuration/` - strongly typed settings classes.
-- `appsettings*.json` - service-local configuration.
-- `Properties/launchSettings.json` - development launch profile.
-- `Endpoints/<Area>/<Action>/` - public REST endpoints owned by the service.
-- `Persistence/` - private entities, stores, database/index initialization.
-- `Subscriptions/<Publisher>/<Event>/` - event handlers and colocated tests.
-- `Tests/` - shared service-local fixtures and xUnit config.
-- Service-specific folders such as `Email/` and `Jobs/` stay inside the owning service.
-
-## Where to add behavior
-
-- New public API behavior: owning service under `Services/<Service>/Endpoints/...` plus colocated `Tests/`.
-- New event contract: owning `Contracts/<Service>/` project (event record + `EventSubscribers` array when known subscribers exist).
-- New event publication: owning service after local persistence succeeds; register hub with `RegisterEventHub<TEvent>(EventSubscribers.SomeEvent)`.
-- New subscription: consuming service under `Subscriptions/<Publisher>/<Event>/` plus `Program.cs` `MapRemote(...)` registration that sets `c.SubscriberID = SubscriberService.Name` before `c.Subscribe<TEvent, THandler>()`; also add the subscriber service name string literal to the publisher contract's `EventSubscribers` array.
-- Reusable infrastructure: `Common/` only when generic and not domain behavior.
-
-## Edit guidance
-
-- Do not edit build outputs under `bin/` or `obj/` if present.
-- Do not move service-local persistence/entities into contracts or common projects.
-- Do not create empty service folders just to match a template.
-- Release builds remove `**/Tests/**` from service web projects via csproj conditions.
+- FastEndpoints.Generator source generators (reflection cache e.g. `AddFromServicesUserIdentity()`). Do not hand-edit generated outputs; regenerate via build.
+- Tests excluded from Release builds (`Compile Remove="**\Tests\**"`).
 
 ## Sources
 
-- `README.md`
 - `HelpDesk.slnx`
-- `*.csproj`
 - `Services/*/Program.cs`
-- `Services/*/Tests/Sut.cs`
+- `Services/*/*.csproj`

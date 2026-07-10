@@ -1,94 +1,92 @@
 ---
 type: Architecture
 title: Architecture
-description: Service boundaries, event mesh communication, persistence, security, and invariants.
-tags: [architecture, boundaries, events]
+description: Brokerless FastEndpoints remote mesh with Contracts/Common/Services layering and event-only cross-service workflows.
+tags: [architecture]
+resource: README.md
 ---
 
 # Architecture
 
 ## Style
 
-Brokerless, event-driven microservice mesh. Services are independently deployable FastEndpoints apps. Cross-service business communication uses FastEndpoints remote events over local IPC in development; deployment can change topology without changing business/event code.
+Brokerless microservice mesh:
 
-```text
-External clients -> service-owned HTTP endpoints
-Services         -> contract events over FastEndpoints remote messaging
-Storage          -> service-owned MongoDB databases + event/job records
-Broker           -> none
-Internal RPC     -> forbidden for business workflows
-```
+- **Contracts** = public event language
+- **Common** = reusable infrastructure/helpers only
+- **Services** = isolated deployable FastEndpoints hosts
+- **Mesh** = FastEndpoints.Messaging.Remote event queues between nodes
+- **Broker** = none; **business RPC** = none
+
+Local: `ListenInterProcess(Service.Name)` + `MapRemote(publisherName, …)`. Topology (IPC vs network) is config/deployment; handlers and contracts stay the same.
 
 ## Components
 
-| Area | Projects | Responsibility |
+```text
+External client
+  │ REST
+  ▼
+UserIdentity ──events──► UserProfile
+     │                        │
+     └──events──────────────► Notifications (email jobs)
+```
+
+| Layer | Projects | Role |
 | --- | --- | --- |
-| `Contracts/` | `Contracts.UserIdentity`, `Contracts.UserProfile`, `Contracts.Notifications` | Stable service names, public event contracts, and data-only `EventSubscribers` known-subscriber arrays. |
-| `Common/StorageProvider` | class library | MongoDB-backed `IEventHubStorageProvider`/`IEventSubscriberStorageProvider` using `EventRecord`. |
-| `Common/Tools` | class library | Generic helpers, currently lookup string normalization. |
-| `Services/UserIdentity` | web app | Identity HTTP API, credentials/status persistence, JWTs, identity events. |
-| `Services/UserProfile` | web app | Profile persistence and reactions to identity events. |
-| `Services/Notifications` | web app | Identity verification-issued reaction, durable email jobs, SMTP/null email sending. |
+| Common | `StorageProvider`, `Tools` | Event storage provider; `NormalizeForLookup` |
+| Contracts | `UserIdentity`, `UserProfile`, `Notifications` | `Service.Name`, events, `EventSubscribers` |
+| Services | same three names | Endpoints, persistence, hubs, subscriptions |
 
 ## Dependency rules
 
-Allowed reference direction:
+**Allowed:**
 
 ```text
-Services -> Contracts
-Services -> Common
-Contracts -> package references only
-Common -> package references only
+Services → Contracts
+Services → Common
+Contracts → package refs only (e.g. FastEndpoints.Messaging.Core)
+Common → package refs only
 ```
 
-Forbidden:
+**Forbidden:**
 
-- `Services/<A>` referencing `Services/<B>`.
-- Contract projects containing endpoints, handlers, entities, stores, persistence, SMTP/email implementation, or service-local business logic.
-- Shared domain models in `Common/` or `Contracts/`.
+```text
+Services/A → Services/B
+Contracts → Services or domain logic
+Common → domain / service-specific behavior
+```
 
-## Communication rules
+Cross-service business flow: **events only**. A service may expose REST for external clients; must not call another service’s REST to finish an internal workflow. Events are facts after local commit, not commands.
 
-- Cross-service workflows use events only.
-- Events are facts that already happened, not commands.
-- Publish events only after the owning service commits local state.
-- Subscribers update only their own local state or queue internal work.
-- Current local topology uses `ListenInterProcess(Service.Name)` and `MapRemote(Service.Name, ...)`.
-- Subscribers set `c.SubscriberID = SubscriberService.Name` inside `MapRemote(...)`, then call `c.Subscribe<TEvent, THandler>()`, so subscriber IDs are stable and match contract service names.
-- Known subscriber IDs for durable startup/offline delivery live as data-only `string[]` fields on the publisher contract's `EventSubscribers` type (string literals matching subscriber `Service.Name`; no contract→contract references).
-- Publisher services register hubs with those arrays: `RegisterEventHub<TEvent>(EventSubscribers.SomeEvent)`.
-- When adding a new subscriber, update the publisher contract `EventSubscribers` array and the subscriber's process-local `MapRemote(...)` registration (`SubscriberID` + `Subscribe`).
+## Communication
 
-## Persistence rules
+- Publisher: persist locally → `event.Broadcast()`; hubs registered in `Program.cs` via `MapHandlers` + `RegisterEventHub<TEvent>(subscriberIds)`.
+- Subscriber: `MapRemote(publisherServiceName, c => { c.SubscriberID = ownName; c.Subscribe<TEvent, THandler>(); })`.
+- Durable event records: `Common.StorageProvider.EventRecord` + `EventStorageProvider` (MongoDB.Entities).
+- Notifications internal work: FastEndpoints job queue (`JobRecord` / `JobStorageProvider`) for `SendEmailCommand`.
 
-- Each service initializes and owns its MongoDB database name from its settings.
-- `UserIdentity` stores `UserIdentities`, with unique normalized email and sparse unique verification code indexes.
-- `UserProfile` stores `UserProfiles`, with unique normalized email and user identity id indexes.
-- Notifications stores FastEndpoints job records and event records.
-- Every service initializes an `EventRecord` index for remote event subscriber storage.
-- Persistence classes/entities/stores stay private to the owning service.
+## Persistence
 
-## Security/auth model
+Each service owns its MongoDB database (config `*Settings` / `DatabaseName`). No shared domain collections. Event storage indexes created per service DB init. Notifications also stores job records.
 
-- `UserIdentity` hashes passwords with ASP.NET Core Identity `IPasswordHasher<UserIdentityEntity>`.
-- Login issues asymmetric JWT bearer tokens using `UserIdentity.Jwt.PrivateKeyPem`, issuer, audience, and expiry settings.
-- `UserProfile` validates JWT bearer tokens with `UserProfile.Jwt.PublicKey` and uses the token subject to load local profile state.
-- Registration/login/verification endpoints allow anonymous access; `GET /profiles/me` requires authentication.
-- Do not commit real JWT private keys, SMTP credentials, or MongoDB credentials.
+## Security / auth (boundaries)
 
-## Invariants agents must preserve
+- UserIdentity issues RSA JWT (`sub` = identity id); signs with private PEM.
+- UserProfile validates JWT with public key (asymmetric); `GET /profiles/me` requires auth.
+- Notifications has no public business API / no JWT surface today.
+- Details: [security.md](security.md).
 
-- Keep service implementation projects isolated; use contract projects for cross-service language.
-- Keep internal workflows event-driven and brokerless unless architecture is intentionally changed and OKF/README are updated.
-- Keep events small, public, and owned by the publishing service's contract project.
-- Keep service-local state changes before event publication.
-- Keep tests colocated with the endpoint/subscription behavior they verify.
+## Invariants
+
+1. Own state committed before publishing related events.
+2. Subscribers mutate only own state / queue own jobs; no callback to publisher.
+3. Contracts stay free of endpoints, entities, stores, SMTP, handlers.
+4. Service names and `EventSubscribers` arrays stay aligned with real consumer `Service.Name` values.
+5. Tests prove REST boundaries and subscription reactions; topology-agnostic.
 
 ## Sources
 
 - `README.md`
-- `HelpDesk.slnx`
 - `Services/*/Program.cs`
-- `Services/*/Persistence/*Database.cs`
-- `Services/UserIdentity/Endpoints/Identities/*/Endpoint.cs`
-- `Contracts/*/Events.cs`
+- `Contracts/*/`
+- `Common/StorageProvider/`

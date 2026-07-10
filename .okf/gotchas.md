@@ -1,36 +1,31 @@
 ---
 type: Reference
 title: Gotchas
-description: Practical traps and non-obvious constraints for future agents.
-tags: [gotchas, constraints]
+description: Non-obvious traps for the HelpDesk mesh, tests, config, and layering rules.
+tags: [gotcha]
 ---
 
 # Gotchas
 
-- `.okf/` may be referenced by `AGENTS.md`; keep it present and conformant.
-- The solution file is `HelpDesk.slnx`, not traditional `.sln`; some tools need individual `.csproj` paths.
-- Cross-service business behavior must not use REST/RPC or service implementation references; use contract events only.
-- Contract projects must stay small: service name, event records, and simple DTOs only.
-- `Common/` is not a shared domain layer; avoid moving service-specific behavior there.
-- Events should be published only after local persistence succeeds. The registration/verification endpoints follow this pattern.
-- Durable startup/offline remote events still require matching known subscriber IDs on both sides: process-local `c.SubscriberID = SubscriberService.Name` before subscriber `c.Subscribe<...>()` calls, and publisher contract `EventSubscribers` arrays passed to `RegisterEventHub<TEvent>(...)`. Keep the string literals identical to subscriber `Service.Name`.
-- Tests live inside service web projects and are excluded from Release builds; run tests in Debug/default configuration.
-- Tests require MongoDB at the configured connection string unless a test explicitly replaces storage.
-- `UserIdentity` login JWT creation needs a valid `UserIdentity:Jwt:PrivateKeyPem`; the committed default is empty.
-- Notifications will not send real email unless environment is Production and `Smtp:Enabled` is true.
-- Verification email links derive their base URL from the registration request's scheme/host/path base; account for reverse proxies or public host headers.
-- `UserProfile` and `Notifications` have dummy endpoints in `Program.cs`; do not treat them as public business APIs.
-- Email lookup normalization is `Trim().ToUpperInvariant()`; preserve this for uniqueness and duplicate checks.
-- Do not commit real MongoDB credentials, JWT private keys, SMTP usernames/passwords, or customer data.
+- **Never** reference `Services/*` from another service—only Contracts/Common. Cross-service workflow = events only, not REST callbacks.
+- Events are **facts after commit**, not commands. Publish only after local persistence succeeds.
+- Keep `Contracts/*/EventSubscribers` arrays in sync with real consumer `Service.Name` values when adding subscribers.
+- Contracts must stay free of entities, stores, endpoints, handlers, SMTP.
+- Local mesh needs **all relevant processes** running for full onboarding; unit/service tests intentionally avoid multi-process E2E.
+- Tests need **MongoDB**; Testing DB names end with `_TESTING`. Fixtures drop collections—don’t point tests at shared prod data.
+- JWT: empty `PrivateKeyPem` / `PublicKey` in base appsettings—configure secrets for real runs. Profile tests use Testing JWT keys in `appsettings.Testing.json`.
+- Notifications SMTP is off unless **Production and** `Smtp:Enabled`. Dev/test use null/test senders.
+- Notifications has **no public business HTTP port** in Program (IPC + jobs only).
+- Email lookup always uses `NormalizeForLookup` (trim + upper). Duplicate checks depend on normalized unique indexes.
+- Profile create on identity register is **idempotent on duplicate email** (handler returns); identity register is **not** (client error).
+- FastEndpoints reflection helpers (`AddFromServices…`) come from the generator—rebuild if missing after structural changes.
+- Release builds **strip Tests**; don’t rely on test code in Release publish.
+- README says Notifications may subscribe to profile registration in places historically; **code** subscribes to `UserIdentityVerificationIssuedEvent`—prefer source over stale prose if they diverge.
+- Do not invent a central broker; architecture is brokerless FE remote messaging.
 
 ## Sources
 
-- `AGENTS.md`
 - `README.md`
-- `HelpDesk.slnx`
-- `Services/*/*.csproj`
 - `Services/*/Program.cs`
-- `Services/*/appsettings*.json`
-- `Services/UserIdentity/Endpoints/Identities/Register/Endpoint.cs`
-- `Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/UserIdentityVerificationIssuedEventHandler.cs`
-- `Common/Tools/StringExtensions.cs`
+- `Services/*/Tests/Sut.cs`
+- `Contracts/*/EventSubscribers.cs`

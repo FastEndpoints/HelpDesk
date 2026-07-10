@@ -1,53 +1,44 @@
 ---
 type: Reference
-title: OKF Maintenance
-description: Rules for keeping OKF synchronized and conformant.
-tags: [okf, maintenance]
+title: Maintenance
+description: OKF v0.1 conformance, update triggers, and conflict handling for this repository.
+tags: [maintain]
 ---
 
-# OKF Maintenance
+# Maintenance
 
-Preserve OKF v0.1 conformance:
+## Conformance
 
-- Every non-reserved `.md` file needs YAML frontmatter with a non-empty `type` field.
-- `index.md` and `log.md` are reserved names.
-- Only the bundle-root `.okf/index.md` may include frontmatter, and only for `okf_version`.
-- Do not create empty placeholder OKF files.
-- Keep OKF concise and source-backed; link to canonical files instead of copying large docs.
+- Non-reserved `.okf/*.md`: YAML frontmatter with non-empty `type` (closed list), `title`, `description`
+- Allowed types: `Reference`, `Architecture`, `Playbook`, `API Endpoint`, `Database`, `Service`, `Event`, `Security`, `Deployment`, `Generated`, `ADR`
+- Root `index.md` only: optional `okf_version: "0.1"` frontmatter; it is a router, not a concept dump
+- Do not create `log.md` unless requested; no empty placeholders
+- Soft target ~50–150 lines per file; split by topic when scanability suffers
 
-## Update OKF when changing
+## Update triggers
 
-- architecture, service/module boundaries, or dependency direction;
-- public APIs, routes, schemas, contracts, events, or message formats;
-- persistence models, indexes, migrations, data ownership, or database names;
-- build, test, lint, format, generation, or run commands;
-- dependency versions, runtime versions, package management, or tooling assumptions;
-- deployment topology, ports, configuration keys, secret handling, or operational behavior;
-- security/auth behavior;
-- testing strategy, test layout, fixtures, or required validation steps;
-- repository layout or coding conventions;
-- known gotchas or common failure modes.
+Sync `.okf/` when work changes:
 
-## Conflict resolution
+- Architecture / layering / mesh topology assumptions
+- Public APIs, routes, schemas, events, contracts
+- Persistence, indexes, databases
+- Dependencies, runtime, package management
+- Build / run / test / format / generate / deploy commands
+- Testing strategy or layout
+- Security / auth
+- Config keys, ports, ops assumptions
+- Conventions / directory layout
+- Gotchas
 
-If OKF conflicts with code/tests/config/manifests/README:
+If unaffected, say so explicitly before finishing (`OKF unaffected (non-behavioral edit)` for pure comment/typo/format).
 
-1. Verify behavior from authoritative current project sources.
-2. Update the stale OKF file.
-3. Mention the correction in the final response.
+## Conflicts
 
-## Review expectations
-
-Before finishing OKF maintenance:
-
-- Check frontmatter and reserved `index.md` rules.
-- Check that paths and source references are plausible.
-- Confirm no secrets or private data were copied.
-- Confirm `AGENTS.md` or equivalent instructs future agents to read and maintain OKF.
-- State either what OKF changed or why OKF was unaffected.
+1. Prefer verified source, tests, generated artifacts, manifests over OKF prose
+2. Fix OKF to match reality
+3. Mention the correction in the final response
 
 ## Sources
 
-- `AGENTS.md`
-- `README.md`
-- `.okf/index.md`
+- OKF skill / repo `AGENTS.md` OKF block
+- This file’s inventory via `index.md`

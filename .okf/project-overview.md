@@ -1,70 +1,61 @@
 ---
 type: Reference
 title: Project Overview
-description: Project purpose, scope, capabilities, status, and glossary.
-tags: [overview, product]
+description: HelpDesk is a .NET 10 brokerless event-driven microservice mesh for user onboarding (identity, profile, notifications).
+tags: [overview]
+resource: README.md
 ---
 
 # Project Overview
 
 ## Purpose
 
-HelpDesk is a brokerless, event-driven microservice mesh built with .NET and FastEndpoints. Services communicate through public contract events, not direct service references, synchronous service-to-service REST/RPC, or a central broker.
+HelpDesk implements a brokerless, event-driven microservice mesh with .NET and FastEndpoints. Independently deployable service nodes communicate through public contract events—no central message broker and no cross-service RPC for business workflows.
 
-## Current scope
+## Scope
 
-The implemented product scope is the user onboarding path:
+Current system covers the **user onboarding path**:
 
-1. External client registers an identity.
-2. `UserIdentity` stores a deactivated identity and publishes `UserIdentityRegisteredEvent` plus `UserIdentityVerificationIssuedEvent`.
-3. `UserProfile` creates a deactivated profile from `UserIdentityRegisteredEvent` and publishes `UserProfileRegisteredEvent`.
-4. `Notifications` queues/sends a welcome verification email from `UserIdentityVerificationIssuedEvent`.
-5. External client verifies the identity.
-6. `UserIdentity` activates the identity and publishes `UserIdentityVerifiedEvent`.
-7. `UserProfile` activates the matching profile and marks email verified.
+1. Register identity → `UserIdentityRegisteredEvent` + `UserIdentityVerificationIssuedEvent`
+2. Create deactivated profile → `UserProfileRegisteredEvent`
+3. Send welcome/verification email
+4. Verify identity → `UserIdentityVerifiedEvent`
+5. Activate matching profile
 
-## Users and consumers
+## Capabilities
 
-- External clients consume the `UserIdentity` HTTP API.
-- Other services consume only contract event records from `Contracts/*`.
-- Developers/agents maintain independently deployable service nodes.
+| Area | Responsibility |
+| --- | --- |
+| UserIdentity | Public identity REST API, credentials, JWT issuance, identity lifecycle events |
+| UserProfile | Authenticated profile API; reacts to identity events |
+| Notifications | Email jobs from verification-issued events; no public business API |
+| Common | MongoDB-backed remote event storage; lookup string helpers |
+| Contracts | Stable service names, events, subscriber ID arrays |
 
-## Major capabilities
+## Status
 
-- Identity registration, login, verification, password hashing, and JWT issuance.
-- Profile creation/activation from identity events.
-- Notification email job queuing and SMTP delivery when enabled; null sender otherwise.
-- MongoDB-backed durable FastEndpoints remote event storage.
-- Service-local tests for endpoints, subscriptions, and event publication.
+Active development. Targets .NET 10. Local mesh uses IPC (`ListenInterProcess` / `MapRemote`); remote topology is deployment config, not business-code change.
 
-## Current service status
+## Non-goals
 
-| Service | Public API | Publishes | Subscribes |
-| --- | --- | --- | --- |
-| `UserIdentity` | `POST /identities/register`, `POST /identities/login`, `GET /identities/verify/{VerificationCode}` | `UserIdentityRegisteredEvent`, `UserIdentityVerificationIssuedEvent`, `UserIdentityVerifiedEvent` | none |
-| `UserProfile` | `GET /profiles/me` | `UserProfileRegisteredEvent` | `UserIdentityRegisteredEvent`, `UserIdentityVerifiedEvent` |
-| `Notifications` | no public business API | none | `UserIdentityVerificationIssuedEvent` |
-
-## Non-goals and constraints
-
-- No RabbitMQ/Kafka/Azure Service Bus broker in the current architecture.
-- No cross-service business workflow via REST/RPC.
-- No shared domain models across service implementations.
-- No service implementation project references from other services.
+- Central broker (RabbitMQ/Kafka/Service Bus)
+- Service-to-service REST for internal workflows
+- Shared domain models across services
+- Cross-service project references between `Services/*`
+- Exhaustive multi-domain helpdesk product surface yet—onboarding mesh only
 
 ## Glossary
 
-- **Contract project**: public cross-service language for a service: service name, event records, known-subscriber ID arrays (`EventSubscribers`), and simple DTOs if needed.
-- **Service implementation**: deployable FastEndpoints app under `Services/<ServiceName>/` with private endpoints, handlers, persistence, and tests.
-- **IPC mesh**: local FastEndpoints remote messaging topology using `ListenInterProcess(...)` and `MapRemote(...)`.
-- **Event hub**: publisher-side remote messaging hub registered with `RegisterEventHub<TEvent>(EventSubscribers.SomeEvent)`.
-- **EventSubscribers**: data-only publisher-contract arrays of subscriber service name string literals for durable startup/offline delivery.
+| Term | Meaning |
+| --- | --- |
+| Contract | Public cross-service language: service name + events (+ DTOs if needed) |
+| Event hub | Publisher-side registration of an event type and known subscriber IDs |
+| IPC | Local inter-process FastEndpoints remote transport |
+| Mesh | Set of service nodes linked by remote event subscriptions |
+| SubscriberID | Stable service name used as remote subscriber identity |
 
 ## Sources
 
 - `README.md`
-- `Contracts/UserIdentity/Events.cs`
-- `Contracts/UserProfile/Events.cs`
-- `Services/UserIdentity/Program.cs`
-- `Services/UserProfile/Program.cs`
-- `Services/Notifications/Program.cs`
+- `HelpDesk.slnx`
+- `Directory.Packages.props`

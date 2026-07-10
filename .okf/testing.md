@@ -1,89 +1,60 @@
 ---
-type: Reference
+type: Playbook
 title: Testing
-description: Test strategy, layout, commands, fixtures, dependencies, and expectations.
-tags: [testing, validation]
+description: Colocated FastEndpoints.Testing strategy, fixtures, and commands for service boundaries.
+tags: [test]
+resource: README.md
 ---
 
 # Testing
 
-## Strategy
+## Frameworks and layout
 
-Tests are service-local and colocated with the behavior they verify. The baseline confidence model is to test every service at its public boundary:
+- **xunit.v3** + **Shouldly** + **FastEndpoints.Testing** (+ **Messaging.Remote.Testing** where events are asserted)
+- Tests live **inside** service projects, colocated with endpoints/handlers
+- Shared fixture: `Services/<Service>/Tests/Sut.cs` (`AppFixture<Program>`), `Tests/Meta.cs` with `[assembly: EnableAdvancedTesting]`
+- DEBUG hosts accept `@@` args for in-proc xunit runner (`ConsoleRunner`)
+- Test packages only when `Configuration != Release`; Release excludes `**/Tests/**`
 
-1. public REST endpoints for client-facing API behavior;
-2. event subscriptions/reactions for cross-service behavior;
-3. event publication when a service owns and broadcasts a contract event.
+Examples:
 
-Full end-to-end tests may be useful later for deployed smoke testing, but they are not the primary correctness strategy.
-
-## Frameworks
-
-- xUnit v3 (`xunit.v3`, `xunit.runner.visualstudio`).
-- FastEndpoints.Testing and `AppFixture<Program>`.
-- FastEndpoints.Messaging.Remote.Testing for event receivers where present.
-- Shouldly assertions.
-- Microsoft.NET.Test.Sdk.
-
-Test package references are included only for non-Release configurations in each service csproj.
-
-## Layout
-
-| Path | Purpose |
-| --- | --- |
-| `Services/UserIdentity/Endpoints/Identities/Register/Tests/` | Registration endpoint tests, including event publication. |
-| `Services/UserIdentity/Endpoints/Identities/Login/Tests/` | Login endpoint tests. |
-| `Services/UserIdentity/Endpoints/Identities/Verify/Tests/` | Verification endpoint tests, including event publication. |
-| `Services/UserProfile/Endpoints/Profiles/GetCurrent/Tests/` | Current authenticated profile endpoint tests. |
-| `Services/UserProfile/Subscriptions/UserIdentity/Registration/Tests/` | Reaction to identity registration and profile event publication. |
-| `Services/UserProfile/Subscriptions/UserIdentity/Verification/Tests/` | Reaction to identity verification. |
-| `Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/Tests/` | Reaction to identity verification-issued events and email/job behavior. |
-| `Services/<Service>/Tests/Sut.cs` | Shared service fixture. |
-| `Services/<Service>/Tests/xunit.runner.json` | xUnit parallelization settings. |
+```text
+Services/UserIdentity/Endpoints/Identities/Register/Tests/Cases.cs
+Services/UserProfile/Subscriptions/UserIdentity/Registration/Tests/
+Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/Tests/
+```
 
 ## Commands
 
 ```bash
 dotnet test
-```
-
-Targeted service tests:
-
-```bash
 dotnet test Services/UserIdentity/Services.UserIdentity.csproj
 dotnet test Services/UserProfile/Services.UserProfile.csproj
 dotnet test Services/Notifications/Services.Notifications.csproj
 ```
 
-In Debug builds, each service `Program.cs` runs the xUnit in-process console runner when arguments contain `@@`.
+## Integration and data
 
-## Test fixtures and data
+- Environment: `Testing` via fixture `UseEnvironment("Testing")`
+- DB names: `*_TESTING` overrides in `appsettings.Testing.json`
+- Real MongoDB required for tests (connection from config/user secrets)
+- Fixtures drop owned collections on dispose (`UserIdentities` / `UserProfiles` / jobs+events)
+- Event assertions: `RegisterTestEventReceivers()` + `GetTestEventReceiver<TEvent>().WaitForMatchAsync(...)`
+- Notifications: replaces `IEmailSender` with `TestEmailSender` capture queue
 
-- Fixtures set `ASPNETCORE_ENVIRONMENT` to `Testing` through `UseEnvironment("Testing")`.
-- Testing settings use service-specific `_TESTING` database names.
-- Fixture disposal drops relevant MongoDB collections, not whole MongoDB servers.
-- `UserIdentity` tests register test event receivers and inspect stored identities.
-- `UserProfile` tests register test event receivers for published profile events and use a test JWT key pair for authenticated profile endpoint coverage.
-- `Notifications` tests replace `IEmailSender` with `TestEmailSender` and drop job/event collections.
+## Expectations
 
-## Integration dependencies
+Prove each service at **public boundaries**:
 
-- A reachable MongoDB instance is required unless a specific test replaces storage.
-- Tests may read optional user secrets in the `Testing` environment.
-- Avoid using production database names or credentials in tests.
+1. REST endpoints (client-facing)
+2. Subscription handlers (reactions)
+3. Event publication where the service owns the contract event
 
-## Expectations for new behavior
-
-- Add tests in the owning service, near the endpoint or subscription being changed.
-- For new event publishers, assert event payloads with FastEndpoints test event receivers.
-- For new subscribers, assert service-local state/work queued by the handler.
-- For duplicate/validation/error paths, assert HTTP status/problem details or idempotent handler behavior.
+Prefer not to couple correctness to full multi-process topology. E2E smoke optional later.
 
 ## Sources
 
 - `README.md`
-- `Services/*/*.csproj`
-- `Services/*/Program.cs`
 - `Services/*/Tests/Sut.cs`
-- `Services/*/Tests/xunit.runner.json`
 - `Services/*/**/Tests/Cases.cs`
+- `Services/*/*.csproj`
