@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
+using Common.Tools;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -21,6 +22,7 @@ public class Sut : AppFixture<Program>
                 o.Audience = jwtSettings.Audience;
                 o.ExpireAt = DateTime.UtcNow.AddHours(1);
                 o.User["sub"] = userIdentityId;
+                o.User.Roles.Add(AuthGroups.User);
             });
     }
 

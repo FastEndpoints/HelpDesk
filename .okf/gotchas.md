@@ -14,11 +14,14 @@ tags: [gotcha]
 - Local mesh needs **all relevant processes** running for full onboarding; unit/service tests intentionally avoid multi-process E2E.
 - Tests need **MongoDB**; Testing DB names end with `_TESTING`. Fixtures drop collections—don’t point tests at shared prod data.
 - JWT: empty `PrivateKeyPem` / `PublicKey` in base appsettings—configure secrets for real runs. Profile tests use Testing JWT keys in `appsettings.Testing.json`.
+- Mesh authz: Identity JWT carries **role group names**, not FE permission hash codes. Resource services must register `IClaimsTransformation` (or tests must mint `permissions` codes) or endpoints with `AccessControl(..., Apply.ToThisEndpoint)` return 403.
+- FE `AccessControl` group names are **syntax-only string literals**—`AuthGroups.User` const refs are ignored by the generator; use `"User"` and keep values in sync.
+- `Allow.Admin` (etc.) only exists after some endpoint in that assembly uses that group literal.
 - Notifications SMTP is off unless **Production and** `Smtp:Enabled`. Dev/test use null/test senders.
 - Notifications has **no public business HTTP port** in Program (IPC + jobs only).
 - Email lookup always uses `NormalizeForLookup` (trim + upper). Duplicate checks depend on normalized unique indexes.
 - Profile create on identity register is **idempotent on duplicate email** (handler returns); identity register is **not** (client error).
-- FastEndpoints reflection helpers (`AddFromServices…`) come from the generator—rebuild if missing after structural changes.
+- FastEndpoints reflection helpers (`AddFromServices…`) and `Allow` ACL classes come from the generator—rebuild if missing after structural/`AccessControl` changes.
 - Release builds **strip Tests**; don’t rely on test code in Release publish.
 - README says Notifications may subscribe to profile registration in places historically; **code** subscribes to `UserIdentityVerificationIssuedEvent`—prefer source over stale prose if they diverge.
 - Do not invent a central broker; architecture is brokerless FE remote messaging.

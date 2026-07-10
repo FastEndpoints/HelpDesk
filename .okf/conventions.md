@@ -34,7 +34,9 @@ resource: README.md
 ## APIs and data
 
 - REST only on owning service; routes without leading slash in `Configure()` (e.g. `Post("identities/register")`)
-- Anonymous where appropriate (`AllowAnonymous`); profile `GET /profiles/me` authenticated
+- Anonymous where appropriate (`AllowAnonymous`); profile `GET /profiles/me` authenticated + permission-gated
+- Mesh authz: Identity stores/mints **group names** (`AuthGroups`); resource services expand roles → local FE `Allow` **codes** via `IClaimsTransformation`. Group name ≡ JWT `role` ≡ `AccessControl` group literal ≡ `Allow.{Name}`
+- `AccessControl(..., "User")` group args must be **string literals** (FE generator syntax); keep values aligned with `AuthGroups`
 - Email lookup normalization: `NormalizeForLookup()` → trim + upper invariant; store both raw and normalized
 - Events after successful local write; broadcast via `.Broadcast()`
 - Contracts: only service name, events, subscriber ID arrays—no entities/endpoints/stores
@@ -43,7 +45,7 @@ resource: README.md
 
 - Options pattern: `Get<TSettings>()`, `Configure<TSettings>(Configuration)`
 - Store interfaces + Mongo implementations registered in `Program.cs`
-- JWT: UserIdentity signs (private PEM); UserProfile validates (public key)
+- JWT: UserIdentity signs (private PEM) with `sub` + role group claims; UserProfile validates (public key) and expands groups to permissions
 - Notifications: `SmtpService` only when Production **and** `Smtp:Enabled`; else `NullEmailSender`
 - Testing env may load user secrets (`AddUserSecrets` when environment is `Testing`)
 

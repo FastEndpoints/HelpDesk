@@ -1,6 +1,8 @@
+using Auth;
 using Common.StorageProvider;
 using Contracts.UserIdentity;
 using Contracts.UserProfile;
+using Microsoft.AspNetCore.Authentication;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
 using Services.UserProfile;
@@ -46,6 +48,7 @@ bld.Services
    .AddAuthorization();
 
 bld.Services
+   .AddSingleton<IClaimsTransformation, PermissionClaimsTransformation>()
    .AddFastEndpoints()
    .AddEventSubscriberStorageProvider<EventRecord, EventStorageProvider>()
    .AddSingleton<IUserProfileStore, MongoUserProfileStore>()

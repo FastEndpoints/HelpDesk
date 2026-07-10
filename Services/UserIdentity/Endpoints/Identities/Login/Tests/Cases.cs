@@ -1,4 +1,6 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using Common.Tools;
 using UserIdentity.Tests;
 
 namespace Endpoints.Identities.Login.Tests;
@@ -77,5 +79,9 @@ public class Cases(Sut App) : TestBase<Sut>
         res.AccessToken.ShouldNotBeNullOrWhiteSpace();
         res.ExpiresAt.ShouldBeGreaterThan(beforeLogin.AddDays(6));
         res.ExpiresAt.ShouldBeLessThan(DateTime.UtcNow.AddDays(8));
+
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(res.AccessToken);
+        jwt.Claims.ShouldContain(c => c.Type == "role" && c.Value == AuthGroups.User);
+        jwt.Claims.ShouldContain(c => c.Type == "sub" && c.Value == identity.ID);
     }
 }

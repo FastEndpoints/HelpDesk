@@ -36,6 +36,7 @@ public class Sut : AppFixture<Program>
             NormalizedEmail = email.NormalizeForLookup(),
             PasswordHash = passwordHash,
             VerificationCode = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)),
+            Groups = [..AuthGroups.Defaults],
             Status = status,
             CreatedAt = DateTime.UtcNow
         };

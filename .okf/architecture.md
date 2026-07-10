@@ -33,7 +33,7 @@ UserIdentity ──events──► UserProfile
 
 | Layer | Projects | Role |
 | --- | --- | --- |
-| Common | `StorageProvider`, `Tools` | Event storage provider; `NormalizeForLookup` |
+| Common | `StorageProvider`, `Tools` | Event storage provider; `NormalizeForLookup`; `AuthGroups` (permission group names only) |
 | Contracts | `UserIdentity`, `UserProfile`, `Notifications` | `Service.Name`, events, `EventSubscribers` |
 | Services | same three names | Endpoints, persistence, hubs, subscriptions |
 
@@ -71,8 +71,9 @@ Each service owns its MongoDB database (config `*Settings` / `DatabaseName`). No
 
 ## Security / auth (boundaries)
 
-- UserIdentity issues RSA JWT (`sub` = identity id); signs with private PEM.
-- UserProfile validates JWT with public key (asymmetric); `GET /profiles/me` requires auth.
+- UserIdentity issues RSA JWT (`sub` + role **group names** from identity `Groups`); signs with private PEM. Never references another service’s `Allow`.
+- UserProfile validates JWT with public key (asymmetric); expands roles → local permission codes via `IClaimsTransformation`; `GET /profiles/me` requires auth + `Profiles_Read_Own` (group `User`).
+- Shared group names live in `Common.Tools.AuthGroups` (constants only—not a full RBAC engine).
 - Notifications has no public business API / no JWT surface today.
 - Details: [security.md](security.md).
 

@@ -14,7 +14,7 @@ resource: HelpDesk.slnx
 HelpDesk/
 ├── Common/
 │   ├── StorageProvider/     # EventRecord, EventStorageProvider
-│   └── Tools/               # StringExtensions.NormalizeForLookup
+│   └── Tools/               # StringExtensions, AuthGroups (permission group names)
 ├── Contracts/
 │   ├── UserIdentity/        # Service, Events, EventSubscribers
 │   ├── UserProfile/
@@ -33,7 +33,8 @@ HelpDesk/
 | Path | Contents |
 | --- | --- |
 | `Common/StorageProvider` | Mongo-backed FE remote event hub/subscriber storage |
-| `Common/Tools` | Generic helpers only |
+| `Common/Tools` | Generic helpers; `AuthGroups` (mesh permission group name constants) |
+| `Services/UserProfile/Auth/` | `PermissionClaimsTransformation` (role groups → local Allow codes) |
 | `Contracts/<Name>` | `Service.cs`, `Events.cs`, `EventSubscribers.cs` as needed |
 | `Services/<Name>/Program.cs` | Host, Kestrel IPC/HTTP, DI, hubs, MapRemote |
 | `Services/<Name>/Meta.cs` | Global usings |

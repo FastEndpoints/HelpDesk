@@ -9,6 +9,7 @@ sealed class UserIdentityEntity : Entity
     public string NormalizedEmail { get; init; } = null!;
     public string PasswordHash { get; init; } = null!;
     public string VerificationCode { get; init; } = null!;
+    public string[] Groups { get; init; } = [];
     public UserIdentityStatus Status { get; init; } = UserIdentityStatus.Deactivated;
     public DateTime CreatedAt { get; init; }
 
@@ -19,6 +20,7 @@ sealed class UserIdentityEntity : Entity
             NormalizedEmail = email.NormalizeForLookup(),
             PasswordHash = passwordHash,
             VerificationCode = CreateVerificationCode(),
+            Groups = [..AuthGroups.Defaults],
             CreatedAt = now
         };
 
