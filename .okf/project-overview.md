@@ -34,14 +34,16 @@ Current system covers the **user onboarding path**:
 
 ## Status
 
-Active development. Targets .NET 10. Local mesh uses IPC (`ListenInterProcess` / `MapRemote`); remote topology is deployment config, not business-code change.
+Active monorepo development. `backend/` targets .NET 10; `frontend/` requires Node 26 or newer and pnpm 11 or newer with SvelteKit. The frontend currently provides a landing page, generated API types, and server-only client/session helpers—not optional auth/profile UI.
+
+Deployment decisions for verification-link routing and profile-picture serving/public URLs remain unresolved and block shipping those corresponding UI flows.
 
 ## Non-goals
 
 - Central broker (RabbitMQ/Kafka/Service Bus)
 - Service-to-service REST for internal workflows
 - Shared domain models across services
-- Cross-service project references between `Services/*`
+- Cross-service project references between `backend/Services/*`
 - Exhaustive multi-domain helpdesk product surface yet—onboarding mesh only
 
 ## Glossary
@@ -58,4 +60,4 @@ Active development. Targets .NET 10. Local mesh uses IPC (`ListenInterProcess` /
 
 - `README.md`
 - `HelpDesk.slnx`
-- `Directory.Packages.props`
+- `backend/Directory.Packages.props`

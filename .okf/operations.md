@@ -1,55 +1,66 @@
 ---
 type: Playbook
 title: Operations
-description: Local runtime topology, ports, databases, and configuration keys (names only) for HelpDesk services.
+description: Local SvelteKit, backend service, and authenticated MongoDB runtime configuration.
 tags: [ops]
-resource: Services/UserIdentity/appsettings.json
+resource: compose.yaml
 ---
 
 # Operations
 
-## Deploy model
+## Topology and ports
 
-Independently deployable service processes. Local default: IPC mesh on one machine. Remote: change listen/target topology only—contracts/handlers unchanged. No Docker/compose in repo today.
+| Process | Local endpoint | Notes |
+| --- | --- | --- |
+| SvelteKit | `http://localhost:5173` | External-client/BFF boundary |
+| UserIdentity | `http://localhost:5000` | OpenAPI/Scalar outside Production |
+| UserProfile | `http://localhost:5001` | OpenAPI/Scalar outside Production |
+| Notifications | none | IPC subscriber and jobs only |
+| MongoDB | `127.0.0.1:27017` by default (`MONGO_PORT` overrides host port) | authenticated single-node replica set `rs0` |
 
-## Services and ports
+Backend services are currently a host-local IPC FastEndpoints mesh: startup hardcodes `ListenInterProcess`, while Identity/Profile HTTP listeners use `ListenLocalhost`. SvelteKit calls Identity/Profile only from server modules. No current configuration or deployment manifest provides a network transport or multi-host topology.
 
-| Service | HTTP | IPC name | Notes |
-| --- | --- | --- | --- |
-| UserIdentity | `UserIdentity:HttpPort` (5000) | `USER_IDENTITY_SERVICE` | OpenAPI/Scalar non-prod |
-| UserProfile | `UserProfile:HttpPort` (5001) | `USER_PROFILE_SERVICE` | JWT auth; OpenAPI/Scalar non-prod; static profile pictures at `/profile-pictures` |
-| Notifications | none in Program | `NOTIFICATIONS_SERVICE` | Job queue + event subscriber |
+`compose.yaml` starts MongoDB and its replica-set initializer only. It does not build or launch the frontend or backend services; start those processes separately. Compose health-checks MongoDB, but the application services currently expose no health/readiness endpoints.
 
-## Data stores
+## Private frontend environment
 
-- MongoDB via `ConnectionStrings:MongoDB` (default `mongodb://localhost:27017`)
-- DBs: `HelpDesk_UserIdentity`, `HelpDesk_UserProfile`, `HelpDesk_Notifications` (+ `_TESTING` variants)
+- `IDENTITY_API_BASE_URL` (required when its client is used)
+- `PROFILE_API_BASE_URL` (required when its client is used)
 
-## Config and observability
+Backend origins are private server variables. Never prefix them with `PUBLIC_`.
 
-Config keys (names only—never commit real secrets):
+## MongoDB Compose
 
-| Key area | Examples |
-| --- | --- |
-| Mongo | `ConnectionStrings:MongoDB`, `*:DatabaseName` |
-| JWT issue | `UserIdentity:Jwt:Issuer`, `Audience`, `AccessTokenDays`, `PrivateKeyPem` |
-| JWT validate | `UserProfile:Jwt:Issuer`, `Audience`, `PublicKey` (tests may use `PrivateKey`) |
-| Profile pictures | `UserProfile:ProfilePictures:StorageRoot`, optional `PublicBaseUrl`, positive `MaxUploadBytes` (default 5 MiB; endpoint and multipart limits follow it) |
-| SMTP | `Smtp:Enabled`, `Host`, `Port`, `UseSsl`, `Username`, `Password`, `SenderName`, `SenderEmail`, `AdminName`, `AdminEmail` |
-| Logging | `Logging:LogLevel:*` |
+1. Install Podman plus a Compose provider (for example, `podman-compose`).
+2. `cp .env.example .env`; set both Mongo credentials. Compose fails fast with an actionable error when either is absent.
+3. `./scripts/setup-mongodb.sh` creates `.local/mongodb-keyfile` with mode `400`, or preserves an existing keyfile. Stop MongoDB and pass `--rotate` only for intentional rotation.
+4. `podman compose up -d`; inspect with `podman compose ps` / `podman compose logs -f mongodb`.
+5. Stop with `podman compose down`; `down -v` also deletes local data.
 
-- Picture files land under `StorageRoot` (default `data/profile-pictures`; testing uses `data/profile-pictures-testing`); writes use a temporary file followed by an atomic move
-- `StorageRoot` is a service-owned trust boundary and must not be writable by untrusted users/processes; lexical and symbolic-link checks are defense in depth, not a substitute for filesystem permissions
-- Object key: `profiles/{userIdentityId}/{version}.{ext}`; canonical relative-path checks and symbolic-link rejection prevent escaping the storage root
-- Public URL: if `PublicBaseUrl` is set (CDN/proxy), use that + key; otherwise current request `scheme://host/profile-pictures` + key
-- Local picture dirs are gitignored; not Mongo/GridFS
+Connection string (substitute `.env` credentials):
 
-- User secrets IDs present on service csprojs for local/test secrets
-- SMTP live only Production **and** `Smtp:Enabled`; otherwise null/log sender
-- Standard ASP.NET Core logging; no separate APM package in tree
+```text
+mongodb://helpdesk_local_admin:<password>@localhost:27017/?authSource=admin&replicaSet=rs0&directConnection=true
+```
+
+The query parameters are required for root authentication and the local single-node transaction-capable topology. Set backend `ConnectionStrings__MongoDB` or equivalent user secrets; base appsettings still contain an unauthenticated placeholder and are not sufficient for Compose.
+
+## Backend configuration names
+
+`ConnectionStrings:MongoDB`, `*:DatabaseName`, `UserIdentity:Jwt:{Issuer,Audience,AccessTokenDays,PrivateKeyPem}`, `UserProfile:Jwt:{Issuer,Audience,PublicKey}`, `UserProfile:ProfilePictures:{StorageRoot,PublicBaseUrl,MaxUploadBytes}`, and `Smtp:*`. Base JWT keys are empty. Generate one RSA pair, give Identity the private PEM and Profile its matching public PEM through user secrets or multiline-preserving environment variables; exact commands are in root `README.md`. Never commit real secrets or generated keys.
+
+All three service projects currently declare the same ASP.NET Core `UserSecretsId`; local settings therefore share one user-secrets store. Use fully qualified configuration keys and consider all service secrets co-located.
+
+## Runtime caveats
+
+- Notification jobs are non-distributed. Email processing is limited to one concurrent command per Notifications process with a two-minute execution limit; multiple instances are not coordinated. Handler failures are rescheduled one minute later.
+- Verification links and default profile-picture URLs derive from the raw request scheme/host. No service configures forwarded-header middleware; reverse-proxy deployments need an explicit public URL and trusted-header strategy.
+- Deployment destination for verification links and deployment/storage/public-URL strategy for profile pictures remain unresolved. Those decisions block shipping the associated frontend UI flows.
 
 ## Sources
 
-- `Services/*/appsettings.json`
-- `Services/*/Program.cs`
-- `Services/*/Properties/launchSettings.json`
+- `compose.yaml`
+- `.env.example`
+- `frontend/.env.example`
+- `scripts/setup-mongodb.sh`
+- `backend/Services/`

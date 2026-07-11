@@ -1,61 +1,106 @@
 ---
 type: Playbook
 title: Workflows
-description: Restore, build, run, test, and format commands for the HelpDesk solution.
+description: Monorepo bootstrap, build, run, test, format, and OpenAPI commands.
 tags: [build]
 resource: README.md
 ---
 
 # Workflows
 
-## Setup
+## Bootstrap
 
-- Install .NET 10 SDK
-- MongoDB reachable at connection string (default `mongodb://localhost:27017`)
-- JWT keys for non-test runs: set `UserIdentity:Jwt:PrivateKeyPem` and matching `UserProfile:Jwt:PublicKey` (user secrets or env)—empty defaults in base `appsettings.json`
+Required: .NET 10, Node 26 or newer (root `engines`; `.node-version` selects 26.4.0), pnpm 11 or newer (root `engines`; `packageManager` selects 11.10.0 by default), Podman plus a Compose provider (for example, `podman-compose`), OpenSSL. Root `.npmrc` enables strict engine enforcement.
 
 ```bash
-dotnet restore
+# Preferred when Corepack is available:
+corepack enable
+corepack prepare pnpm@11.10.0 --activate
+# Otherwise:
+npm install --global pnpm@11.10.0
+pnpm install --frozen-lockfile
 ```
 
-## Build and run
+## Infrastructure
 
 ```bash
-dotnet build
-dotnet run --project Services/UserIdentity/Services.UserIdentity.csproj
-dotnet run --project Services/UserProfile/Services.UserProfile.csproj
-dotnet run --project Services/Notifications/Services.Notifications.csproj
+cp .env.example .env                 # replace local Mongo credentials
+./scripts/setup-mongodb.sh           # creates keyfile or preserves the existing one
+# ./scripts/setup-mongodb.sh --rotate  # explicit rotation only; stop MongoDB first
+podman compose up -d
+podman compose ps
+podman compose logs -f mongodb
+podman compose down
+podman compose down -v               # destructive: removes Mongo data volume
 ```
 
-Local HTTP: UserIdentity `:5000`, UserProfile `:5001` (from appsettings / launchSettings). Mesh IPC uses contract `Service.Name` values—run subscribers with publishers as needed for full onboarding.
+Authenticated local backend connection string (substitute `.env` values):
 
-IDE: `.run/RunAll.run.xml` multi-launch configuration.
+```text
+mongodb://helpdesk_local_admin:<password>@localhost:27017/?authSource=admin&replicaSet=rs0&directConnection=true
+```
 
-OpenAPI/Scalar (non-Production): UserIdentity and UserProfile map OpenAPI + Scalar (`/scalar` launchUrl).
+Set it through `ConnectionStrings__MongoDB` or user secrets. Before authenticated local API use, generate matching Identity private/Profile public RSA PEM keys and configure them through user secrets or multiline-preserving environment variables; use the root README commands.
 
-## Lint and format
+## Root commands
 
 ```bash
-dotnet format
-dotnet test
+pnpm backend:restore
+pnpm backend:build
+pnpm backend:build:release
+pnpm backend:test
+pnpm backend:format:check
+pnpm stack:dev
+pnpm frontend:dev
+pnpm frontend:check
+pnpm frontend:lint
+pnpm frontend:format:check
+pnpm frontend:test:unit
+pnpm frontend:test:e2e
+pnpm frontend:build
+pnpm frontend:api:check
+pnpm check:quick
+pnpm check:full
 ```
 
-## Codegen and migrations
+## Full-stack run
 
-- No EF migrations. Mongo indexes created at startup in `*Database.InitializeAsync`.
-- FastEndpoints generators run on build (`FastEndpoints.Generator`).
+After configuring root `.env`, run `pnpm stack:dev`. It creates `frontend/.env` and local JWT keys when absent, starts MongoDB plus all backend and frontend processes in the foreground, and tears the complete stack down on Ctrl+C or when any application process exits. Ctrl+C is a successful shutdown; application failures retain their nonzero exit status.
 
-## Adding a service (checklist)
+## Direct run
 
-1. `Contracts/<Name>/` with `Service.Name` + owned events
-2. `Services/<Name>/` FastEndpoints host; refs own contract + Common as needed
-3. Ref other contracts only for consumed events
-4. IPC listen / MapRemote / hubs in `Program.cs`
-5. Private persistence + colocated tests
-6. Update solution + OKF
+```bash
+cp frontend/.env.example frontend/.env
+dotnet run --project backend/Services/UserIdentity/Services.UserIdentity.csproj
+dotnet run --project backend/Services/UserProfile/Services.UserProfile.csproj
+dotnet run --project backend/Services/Notifications/Services.Notifications.csproj
+pnpm --dir frontend dev
+```
+
+Frontend 5173; Identity 5000; Profile 5001; MongoDB 27017; Notifications has no public HTTP port.
+
+## Frontend and Playwright
+
+From `frontend/`: `pnpm check`, `pnpm lint`, `pnpm format:check`, `pnpm test:unit`, `pnpm build`. Before first E2E run install browsers with `pnpm exec playwright install`, then run `pnpm test:e2e`. Playwright builds/previews on 4173 and configures that origin as `baseURL`; its command is self-contained, so `check:full` does not prebuild separately.
+
+## OpenAPI
+
+From `frontend/`, with Identity/Profile live for refresh/live-check:
+
+```bash
+pnpm api:refresh
+pnpm api:generate
+pnpm api:check
+pnpm api:check:live
+```
+
+`api:refresh` fetches and normalizes every service spec before writing any snapshot; `api:generate` regenerates declarations; `api:check` compares declarations to committed snapshots offline; `api:check:live` additionally compares live specs. Override live URLs with `IDENTITY_OPENAPI_URL` / `PROFILE_OPENAPI_URL`.
 
 ## Sources
 
-- `README.md`
-- `Services/*/Properties/launchSettings.json`
-- `Services/*/appsettings.json`
+- `package.json`
+- `frontend/package.json`
+- `frontend/scripts/openapi.mjs`
+- `frontend/playwright.config.ts`
+- `compose.yaml`
+- `.env.example`

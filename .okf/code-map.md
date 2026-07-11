@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: Code Map
-description: Top-level and per-service layout for Common, Contracts, and Services projects.
+description: Monorepo layout for the SvelteKit frontend and .NET backend projects.
 tags: [layout]
 resource: HelpDesk.slnx
 ---
@@ -12,57 +12,75 @@ resource: HelpDesk.slnx
 
 ```text
 HelpDesk/
-├── Common/
-│   ├── StorageProvider/     # EventRecord, EventStorageProvider
-│   └── Tools/               # StringExtensions, PermissionGroups (permission group names)
-├── Contracts/
-│   ├── UserIdentity/        # Service, Events, EventSubscribers
-│   ├── UserProfile/
-│   └── Notifications/       # Service name only (no events yet)
-├── Services/
-│   ├── UserIdentity/
-│   ├── UserProfile/
-│   └── Notifications/
-├── Directory.Packages.props # central package versions
+├── frontend/
+│   ├── src/lib/server/api/       # server-only typed backend clients and JWT cookie helper
+│   ├── src/lib/api/generated/    # generated OpenAPI TypeScript declarations
+│   ├── openapi/                  # committed backend API snapshots
+│   └── scripts/openapi.mjs
+├── backend/
+│   ├── Common/{StorageProvider,Tools}/
+│   ├── Contracts/{UserIdentity,UserProfile,Notifications}/
+│   ├── Services/{UserIdentity,UserProfile,Notifications}/
+│   └── Directory.Packages.props
 ├── HelpDesk.slnx
-└── README.md
+├── scripts/setup-mongodb.sh
+├── compose.yaml
+├── package.json
+└── pnpm-workspace.yaml
 ```
 
-## Modules
+## Backend modules
 
 | Path | Contents |
 | --- | --- |
-| `Common/StorageProvider` | Mongo-backed FE remote event hub/subscriber storage |
-| `Common/Tools` | Generic helpers; `PermissionGroups` (mesh permission group name constants) |
-| `Services/UserProfile/Auth/` | `PermissionClaimsTransformation` (role groups → local Allow codes) |
-| `Services/UserProfile/ProfilePictures/` | Local FS storage, ImageSharp processor, public URL builder |
-| `Contracts/<Name>` | `Service.cs`, `Events.cs`, `EventSubscribers.cs` as needed |
-| `Services/<Name>/Program.cs` | Host, Kestrel IPC/HTTP, DI, hubs, MapRemote |
-| `Services/<Name>/Meta.cs` | Global usings |
-| `Services/<Name>/Configuration/` | Typed settings bound from configuration |
-| `Services/<Name>/Endpoints/` | Public REST (area/action folders) |
-| `Services/<Name>/Persistence/` | Entities, stores, DB init |
-| `Services/<Name>/Subscriptions/<Publisher>/<Event>/` | Handlers + Tests |
-| `Services/<Name>/Tests/` | `Sut` fixture, assembly Meta, xunit.runner.json |
-| `Services/Notifications/Email/`, `Jobs/` | SMTP/null sender, job storage |
+| `backend/Common/StorageProvider` | Mongo-backed remote event storage |
+| `backend/Common/Tools` | Generic helpers and permission group names |
+| `backend/Contracts/<Name>` | Service name, events, subscriber IDs as needed |
+| `backend/Services/<Name>/Program.cs` | Host, IPC/HTTP, DI, hubs, subscriptions |
+| `backend/Services/<Name>/Endpoints/` | Service-owned REST endpoints |
+| `backend/Services/<Name>/Persistence/` | Private entities, stores, database init |
+| `backend/Services/<Name>/Subscriptions/` | Event handlers and colocated tests |
+| `backend/Services/<Name>/Tests/` | Shared service test fixtures |
 
-## Entry points
+## Frontend modules
 
-| Service | Host entry | HTTP (local) | IPC name |
-| --- | --- | --- | --- |
-| UserIdentity | `Services/UserIdentity/Program.cs` | port from `UserIdentity:HttpPort` (5000) | `USER_IDENTITY_SERVICE` |
-| UserProfile | `Services/UserProfile/Program.cs` | `UserProfile:HttpPort` (5001) | `USER_PROFILE_SERVICE` |
-| Notifications | `Services/Notifications/Program.cs` | IPC only (no public HTTP listen in Program) | `NOTIFICATIONS_SERVICE` |
+| Path | Contents |
+| --- | --- |
+| `frontend/src/routes/` | SvelteKit routes; currently only the foundation landing page |
+| `frontend/src/lib/server/api/` | BFF-only config, clients, errors, and session cookie convention |
+| `frontend/openapi/*.json` | Normalized Identity/Profile OpenAPI snapshots |
+| `frontend/src/lib/api/generated/*.d.ts` | Generated API path/schema types |
 
-IDE multi-run: `.run/RunAll.run.xml` launches all three profiles.
+No registration, login, verification, profile-edit, or profile-picture UI currently exists.
 
-## Generated code
+## Entry points and ports
 
-- FastEndpoints.Generator source generators (reflection cache e.g. `AddFromServicesUserIdentity()`). Do not hand-edit generated outputs; regenerate via build.
-- Tests excluded from Release builds (`Compile Remove="**\Tests\**"`).
+| Process | Entry | Local port |
+| --- | --- | --- |
+| Frontend | `frontend/` Vite/SvelteKit | 5173 (Playwright preview 4173) |
+| UserIdentity | `backend/Services/UserIdentity/Program.cs` | 5000 |
+| UserProfile | `backend/Services/UserProfile/Program.cs` | 5001 |
+| Notifications | `backend/Services/Notifications/Program.cs` | no public HTTP port |
+| MongoDB | `compose.yaml` | 127.0.0.1:27017 |
+
+## Sibling library sources
+
+Outside this monorepo (paths relative to HelpDesk root):
+
+| Library | Path |
+| --- | --- |
+| FastEndpoints | `../FastEndpoints/` |
+| MongoDB.Entities | `../MongoDB.Entities/` |
+
+Use these when tracing FE messaging, endpoint generation, or MongoDB.Entities persistence behavior. HelpDesk still consumes NuGet packages via CPM; these are source trees for inspection, not in-solution project refs.
 
 ## Sources
 
+- `package.json`
+- `frontend/package.json`
+- `frontend/src/`
 - `HelpDesk.slnx`
-- `Services/*/Program.cs`
-- `Services/*/*.csproj`
+- `backend/Services/*/Program.cs`
+- `compose.yaml`
+- `../FastEndpoints/`
+- `../MongoDB.Entities/`

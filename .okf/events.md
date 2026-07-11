@@ -3,7 +3,7 @@ type: Event
 title: Events
 description: Contract events, hubs, and subscribers for the onboarding mesh.
 tags: [api]
-resource: Contracts/UserIdentity/Events.cs
+resource: backend/Contracts/UserIdentity/Events.cs
 ---
 
 # Events
@@ -50,8 +50,8 @@ No owned events currently (`Contracts.Notifications` has `Service.Name` only).
 
 ## Sources
 
-- `Contracts/UserIdentity/Events.cs`
-- `Contracts/UserIdentity/EventSubscribers.cs`
-- `Contracts/UserProfile/Events.cs`
-- `Services/*/Program.cs`
-- `Services/*/Subscriptions/**`
+- `backend/Contracts/UserIdentity/Events.cs`
+- `backend/Contracts/UserIdentity/EventSubscribers.cs`
+- `backend/Contracts/UserProfile/Events.cs`
+- `backend/Services/*/Program.cs`
+- `backend/Services/*/Subscriptions/**`

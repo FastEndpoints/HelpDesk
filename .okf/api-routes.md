@@ -15,7 +15,7 @@ tags: [api]
 | POST | `/identities/login` | Anonymous | Validate credentials + Active status; return RSA JWT (`sub` = identity id) |
 | GET | `/identities/verify/{VerificationCode}` | Anonymous | Activate identity; broadcast verified (idempotent if already Active) |
 
-Implementation roots: `Services/UserIdentity/Endpoints/Identities/{Register,Login,Verify}/`.
+Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Register,Login,Verify}/`.
 
 ### Request notes
 
@@ -33,7 +33,7 @@ Implementation roots: `Services/UserIdentity/Endpoints/Identities/{Register,Logi
 
 Public static files: `GET /profile-pictures/**` (no auth) from local storage root.
 
-Implementation: `Services/UserProfile/Endpoints/Profiles/{GetCurrent,UpdateCurrent,UploadPicture,DeletePicture}/`.
+Implementation: `backend/Services/UserProfile/Endpoints/Profiles/{GetCurrent,UpdateCurrent,UploadPicture,DeletePicture}/`.
 
 ### Request notes
 
@@ -47,6 +47,6 @@ No public business HTTP API. Program registers handler server / jobs only (plus 
 
 ## Sources
 
-- `Services/UserIdentity/Endpoints/**`
-- `Services/UserProfile/Endpoints/**`
-- `Services/*/Program.cs`
+- `backend/Services/UserIdentity/Endpoints/**`
+- `backend/Services/UserProfile/Endpoints/**`
+- `backend/Services/*/Program.cs`

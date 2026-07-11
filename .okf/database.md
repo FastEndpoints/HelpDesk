@@ -39,7 +39,7 @@ No schema migration framework—index create is idempotent startup work.
 
 ## Sources
 
-- `Services/*/Persistence/*Database.cs`
-- `Services/*/Persistence/*Entity.cs`
-- `Common/StorageProvider/EventRecord.cs`
-- `Services/Notifications/Jobs/JobRecord.cs`
+- `backend/Services/*/Persistence/*Database.cs`
+- `backend/Services/*/Persistence/*Entity.cs`
+- `backend/Common/StorageProvider/EventRecord.cs`
+- `backend/Services/Notifications/Jobs/JobRecord.cs`

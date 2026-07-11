@@ -1,406 +1,210 @@
 # HelpDesk
 
-HelpDesk is a brokerless, event-driven microservice mesh built with .NET and FastEndpoints. The solution is organized around independently deployable service nodes that communicate through public contract events instead of direct service references, synchronous RPC, or a central message broker.
+HelpDesk is a monorepo containing a SvelteKit frontend and a .NET 10 brokerless, event-driven microservice backend.
 
-The current system covers the user onboarding path:
-
-```text
-register identity
-  -> publish UserIdentityRegisteredEvent
-  -> create deactivated user profile
-  -> publish UserProfileRegisteredEvent
-  -> publish UserIdentityVerificationIssuedEvent
-  -> send welcome/verification email
-  -> verify identity
-  -> publish UserIdentityVerifiedEvent
-  -> activate matching user profile
-```
-
-## Architecture at a glance
+## Repository layout
 
 ```text
 HelpDesk/
-├── Common/                 # reusable infrastructure and generic helpers
-├── Contracts/              # public service contracts: service names, events, DTOs
-├── Services/               # independently deployable service implementations
-├── Directory.Packages.props
-└── HelpDesk.slnx
+├── frontend/                     # SvelteKit application and server-only backend clients
+├── backend/
+│   ├── Common/                   # reusable infrastructure and helpers
+│   ├── Contracts/                # public service event contracts
+│   ├── Services/                 # UserIdentity, UserProfile, Notifications
+│   └── Directory.Packages.props
+├── HelpDesk.slnx
+├── scripts/setup-mongodb.sh
+├── compose.yaml
+├── package.json                  # root workspace commands
+└── pnpm-workspace.yaml
 ```
 
-Current projects:
+Backend services remain independently deployable. Cross-service business workflows use FastEndpoints remote events only: services do not reference another service implementation or call another service's REST API to complete internal work.
 
-| Area | Project | Responsibility |
+## Frontend boundary
+
+`frontend/` is a SvelteKit application using `adapter-node`. It is the external-client/BFF boundary:
+
+- browsers communicate with SvelteKit, not directly with backend service origins;
+- typed `openapi-fetch` clients live under `frontend/src/lib/server/api/`, are server-only, and throw `ApiError` with preserved RFC problem details for non-success responses;
+- backend origins are private runtime variables named `IDENTITY_API_BASE_URL` and `PROFILE_API_BASE_URL`; never expose them with a `PUBLIC_` prefix;
+- JWTs returned by UserIdentity are held by the BFF in the `helpdesk_session` cookie, with `HttpOnly`, `SameSite=Lax`, `Path=/`, a maximum seven-day lifetime, and `Secure` in production. Do not expose JWTs to browser JavaScript or browser storage.
+
+The current frontend is a foundation/landing page with server API helpers. Registration, login, verification, profile editing, and profile-picture UI flows are **not implemented**. Deployment decisions for the verification-link destination and profile-picture serving/public URL remain unresolved; those decisions block shipping the corresponding UI flows.
+
+## Prerequisites and bootstrap
+
+- .NET 10 SDK
+- Node.js **26 or newer** (`.node-version` selects 26.4.0)
+- pnpm **11 or newer** (`packageManager` selects 11.10.0 by default)
+- Podman with a Compose provider (for example, the `podman-compose` package/command)
+- OpenSSL (for the local MongoDB keyfile)
+
+Install the pinned pnpm version from the repository root:
+
+```bash
+# Prefer Corepack when the installed Node distribution provides it.
+corepack enable
+corepack prepare pnpm@11.10.0 --activate
+
+# If Corepack is unavailable:
+npm install --global pnpm@11.10.0
+
+pnpm install --frozen-lockfile
+```
+
+## Local infrastructure
+
+Create local credentials and the MongoDB replica-set keyfile before starting Compose:
+
+```bash
+cp .env.example .env
+# Replace MONGO_ROOT_PASSWORD in .env (and optionally the local username).
+./scripts/setup-mongodb.sh
+podman compose up -d
+podman compose ps
+```
+
+MongoDB is bound to `127.0.0.1:27017` by default. Set `MONGO_PORT` in `.env` if that host port is already occupied. Configure each backend service with the authenticated local connection string (replace values to match `.env`):
+
+```text
+mongodb://helpdesk_local_admin:<password>@localhost:27017/?authSource=admin&replicaSet=rs0&directConnection=true
+```
+
+For example, use the ASP.NET Core environment variable `ConnectionStrings__MongoDB` or user secrets. Do not commit credentials.
+
+Lifecycle commands:
+
+```bash
+podman compose logs -f mongodb
+podman compose down
+podman compose down -v  # destructive: also removes local MongoDB data
+```
+
+`./scripts/setup-mongodb.sh` preserves an existing keyfile and restores mode `400`. Rotation invalidates the replica-set shared secret for running members, so stop MongoDB and run `./scripts/setup-mongodb.sh --rotate` only when intentional.
+
+## Local JWT keys
+
+Base appsettings intentionally leave the Identity signing key and Profile validation key empty. Generate one local RSA keypair and configure the matching private/public halves without committing either file:
+
+```bash
+mkdir -p .local/jwt
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+  -out .local/jwt/identity-private.pem
+openssl rsa -pubout -in .local/jwt/identity-private.pem \
+  -out .local/jwt/profile-public.pem
+chmod 600 .local/jwt/identity-private.pem .local/jwt/profile-public.pem
+
+dotnet user-secrets set "UserIdentity:Jwt:PrivateKeyPem" \
+  "$(cat .local/jwt/identity-private.pem)" \
+  --project backend/Services/UserIdentity/Services.UserIdentity.csproj
+dotnet user-secrets set "UserProfile:Jwt:PublicKey" \
+  "$(cat .local/jwt/profile-public.pem)" \
+  --project backend/Services/UserProfile/Services.UserProfile.csproj
+```
+
+Environment variables are also supported as `UserIdentity__Jwt__PrivateKeyPem` and `UserProfile__Jwt__PublicKey`; preserve the PEM newlines. The Identity private key and Profile public key must come from the same pair or authenticated Profile requests will fail. Never commit generated keys, put the private key in frontend configuration, or use it in browser code.
+
+## Run locally
+
+After configuring the root `.env`, start the complete local stack in one foreground command:
+
+```bash
+pnpm stack:dev
+```
+
+The command creates `frontend/.env` and local JWT keys when missing, starts MongoDB and all application processes, and stops the complete stack cleanly on Ctrl+C. To run processes in separate terminals instead:
+
+```bash
+cp frontend/.env.example frontend/.env
+pnpm backend:restore
+
+dotnet run --project backend/Services/UserIdentity/Services.UserIdentity.csproj
+dotnet run --project backend/Services/UserProfile/Services.UserProfile.csproj
+dotnet run --project backend/Services/Notifications/Services.Notifications.csproj
+
+pnpm frontend:dev
+```
+
+Local ports:
+
+| Process | URL/port |
+| --- | --- |
+| SvelteKit dev server | `http://localhost:5173` |
+| UserIdentity | `http://localhost:5000` |
+| UserProfile | `http://localhost:5001` |
+| MongoDB | `127.0.0.1:27017` |
+| Notifications | no public HTTP port (IPC/jobs only) |
+
+UserIdentity and UserProfile expose non-production OpenAPI documents at `/openapi/v1.json` and Scalar at `/scalar`.
+
+## Commands
+
+Root workspace commands:
+
+```bash
+pnpm backend:restore
+pnpm backend:build
+pnpm backend:build:release
+pnpm backend:test
+pnpm backend:format:check
+pnpm stack:dev
+pnpm frontend:dev
+pnpm frontend:check
+pnpm frontend:lint
+pnpm frontend:format:check
+pnpm frontend:test:unit
+pnpm frontend:test:e2e
+pnpm frontend:build
+pnpm frontend:api:check
+pnpm check:quick
+pnpm check:full
+```
+
+Direct backend commands:
+
+```bash
+dotnet restore HelpDesk.slnx
+dotnet build HelpDesk.slnx
+dotnet test HelpDesk.slnx -c Debug
+dotnet format HelpDesk.slnx --verify-no-changes
+```
+
+Frontend commands (from `frontend/`):
+
+```bash
+pnpm dev
+pnpm check
+pnpm lint
+pnpm format:check
+pnpm test:unit
+pnpm exec playwright install       # first-time browser installation
+pnpm test:e2e
+pnpm build
+```
+
+Playwright builds and previews the frontend on port `4173` for end-to-end tests.
+
+## OpenAPI workflow
+
+With UserIdentity on port 5000 and UserProfile on port 5001:
+
+```bash
+cd frontend
+pnpm api:refresh       # fetch and normalize live specs into openapi/*.json
+pnpm api:generate      # generate src/lib/api/generated/*.d.ts from snapshots
+pnpm api:check         # verify generated types match committed snapshots; no live services needed
+pnpm api:check:live    # verify live specs, snapshots, and generated types all match
+```
+
+`IDENTITY_OPENAPI_URL` and `PROFILE_OPENAPI_URL` may override the default live document URLs. Commit refreshed snapshots and generated types together after an intentional backend API change.
+
+## Backend service map
+
+| Service | Responsibility | Public API |
 | --- | --- | --- |
-| Common | `Common/StorageProvider` | MongoDB-backed FastEndpoints remote event storage. |
-| Common | `Common/Tools` | Generic helpers, such as lookup string normalization. |
-| Contracts | `Contracts/UserIdentity` | UserIdentity service name and identity events. |
-| Contracts | `Contracts/UserProfile` | UserProfile service name and profile events. |
-| Contracts | `Contracts/Notifications` | Notifications service name. |
-| Service | `Services/UserIdentity` | Public identity REST API, identity persistence, identity event hubs. |
-| Service | `Services/UserProfile` | Authenticated profile REST API, profile persistence, and reactions to identity events. |
-| Service | `Services/Notifications` | Reactions to profile events and email job processing. |
-
-Projects currently target .NET 10. Package versions are centrally managed in `Directory.Packages.props`.
-
-## Brokerless mesh
-
-Services use `FastEndpoints.Messaging.Remote` to form a mesh of service nodes. There is no RabbitMQ, Kafka, Azure Service Bus, or other central broker in the current architecture.
-
-Each publisher exposes event hubs. Each subscriber maps a remote publisher and subscribes to specific event contracts. The shared `Common/StorageProvider` project provides durable MongoDB-backed event storage for the FastEndpoints remote messaging infrastructure.
-
-The mental model:
-
-```text
-Contracts = public event language
-Common    = reusable infrastructure/helpers
-Services  = isolated deployable nodes
-Mesh      = remote event queues between service nodes
-Broker    = none
-RPC       = none for business workflows
-```
-
-## Strict event-driven cross-service communication
-
-Cross-service business workflows use events only.
-
-Rules:
-
-- A service may expose public REST endpoints for external clients.
-- A service must not call another service's REST endpoint to complete an internal business workflow.
-- A service must not reference another service implementation project.
-- A service may reference another service's contract project only when it needs that service's public events or DTOs.
-- Events describe facts that already happened, not commands asking another service to do something.
-- Events are published only after the owning service has committed its local state change.
-- Subscribers update only their own local state or queue their own internal work.
-
-Allowed reference direction:
-
-```text
-Services -> Contracts
-Services -> Common
-Contracts -> package references only
-Common -> package references only
-```
-
-Never do this:
-
-```text
-Services/UserProfile -> Services/UserIdentity
-Services/Notifications -> Services/UserProfile
-```
-
-Use contracts instead:
-
-```text
-Services/UserProfile -> Contracts/UserIdentity
-Services/Notifications -> Contracts/UserProfile
-```
-
-## Contracts as the only cross-service language
-
-Contract projects are intentionally small. They contain only public cross-service language:
-
-- the stable service name used for IPC/remote mapping;
-- event records emitted by the owning service;
-- simple DTOs required to interpret those events, when needed.
-
-They must not contain:
-
-- endpoints;
-- entities;
-- persistence code;
-- stores/repositories;
-- handlers;
-- SMTP/email implementation;
-- service-local business logic.
-
-Current event contracts:
-
-```text
-Contracts.UserIdentity
-├── UserIdentityRegisteredEvent
-├── UserIdentityVerificationIssuedEvent
-└── UserIdentityVerifiedEvent
-
-Contracts.UserProfile
-└── UserProfileRegisteredEvent
-
-Contracts.Notifications
-└── no events currently
-```
-
-This keeps cross-service coupling explicit and versionable. Service internals remain private to the service that owns them.
-
-## IPC-first development, remote-ready deployment
-
-The project currently uses IPC for local service-to-service communication:
-
-```csharp
-ListenInterProcess(Service.Name)
-MapRemote(Service.Name, ...)
-```
-
-This makes local development simple. Multiple services can run on the same machine without introducing a broker or configuring network endpoints for every service.
-
-The architecture is still remote-ready. To lift a service out to a separate process, machine, container, or host, the event contracts and handlers do not need to change. The deployment only needs to change how the publisher listens and how subscribers target that publisher. In other words, topology is a configuration/deployment concern; business code remains event-based and contract-based.
-
-## Current onboarding flow
-
-```text
-External client
-  │
-  │ POST /identities/register
-  ▼
-UserIdentity service
-  - creates a deactivated identity
-  - stores normalized email and password hash
-  - publishes UserIdentityRegisteredEvent
-  - publishes UserIdentityVerificationIssuedEvent
-  │
-  ├────────────────────────────────────────────┐
-  ▼                                           ▼
-UserProfile service                       Notifications service
-  - subscribes to                           - subscribes to
-    UserIdentityRegisteredEvent               UserIdentityVerificationIssuedEvent
-  - creates a deactivated profile           - queues/sends welcome email
-  - publishes UserProfileRegisteredEvent      with verification link
-  │
-  │ GET /identities/verify/{verificationCode}
-  ▼
-UserIdentity service
-  - validates verification code
-  - activates identity
-  - publishes UserIdentityVerifiedEvent
-  │
-  ▼
-UserProfile service
-  - subscribes to UserIdentityVerifiedEvent
-  - activates the profile matched by normalized email
-  - marks EmailVerified = true
-```
-
-UserIdentity public endpoints:
-
-```text
-POST /identities/register
-POST /identities/login
-GET  /identities/verify/{VerificationCode}
-```
-
-UserProfile public endpoints:
-
-```text
-GET  /profiles/me
-```
-
-Notifications currently reacts to events and does not expose public business APIs.
-
-## Service responsibilities
-
-### UserIdentity
-
-Owns identity data and public identity API behavior.
-
-Responsibilities:
-
-- register identities;
-- store credentials and identity status;
-- validate login credentials;
-- issue JWTs;
-- verify email/identity activation codes;
-- publish identity lifecycle events.
-
-Publishes:
-
-- `UserIdentityRegisteredEvent`
-- `UserIdentityVerificationIssuedEvent`
-- `UserIdentityVerifiedEvent`
-
-### UserProfile
-
-Owns profile data and the authenticated profile API. Profiles are derived from identity events and kept private to the profile service.
-
-Responsibilities:
-
-- create a deactivated profile when an identity is registered;
-- publish profile registration events;
-- activate a profile when the corresponding identity is verified;
-- return the authenticated user's local active profile from `GET /profiles/me`;
-- keep profile persistence and profile rules service-local.
-
-Subscribes to:
-
-- `UserIdentityRegisteredEvent`
-- `UserIdentityVerifiedEvent`
-
-Publishes:
-
-- `UserProfileRegisteredEvent`
-
-### Notifications
-
-Owns notification delivery and email job processing.
-
-Responsibilities:
-
-- react to identity verification-issued events;
-- build notification email content;
-- queue durable email jobs;
-- send through SMTP only when configured;
-- use a null sender by default in non-production/disabled SMTP scenarios.
-
-Subscribes to:
-
-- `UserIdentityVerificationIssuedEvent`
-
-## Typical service layout
-
-A service should be self-contained. The usual shape is:
-
-```text
-Services/<Service>/
-├── Program.cs                         # service startup, DI, event hubs/subscriptions
-├── Meta.cs                            # service-level global usings/metadata
-├── appsettings.json
-├── appsettings.Development.json
-├── appsettings.Testing.json
-├── Properties/launchSettings.json
-├── Endpoints/                         # public REST endpoints owned by the service
-│   └── <Area>/<Action>/
-│       ├── Endpoint.cs
-│       ├── Request.cs
-│       ├── Response.cs
-│       └── Tests/
-├── Persistence/                       # private entities, stores, DB initialization
-├── Subscriptions/                     # event handlers grouped by publisher/event
-│   └── <Publisher>/<Event>/
-│       ├── <Event>Handler.cs
-│       └── Tests/
-├── Tests/                             # shared service-local test fixture/config
-└── <service-specific folders>/         # jobs, email, auth, etc. when owned locally
-```
-
-Do not force empty folders into every service. Use the shape that matches the service's responsibility.
-
-## Preferred solution layout
-
-Preferred top-level layout:
-
-```text
-Common/<ReusableInfrastructureOrHelper>/
-Contracts/<ServiceName>/
-Services/<ServiceName>/
-```
-
-Guidelines:
-
-- Put reusable infrastructure in `Common/` only after it is truly generic.
-- Keep domain behavior out of `Common/`.
-- Put public service contracts in `Contracts/<ServiceName>/`.
-- Put implementation details in `Services/<ServiceName>/`.
-- Add tests inside the service project near the code they cover.
-- Reference another service's contract only if consuming that service's events.
-- Do not create shared domain models across services.
-
-## Testing strategy
-
-Tests are colocated with the service that owns the behavior.
-
-Endpoint tests live beside endpoints:
-
-```text
-Services/UserIdentity/Endpoints/Identities/Register/Tests/
-Services/UserIdentity/Endpoints/Identities/Login/Tests/
-Services/UserIdentity/Endpoints/Identities/Verify/Tests/
-Services/UserProfile/Endpoints/Profiles/GetCurrent/Tests/
-```
-
-Subscription tests live beside event handlers:
-
-```text
-Services/UserProfile/Subscriptions/UserIdentity/Registration/Tests/
-Services/UserProfile/Subscriptions/UserIdentity/Verification/Tests/
-Services/Notifications/Subscriptions/UserProfile/Registration/Tests/
-```
-
-Shared service test setup lives under:
-
-```text
-Services/<Service>/Tests/
-```
-
-The goal is to verify each service at its public boundaries:
-
-1. public REST endpoints, for client-facing API behavior;
-2. event subscriptions/reactions, for cross-service event behavior;
-3. event publication, where the service owns and broadcasts a contract event.
-
-With this architecture, cross-service integration tests are not required for baseline confidence. The service boundary is either a REST endpoint or a contract event. If every service verifies its public REST API and its reactions to every event it subscribes to, the important behavior is covered without binding tests to a specific deployment topology.
-
-This keeps tests fast, local, and aligned with service ownership:
-
-- UserIdentity tests its registration/login/verify endpoints and its published identity events.
-- UserProfile tests its `GET /profiles/me` endpoint, reactions to identity events, and published profile event.
-- Notifications tests its reaction to identity verification-issued events and email job/sending behavior.
-
-A full end-to-end test can still be added later for smoke testing a deployed environment, but it is not the primary correctness strategy for this codebase.
-
-## Adding a new service
-
-1. Create `Contracts/<ServiceName>/`.
-2. Add a stable `Service.Name` constant.
-3. Add events the service owns and publishes.
-4. Create `Services/<ServiceName>/` as a standalone FastEndpoints app.
-5. Reference the service's own contract project.
-6. Reference `Common/StorageProvider` if the service publishes or subscribes to events.
-7. Reference other contract projects only for events this service consumes.
-8. Configure IPC/remote messaging in `Program.cs`.
-9. Add service-owned persistence under `Persistence/`.
-10. Add public REST endpoints under `Endpoints/`, if the service exposes an API.
-11. Add event handlers under `Subscriptions/<Publisher>/<Event>/`.
-12. Add colocated endpoint and subscription tests.
-13. Do not expose entities, stores, or service-local rules through contracts or common projects.
-
-## Adding an event
-
-1. Add the event record to the owning service's contract project.
-2. Implement `IEvent`.
-3. Register the event hub in the owning service.
-4. Publish the event only after local persistence succeeds.
-5. In each subscriber, reference the owning contract project.
-6. Add a handler under `Subscriptions/<Publisher>/<Event>/`.
-7. Register the subscription with `MapRemote(...)`.
-8. Add/update tests for publication and reaction behavior.
-
-## Local development commands
-
-From the repository root:
-
-```bash
-dotnet restore
-dotnet build
-dotnet test
-dotnet format
-```
-
-Run individual services with `dotnet run --project`, for example:
-
-```bash
-dotnet run --project Services/UserIdentity/Services.UserIdentity.csproj
-dotnet run --project Services/UserProfile/Services.UserProfile.csproj
-dotnet run --project Services/Notifications/Services.Notifications.csproj
-```
-
-Default local settings use MongoDB at `mongodb://localhost:27017`. Testing settings use service-specific `_TESTING` database names.
-
-## Coupling checklist
-
-Before adding or changing service behavior, check:
-
-- Does the owning service commit its own state before publishing an event?
-- Is cross-service communication represented as an event contract?
-- Is the subscriber using only contract data, without calling back to the publisher?
-- Are service internals still private to `Services/<ServiceName>/`?
-- Are contracts free of persistence and implementation details?
-- Are tests colocated with the endpoint or subscription they cover?
-- Can the service still move from local IPC to remote deployment without changing business logic?
+| UserIdentity | Credentials, identity status, RSA JWT issuance, identity events | register, login, verify |
+| UserProfile | Profile lifecycle and profile-picture backend capability | authenticated current-profile read/update and picture mutation |
+| Notifications | Verification email jobs and SMTP/null delivery | none |
+
+The onboarding event flow is registration → profile creation and verification issuance → notification email → identity verification → profile activation. Contract projects under `backend/Contracts/` are the only cross-service language; they contain service names and events, not persistence or service-local behavior.

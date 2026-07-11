@@ -9,7 +9,7 @@ tags: [architecture]
 
 ## UserIdentity (`USER_IDENTITY_SERVICE`)
 
-- **Project:** `Services/UserIdentity`
+- **Project:** `backend/Services/UserIdentity`
 - **Owns:** identity credentials, status, verification codes, JWT issuance, identity events
 - **Refs:** `Contracts.UserIdentity`, `Common.StorageProvider`, `Common.Tools`
 - **Publishes:** `UserIdentityRegisteredEvent`, `UserIdentityVerificationIssuedEvent`, `UserIdentityVerifiedEvent`
@@ -18,7 +18,7 @@ tags: [architecture]
 
 ## UserProfile (`USER_PROFILE_SERVICE`)
 
-- **Project:** `Services/UserProfile`
+- **Project:** `backend/Services/UserProfile`
 - **Owns:** profile entity lifecycle, display name, and profile pictures (local filesystem + static URL; no Media service)
 - **Refs:** `Contracts.UserProfile`, `Contracts.UserIdentity`, `Common.StorageProvider`, `Common.Tools`
 - **Packages:** SixLabors.ImageSharp (300×300 center-crop encode)
@@ -28,8 +28,9 @@ tags: [architecture]
 
 ## Notifications (`NOTIFICATIONS_SERVICE`)
 
-- **Project:** `Services/Notifications`
+- **Project:** `backend/Services/Notifications`
 - **Owns:** email templates, SMTP/null sender, durable email jobs
+- **Job limits:** non-distributed processing; `SendEmailCommand` concurrency 1 per process with a 2-minute execution limit; multiple instances are not coordinated; handler failures reschedule the job one minute later
 - **Refs:** `Contracts.Notifications`, `Contracts.UserIdentity`, `Common.StorageProvider`
 - **Publishes:** none
 - **Subscribes:** `UserIdentityVerificationIssuedEvent` → queue `SendEmailCommand`
@@ -44,10 +45,10 @@ UserIdentity  --UserIdentityVerifiedEvent-->  UserProfile
 UserProfile   --UserProfileRegisteredEvent-->  (no subscribers yet)
 ```
 
-Subscriber ID arrays: `Contracts/*/EventSubscribers.cs` must match consumer `Service.Name`.
+Subscriber ID arrays: `backend/Contracts/*/EventSubscribers.cs` must match consumer `Service.Name`.
 
 ## Sources
 
-- `Services/*/Program.cs`
-- `Contracts/*/`
+- `backend/Services/*/Program.cs`
+- `backend/Contracts/*/`
 - `README.md`

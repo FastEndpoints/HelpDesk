@@ -10,7 +10,7 @@
         </option>
         <option name="executable">
           <ExecutableSnapshot>
-            <option name="id" value="runConfig:.NET Launch Settings Profile.UserProfiles" />
+            <option name="id" value="runConfig:.NET Launch Settings Profile.Services.UserProfile: UserProfiles" />
           </ExecutableSnapshot>
         </option>
       </ExecutableRowSnapshot>
@@ -22,7 +22,7 @@
         </option>
         <option name="executable">
           <ExecutableSnapshot>
-            <option name="id" value="runConfig:.NET Launch Settings Profile.Notifications" />
+            <option name="id" value="runConfig:.NET Launch Settings Profile.Services.Notifications: Notifications" />
           </ExecutableSnapshot>
         </option>
       </ExecutableRowSnapshot>
@@ -34,7 +34,7 @@
         </option>
         <option name="executable">
           <ExecutableSnapshot>
-            <option name="id" value="runConfig:.NET Launch Settings Profile.UserIdentity" />
+            <option name="id" value="runConfig:.NET Launch Settings Profile.Services.UserIdentity: UserIdentity" />
           </ExecutableSnapshot>
         </option>
       </ExecutableRowSnapshot>

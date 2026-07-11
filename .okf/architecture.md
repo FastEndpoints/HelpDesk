@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: Architecture
-description: Brokerless FastEndpoints remote mesh with Contracts/Common/Services layering and event-only cross-service workflows.
+description: Brokerless FastEndpoints remote mesh with backend/Contracts/backend/Common/Services layering and event-only cross-service workflows.
 tags: [architecture]
 resource: README.md
 ---
@@ -18,7 +18,11 @@ Brokerless microservice mesh:
 - **Mesh** = FastEndpoints.Messaging.Remote event queues between nodes
 - **Broker** = none; **business RPC** = none
 
-Local: `ListenInterProcess(Service.Name)` + `MapRemote(publisherName, …)`. Topology (IPC vs network) is config/deployment; handlers and contracts stay the same.
+Current topology is host-local and hardcoded in service startup: `ListenInterProcess(Service.Name)` + `MapRemote(publisherName, …)`, with public HTTP listeners bound through `ListenLocalhost`. No current configuration or deployment manifest implements a network transport or multi-host mesh; adding one is an architecture/deployment change even if handlers and contracts remain stable.
+
+## Monorepo and external-client boundary
+
+`frontend/` is the SvelteKit adapter-node application; `backend/` contains the .NET solution and Common/Contracts/Services layers. Browsers use SvelteKit as a BFF. Only server modules under `frontend/src/lib/server/api/` know the private Identity/Profile origins and attach server-held bearer tokens. Their shared client middleware converts every backend non-success response to `ApiError`, preserving RFC problem details and the HTTP status. The existing frontend is a foundation page and API helpers, not completed auth/profile UI.
 
 ## Components
 
@@ -51,7 +55,7 @@ Common → package refs only
 **Forbidden:**
 
 ```text
-Services/A → Services/B
+backend/Services/A → backend/Services/B
 Contracts → Services or domain logic
 Common → domain / service-specific behavior
 ```
@@ -88,6 +92,6 @@ Each service owns its MongoDB database (config `*Settings` / `DatabaseName`). No
 ## Sources
 
 - `README.md`
-- `Services/*/Program.cs`
-- `Contracts/*/`
-- `Common/StorageProvider/`
+- `backend/Services/*/Program.cs`
+- `backend/Contracts/*/`
+- `backend/Common/StorageProvider/`

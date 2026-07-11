@@ -52,6 +52,6 @@ resource: README.md
 ## Sources
 
 - `README.md`
-- `Services/*/Program.cs`
-- `Services/*/Endpoints/**`
-- `Services/*/Persistence/**`
+- `backend/Services/*/Program.cs`
+- `backend/Services/*/Endpoints/**`
+- `backend/Services/*/Persistence/**`
