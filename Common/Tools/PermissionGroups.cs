@@ -5,7 +5,7 @@ namespace Common.Tools;
 /// Group name ≡ JWT role claim value ≡ FastEndpoints AccessControl groupName ≡ Allow.{Name}.
 /// Registry holds names only; resource services expand groups to local permission codes.
 /// </summary>
-public static class AuthGroups
+public static class PermissionGroups
 {
     public const string User = nameof(User);
     public const string Admin = nameof(Admin);

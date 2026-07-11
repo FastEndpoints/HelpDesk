@@ -81,7 +81,7 @@ public class Cases(Sut App) : TestBase<Sut>
         res.ExpiresAt.ShouldBeLessThan(DateTime.UtcNow.AddDays(8));
 
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(res.AccessToken);
-        jwt.Claims.ShouldContain(c => c.Type == "role" && c.Value == AuthGroups.User);
+        jwt.Claims.ShouldContain(c => c.Type == "role" && c.Value == PermissionGroups.User);
         jwt.Claims.ShouldContain(c => c.Type == "sub" && c.Value == identity.ID);
     }
 }

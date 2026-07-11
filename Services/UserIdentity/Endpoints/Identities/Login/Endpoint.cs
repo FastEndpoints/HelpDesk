@@ -32,7 +32,7 @@ sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEnti
             ThrowError("Account not verified.");
 
         var expiresAt = DateTime.UtcNow.AddDays(_jwtSettings.AccessTokenDays);
-        var groups = identity.Groups is { Length: > 0 } ? identity.Groups : AuthGroups.Defaults;
+        var groups = identity.Groups is { Length: > 0 } ? identity.Groups : PermissionGroups.Defaults;
         var accessToken = JwtBearer.CreateToken(
             o =>
             {

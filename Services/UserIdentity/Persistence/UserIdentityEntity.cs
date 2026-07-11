@@ -20,7 +20,7 @@ sealed class UserIdentityEntity : Entity
             NormalizedEmail = email.NormalizeForLookup(),
             PasswordHash = passwordHash,
             VerificationCode = CreateVerificationCode(),
-            Groups = [..AuthGroups.Defaults],
+            Groups = [..PermissionGroups.Defaults],
             CreatedAt = now
         };
 

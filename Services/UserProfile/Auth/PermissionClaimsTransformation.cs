@@ -29,7 +29,7 @@ sealed class PermissionClaimsTransformation : IClaimsTransformation
             // Only map groups that exist on generated Allow (Admin appears after an endpoint uses it).
             var groupCodes = role switch
             {
-                AuthGroups.User => Services.UserProfile.Auth.Allow.User,
+                PermissionGroups.User => Services.UserProfile.Auth.Allow.User,
                 _ => null
             };
 

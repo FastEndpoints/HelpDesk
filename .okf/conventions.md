@@ -35,8 +35,8 @@ resource: README.md
 
 - REST only on owning service; routes without leading slash in `Configure()` (e.g. `Post("identities/register")`)
 - Anonymous where appropriate (`AllowAnonymous`); profile `GET /profiles/me` authenticated + permission-gated
-- Mesh authz: Identity stores/mints **group names** (`AuthGroups`); resource services expand roles → local FE `Allow` **codes** via `IClaimsTransformation`. Group name ≡ JWT `role` ≡ `AccessControl` group literal ≡ `Allow.{Name}`
-- `AccessControl(..., "User")` group args must be **string literals** (FE generator syntax); keep values aligned with `AuthGroups`
+- Mesh authz: Identity stores/mints **group names** (`PermissionGroups`); resource services expand roles → local FE `Allow` **codes** via `IClaimsTransformation`. Group name ≡ JWT `role` ≡ `AccessControl` group literal ≡ `Allow.{Name}`
+- `AccessControl(..., "User")` group args must be **string literals** (FE generator syntax); keep values aligned with `PermissionGroups`
 - Email lookup normalization: `NormalizeForLookup()` → trim + upper invariant; store both raw and normalized
 - Events after successful local write; broadcast via `.Broadcast()`
 - Contracts: only service name, events, subscriber ID arrays—no entities/endpoints/stores

@@ -22,7 +22,7 @@ public class Sut : AppFixture<Program>
                 o.Audience = jwtSettings.Audience;
                 o.ExpireAt = DateTime.UtcNow.AddHours(1);
                 o.User["sub"] = userIdentityId;
-                o.User.Roles.Add(AuthGroups.User);
+                o.User.Roles.Add(PermissionGroups.User);
             });
     }
 

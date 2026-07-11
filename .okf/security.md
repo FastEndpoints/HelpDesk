@@ -12,9 +12,9 @@ tags: [security]
 - **Issuer:** UserIdentity login mints RSA-SHA256 JWT via FastEndpoints.Security `JwtBearer.CreateToken`
 - Claims:
   - `sub` = identity document id
-  - `role` (FE default role claim) = permission **group names** from `UserIdentityEntity.Groups` (default `AuthGroups.User`)
+  - `role` (FE default role claim) = permission **group names** from `UserIdentityEntity.Groups` (default `PermissionGroups.User`)
   - issuer/audience from config; expiry `AccessTokenDays` (default 7)
-- Empty/null `Groups` on old docs → login falls back to `AuthGroups.Defaults` (`User`)
+- Empty/null `Groups` on old docs → login falls back to `PermissionGroups.Defaults` (`User`)
 - **Validator:** UserProfile `AddAuthenticationJwtBearer` asymmetric with `PublicKey`, matching issuer/audience
 - Login requires `UserIdentityStatus.Active` (unverified accounts rejected)
 
@@ -22,14 +22,14 @@ tags: [security]
 
 Invariant: **group name ≡ JWT role claim ≡ FE `AccessControl` groupName ≡ `Allow.{Name}`**.
 
-1. **Common.Tools.AuthGroups** — shared group **name** constants only (`User`, `Admin`, `All`, `Defaults`). No FE codes, no expand helpers.
+1. **Common.Tools.PermissionGroups** — shared group **name** constants only (`User`, `Admin`, `All`, `Defaults`). No FE codes, no expand helpers.
 2. **Identity** stores `Groups` on the identity; mints those names as JWT **roles**. Never mints FE permission hash codes or imports another service’s `Allow`.
 3. **Resource services** (UserProfile today) expand roles → local permission **codes** via `IClaimsTransformation` (`PermissionClaimsTransformation`):
    - Maps known roles to generated `Allow.{Group}` (`IEnumerable` of codes)
    - Adds claim type `permissions` (FE default `PermissionsClaimType`)
    - Unknown roles → no codes (fail closed); multi-role → union
    - Idempotent if `permissions` already present
-4. **Endpoints** call `AccessControl(keyName, Apply.ToThisEndpoint, "User")` so the generator places the code under `Allow.User`. FE generator only accepts **string-literal** group args (not `AuthGroups.User` const refs)—literals must match registry values.
+4. **Endpoints** call `AccessControl(keyName, Apply.ToThisEndpoint, "User")` so the generator places the code under `Allow.User`. FE generator only accepts **string-literal** group args (not `PermissionGroups.User` const refs)—literals must match registry values.
 
 Handler rules for `GET /profiles/me` still apply **after** the permission gate: missing `sub` → 401; missing profile → 404; non-Active → 403.
 
@@ -62,7 +62,7 @@ Verification codes: 32 random bytes hex; unique sparse index.
 
 ## Sources
 
-- `Common/Tools/AuthGroups.cs`
+- `Common/Tools/PermissionGroups.cs`
 - `Services/UserIdentity/Persistence/UserIdentityEntity.cs`
 - `Services/UserIdentity/Endpoints/Identities/Login/Endpoint.cs`
 - `Services/UserProfile/Auth/PermissionClaimsTransformation.cs`

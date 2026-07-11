@@ -15,7 +15,7 @@ tags: [gotcha]
 - Tests need **MongoDB**; Testing DB names end with `_TESTING`. Fixtures drop collections—don’t point tests at shared prod data.
 - JWT: empty `PrivateKeyPem` / `PublicKey` in base appsettings—configure secrets for real runs. Profile tests use Testing JWT keys in `appsettings.Testing.json`.
 - Mesh authz: Identity JWT carries **role group names**, not FE permission hash codes. Resource services must register `IClaimsTransformation` (or tests must mint `permissions` codes) or endpoints with `AccessControl(..., Apply.ToThisEndpoint)` return 403.
-- FE `AccessControl` group names are **syntax-only string literals**—`AuthGroups.User` const refs are ignored by the generator; use `"User"` and keep values in sync.
+- FE `AccessControl` group names are **syntax-only string literals**—`PermissionGroups.User` const refs are ignored by the generator; use `"User"` and keep values in sync.
 - `Allow.Admin` (etc.) only exists after some endpoint in that assembly uses that group literal.
 - Notifications SMTP is off unless **Production and** `Smtp:Enabled`. Dev/test use null/test senders.
 - Notifications has **no public business HTTP port** in Program (IPC + jobs only).
