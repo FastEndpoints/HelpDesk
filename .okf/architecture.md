@@ -72,7 +72,7 @@ Each service owns its MongoDB database (config `*Settings` / `DatabaseName`). No
 ## Security / auth (boundaries)
 
 - UserIdentity issues RSA JWT (`sub` + role **group names** from identity `Groups`); signs with private PEM. Never references another service’s `Allow`.
-- UserProfile validates JWT with public key (asymmetric); expands roles → local permission codes via `IClaimsTransformation`; `GET /profiles/me` requires auth + `Profiles_Read_Own` (group `User`).
+- UserProfile validates JWT with public key (asymmetric); expands roles → local permission codes via `IClaimsTransformation`; `GET /profiles/me` requires `Profiles_Read_Own`, `PUT /profiles/me` requires `Profiles_Update_Own` (both group `User`).
 - Shared group names live in `Common.Tools.PermissionGroups` (constants only—not a full RBAC engine).
 - Notifications has no public business API / no JWT surface today.
 - Details: [security.md](security.md).

@@ -45,4 +45,11 @@ sealed class MongoUserProfileStore : IUserProfileStore
                    .Modify(p => p.Status, UserProfileStatus.Active)
                    .Modify(p => p.EmailVerified, true)
                    .ExecuteAsync(ct);
+
+    public async Task UpdateDisplayNameAsync(string userIdentityId, string displayName, CancellationToken ct)
+        => await DB.Default
+                   .Update<UserProfileEntity>()
+                   .Match(p => p.UserIdentityId == userIdentityId)
+                   .Modify(p => p.DisplayName, displayName)
+                   .ExecuteAsync(ct);
 }

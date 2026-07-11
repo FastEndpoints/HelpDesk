@@ -19,11 +19,11 @@ tags: [architecture]
 ## UserProfile (`USER_PROFILE_SERVICE`)
 
 - **Project:** `Services/UserProfile`
-- **Owns:** profile entity lifecycle and `GET /profiles/me`
+- **Owns:** profile entity lifecycle and authenticated `GET`/`PUT /profiles/me`
 - **Refs:** `Contracts.UserProfile`, `Contracts.UserIdentity`, `Common.StorageProvider`, `Common.Tools`
 - **Publishes:** `UserProfileRegisteredEvent` (hub registered; subscriber list empty today)
 - **Subscribes:** `UserIdentityRegisteredEvent` → create deactivated profile; `UserIdentityVerifiedEvent` → activate by email + `EmailVerified`
-- **REST:** authenticated current profile
+- **REST:** authenticated current profile read + display-name update
 
 ## Notifications (`NOTIFICATIONS_SERVICE`)
 

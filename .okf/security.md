@@ -29,9 +29,9 @@ Invariant: **group name ≡ JWT role claim ≡ FE `AccessControl` groupName ≡ 
    - Adds claim type `permissions` (FE default `PermissionsClaimType`)
    - Unknown roles → no codes (fail closed); multi-role → union
    - Idempotent if `permissions` already present
-4. **Endpoints** call `AccessControl(keyName, Apply.ToThisEndpoint, "User")` so the generator places the code under `Allow.User`. FE generator only accepts **string-literal** group args (not `PermissionGroups.User` const refs)—literals must match registry values.
+4. **Endpoints** call `AccessControl(keyName, Apply.ToThisEndpoint, PermissionGroups.User)` so the generator places the code under `Allow.User`. Always pass `PermissionGroups.*` constants for group args—never raw string literals.
 
-Handler rules for `GET /profiles/me` still apply **after** the permission gate: missing `sub` → 401; missing profile → 404; non-Active → 403.
+Handler rules for `GET`/`PUT /profiles/me` still apply **after** the permission gate: missing `sub` → 401; missing profile → 404; non-Active → 403. Read uses `Profiles_Read_Own`; update uses `Profiles_Update_Own` (both group `User`).
 
 Register / login / verify: `AllowAnonymous`.
 

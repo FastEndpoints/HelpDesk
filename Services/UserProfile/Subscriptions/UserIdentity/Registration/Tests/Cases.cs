@@ -94,5 +94,13 @@ public class Cases(Sut App) : TestBase<Sut>
 
         public Task ActivateByEmailAsync(string email, CancellationToken ct)
             => Task.CompletedTask;
+
+        public Task UpdateDisplayNameAsync(string userIdentityId, string displayName, CancellationToken ct)
+        {
+            var profile = Created.Single(p => p.UserIdentityId == userIdentityId);
+            profile.DisplayName = displayName;
+
+            return Task.CompletedTask;
+        }
     }
 }

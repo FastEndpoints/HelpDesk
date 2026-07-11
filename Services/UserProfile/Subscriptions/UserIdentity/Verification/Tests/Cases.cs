@@ -48,5 +48,13 @@ public class Cases
 
             return Task.CompletedTask;
         }
+
+        public Task UpdateDisplayNameAsync(string userIdentityId, string displayName, CancellationToken ct)
+        {
+            var profile = profiles.Single(p => p.UserIdentityId == userIdentityId);
+            profile.DisplayName = displayName;
+
+            return Task.CompletedTask;
+        }
     }
 }

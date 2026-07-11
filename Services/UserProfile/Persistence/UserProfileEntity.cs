@@ -8,7 +8,7 @@ sealed class UserProfileEntity : Entity
     public string UserIdentityId { get; init; } = null!;
     public string Email { get; init; } = null!;
     public string NormalizedEmail { get; init; } = null!;
-    public string DisplayName { get; init; } = null!;
+    public string DisplayName { get; set; } = null!;
     public UserProfileStatus Status { get; set; } = UserProfileStatus.Deactivated;
     public bool EmailVerified { get; set; }
     public DateTime CreatedAt { get; init; }
