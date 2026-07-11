@@ -59,6 +59,7 @@ public class Cases(Sut App) : TestBase<Sut>
         res.Email.ShouldBe(profile.Email);
         res.DisplayName.ShouldBe("Jane Updated");
         res.Status.ShouldBe(UserProfileStatus.Active.ToString());
+        res.PictureUrl.ShouldBeNull();
 
         var stored = await DB.Default.Find<UserProfileEntity>().OneAsync(profile.ID, Cancellation);
         stored.ShouldNotBeNull();

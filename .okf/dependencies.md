@@ -28,6 +28,7 @@ Project references only declare package **names** (no versions) when using CPM.
 | MongoDB.Entities | Persistence + indexes |
 | MailKit | SMTP (Notifications) |
 | Scalar.AspNetCore | API reference UI (non-prod) |
+| SixLabors.ImageSharp | Profile picture decode/resize/crop/encode (UserProfile) |
 | Microsoft.OpenApi | OpenAPI docs |
 | xunit.v3, Shouldly, Microsoft.NET.Test.Sdk | Tests |
 | ASP.NET Core Identity `PasswordHasher<T>` | Password hashing (UserIdentity) |

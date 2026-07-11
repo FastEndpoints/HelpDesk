@@ -21,7 +21,8 @@ tags: [gotcha]
 - Notifications has **no public business HTTP port** in Program (IPC + jobs only).
 - Email lookup always uses `NormalizeForLookup` (trim + upper). Duplicate checks depend on normalized unique indexes.
 - Profile create on identity register is **idempotent on duplicate email** (handler returns); identity register is **not** (client error).
-- FastEndpoints reflection helpers (`AddFromServices…`) and `Allow` ACL classes come from the generator—rebuild if missing after structural/`AccessControl` changes.
+- FastEndpoints reflection helpers (`AddFromServices…`) and `Allow` ACL classes come from the generator—rebuild if missing after structural/`AccessControl` changes. **AccessControl `keyName` values must be unique** in the assembly (duplicate keys fail generation with CS0102).
+- Profile pictures: store **object key only** on `UserProfileEntity` (never image bytes in Mongo). Files under `UserProfile:ProfilePictures:StorageRoot`. Leave `PublicBaseUrl` empty so URLs follow the current host; set it only for CDN/proxy overrides. Static files at `/profile-pictures` are unauthenticated by design.
 - Release builds **strip Tests**; don’t rely on test code in Release publish.
 - README says Notifications may subscribe to profile registration in places historically; **code** subscribes to `UserIdentityVerificationIssuedEvent`—prefer source over stale prose if they diverge.
 - Do not invent a central broker; architecture is brokerless FE remote messaging.

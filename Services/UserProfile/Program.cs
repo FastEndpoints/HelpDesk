@@ -3,7 +3,10 @@ using Common.StorageProvider;
 using Contracts.UserIdentity;
 using Contracts.UserProfile;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 using MongoDB.Driver;
+using ProfilePictures;
 using Scalar.AspNetCore;
 using Services.UserProfile;
 using Subscriptions.UserIdentity.Registration;
@@ -24,7 +27,14 @@ if (bld.Environment.IsEnvironment("Testing"))
     bld.Configuration.AddUserSecrets<Program>(optional: true);
 
 var settings = bld.Configuration.Get<UserProfileSettings>() ?? new();
+var maxUploadBytes = settings.UserProfile.ProfilePictures.MaxUploadBytes;
+
+if (maxUploadBytes <= 0 || maxUploadBytes > long.MaxValue - UserProfileSettings.ProfilePictureSettings.MultipartOverheadBytes)
+    throw new InvalidOperationException("UserProfile:ProfilePictures:MaxUploadBytes must be a positive value with room for multipart framing.");
+
 bld.Services.Configure<UserProfileSettings>(bld.Configuration);
+bld.Services.Configure<FormOptions>(
+    o => o.MultipartBodyLengthLimit = maxUploadBytes + UserProfileSettings.ProfilePictureSettings.MultipartOverheadBytes);
 
 bld.WebHost.ConfigureKestrel(
     o =>
@@ -52,6 +62,8 @@ bld.Services
    .AddFastEndpoints()
    .AddEventSubscriberStorageProvider<EventRecord, EventStorageProvider>()
    .AddSingleton<IUserProfileStore, MongoUserProfileStore>()
+   .AddSingleton<IProfilePictureStorage, LocalProfilePictureStorage>()
+   .AddSingleton<IProfilePictureProcessor, ImageSharpProfilePictureProcessor>()
    .AddHandlerServer();
 
 if (!bld.Environment.IsProduction())
@@ -68,6 +80,19 @@ var app = bld.Build();
 
 var db = await DB.InitAsync(settings.UserProfile.DatabaseName, MongoClientSettings.FromConnectionString(settings.ConnectionStrings.MongoDB));
 await UserProfileDatabase.InitializeAsync(db);
+
+var pictureRoot = settings.UserProfile.ProfilePictures.StorageRoot;
+var absolutePictureRoot = Path.IsPathRooted(pictureRoot)
+                              ? pictureRoot
+                              : Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, pictureRoot));
+Directory.CreateDirectory(absolutePictureRoot);
+
+app.UseStaticFiles(
+    new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(absolutePictureRoot),
+        RequestPath = LocalProfilePictureStorage.RequestPath
+    });
 
 app.UseAuthentication()
    .UseAuthorization()

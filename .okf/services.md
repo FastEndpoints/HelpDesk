@@ -19,11 +19,12 @@ tags: [architecture]
 ## UserProfile (`USER_PROFILE_SERVICE`)
 
 - **Project:** `Services/UserProfile`
-- **Owns:** profile entity lifecycle and authenticated `GET`/`PUT /profiles/me`
+- **Owns:** profile entity lifecycle, display name, and profile pictures (local filesystem + static URL; no Media service)
 - **Refs:** `Contracts.UserProfile`, `Contracts.UserIdentity`, `Common.StorageProvider`, `Common.Tools`
+- **Packages:** SixLabors.ImageSharp (300×300 center-crop encode)
 - **Publishes:** `UserProfileRegisteredEvent` (hub registered; subscriber list empty today)
 - **Subscribes:** `UserIdentityRegisteredEvent` → create deactivated profile; `UserIdentityVerifiedEvent` → activate by email + `EmailVerified`
-- **REST:** authenticated current profile read + display-name update
+- **REST:** authenticated current profile read/update + picture upload/delete; public static `/profile-pictures`
 
 ## Notifications (`NOTIFICATIONS_SERVICE`)
 

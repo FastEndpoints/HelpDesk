@@ -11,6 +11,10 @@ sealed class UserProfileEntity : Entity
     public string DisplayName { get; set; } = null!;
     public UserProfileStatus Status { get; set; } = UserProfileStatus.Deactivated;
     public bool EmailVerified { get; set; }
+    /// <summary>
+    /// Relative object key under picture storage root (e.g. profiles/{userIdentityId}/{version}.jpg). Null when no picture.
+    /// </summary>
+    public string? PictureObjectKey { get; set; }
     public DateTime CreatedAt { get; init; }
 
     public static UserProfileEntity Create(string userIdentityId, string email, string displayName, DateTime now)

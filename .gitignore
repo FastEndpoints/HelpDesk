@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 *.swp
 
 .serena/
+
+# Local profile picture storage
+**/data/profile-pictures/
+**/data/profile-pictures-testing/

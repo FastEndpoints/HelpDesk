@@ -1,4 +1,4 @@
-namespace Endpoints.Profiles.GetCurrent;
+namespace Endpoints.Profiles.DeletePicture;
 
 sealed class Response
 {

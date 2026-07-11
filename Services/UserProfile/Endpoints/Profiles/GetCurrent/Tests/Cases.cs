@@ -48,6 +48,7 @@ public class Cases(Sut App) : TestBase<Sut>
         res.Email.ShouldBe(profile.Email);
         res.DisplayName.ShouldBe(profile.DisplayName);
         res.Status.ShouldBe(UserProfileStatus.Active.ToString());
+        res.PictureUrl.ShouldBeNull();
     }
 
     static string AuthHeader(HttpResponseMessage rsp)

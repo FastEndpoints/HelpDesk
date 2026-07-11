@@ -52,4 +52,18 @@ sealed class MongoUserProfileStore : IUserProfileStore
                    .Match(p => p.UserIdentityId == userIdentityId)
                    .Modify(p => p.DisplayName, displayName)
                    .ExecuteAsync(ct);
+
+    public async Task<bool> TryUpdatePictureObjectKeyAsync(string userIdentityId,
+                                                           string? expectedPictureObjectKey,
+                                                           string? pictureObjectKey,
+                                                           CancellationToken ct)
+    {
+        var result = await DB.Default
+                             .Update<UserProfileEntity>()
+                             .Match(p => p.UserIdentityId == userIdentityId && p.PictureObjectKey == expectedPictureObjectKey)
+                             .Modify(p => p.PictureObjectKey, pictureObjectKey)
+                             .ExecuteAsync(ct);
+
+        return result.ModifiedCount == 1;
+    }
 }

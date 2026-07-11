@@ -26,6 +26,7 @@
         <PackageReference Include="Microsoft.OpenApi"/>
         <PackageReference Include="MongoDB.Entities"/>
         <PackageReference Include="Scalar.AspNetCore"/>
+        <PackageReference Include="SixLabors.ImageSharp"/>
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' != 'Release'">

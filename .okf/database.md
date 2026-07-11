@@ -27,7 +27,7 @@ tags: [data]
 | Service | Entity | Collection | Notable fields / indexes |
 | --- | --- | --- | --- |
 | UserIdentity | `UserIdentityEntity` | `UserIdentities` | Unique `NormalizedEmail`; unique sparse `VerificationCode`; password hash; status |
-| UserProfile | `UserProfileEntity` | `UserProfiles` | Unique `NormalizedEmail`; index `UserIdentityId`; mutable `DisplayName`; status; EmailVerified |
+| UserProfile | `UserProfileEntity` | `UserProfiles` | Unique `NormalizedEmail`; index `UserIdentityId`; mutable `DisplayName`; optional `PictureObjectKey` (relative storage key, not image bytes); status; EmailVerified |
 | Shared pattern | `EventRecord` | (MongoDB.Entities default for type) | Compound index EventType, SubscriberID, IsComplete, ExpireOn |
 | Notifications | `JobRecord` | (type default) | Queue/complete/execute/expire indexes; TrackingID index |
 

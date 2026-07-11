@@ -41,6 +41,31 @@ public sealed class UserProfileSettings
         /// JWT token validation configuration shared with UserIdentity token issuance.
         /// </summary>
         public JwtSettings Jwt { get; set; } = new();
+
+        /// <summary>
+        /// Local profile picture storage and public URL settings.
+        /// </summary>
+        public ProfilePictureSettings ProfilePictures { get; set; } = new();
+    }
+
+    public sealed class ProfilePictureSettings
+    {
+        public const long MultipartOverheadBytes = 512 * 1024;
+
+        /// <summary>
+        /// Filesystem root for stored profile pictures (relative paths resolve against content root).
+        /// </summary>
+        public string StorageRoot { get; set; } = "data/profile-pictures";
+
+        /// <summary>
+        /// Optional absolute public base for picture URLs (CDN/proxy). When empty, URLs are built from the current request host + /profile-pictures.
+        /// </summary>
+        public string? PublicBaseUrl { get; set; }
+
+        /// <summary>
+        /// Maximum accepted upload size in bytes (default 5 MB).
+        /// </summary>
+        public long MaxUploadBytes { get; set; } = 5 * 1024 * 1024;
     }
 
     public sealed class JwtSettings

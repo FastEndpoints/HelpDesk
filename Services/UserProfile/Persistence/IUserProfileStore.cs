@@ -7,4 +7,5 @@ interface IUserProfileStore
     Task CreateAsync(UserProfileEntity profile, CancellationToken ct);
     Task ActivateByEmailAsync(string email, CancellationToken ct);
     Task UpdateDisplayNameAsync(string userIdentityId, string displayName, CancellationToken ct);
+    Task<bool> TryUpdatePictureObjectKeyAsync(string userIdentityId, string? expectedPictureObjectKey, string? pictureObjectKey, CancellationToken ct);
 }

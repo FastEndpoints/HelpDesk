@@ -35,6 +35,7 @@ HelpDesk/
 | `Common/StorageProvider` | Mongo-backed FE remote event hub/subscriber storage |
 | `Common/Tools` | Generic helpers; `PermissionGroups` (mesh permission group name constants) |
 | `Services/UserProfile/Auth/` | `PermissionClaimsTransformation` (role groups → local Allow codes) |
+| `Services/UserProfile/ProfilePictures/` | Local FS storage, ImageSharp processor, public URL builder |
 | `Contracts/<Name>` | `Service.cs`, `Events.cs`, `EventSubscribers.cs` as needed |
 | `Services/<Name>/Program.cs` | Host, Kestrel IPC/HTTP, DI, hubs, MapRemote |
 | `Services/<Name>/Meta.cs` | Global usings |

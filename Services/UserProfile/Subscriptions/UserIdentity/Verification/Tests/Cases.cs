@@ -56,5 +56,20 @@ public class Cases
 
             return Task.CompletedTask;
         }
+
+        public Task<bool> TryUpdatePictureObjectKeyAsync(string userIdentityId,
+                                                              string? expectedPictureObjectKey,
+                                                              string? pictureObjectKey,
+                                                              CancellationToken ct)
+        {
+            var profile = profiles.Single(p => p.UserIdentityId == userIdentityId);
+
+            if (profile.PictureObjectKey != expectedPictureObjectKey)
+                return Task.FromResult(false);
+
+            profile.PictureObjectKey = pictureObjectKey;
+
+            return Task.FromResult(true);
+        }
     }
 }

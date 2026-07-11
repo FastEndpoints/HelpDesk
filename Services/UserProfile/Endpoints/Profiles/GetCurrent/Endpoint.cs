@@ -1,9 +1,10 @@
 using System.Security.Claims;
 using Common.Tools;
+using ProfilePictures;
 
 namespace Endpoints.Profiles.GetCurrent;
 
-sealed class Endpoint(IUserProfileStore profiles) : EndpointWithoutRequest<Response>
+sealed class Endpoint(IUserProfileStore profiles, IProfilePictureStorage pictures) : EndpointWithoutRequest<Response>
 {
     public override void Configure()
     {
@@ -44,7 +45,8 @@ sealed class Endpoint(IUserProfileStore profiles) : EndpointWithoutRequest<Respo
                 Id = profile.ID,
                 Email = profile.Email,
                 DisplayName = profile.DisplayName,
-                Status = profile.Status.ToString()
+                Status = profile.Status.ToString(),
+                PictureUrl = pictures.BuildPublicUrl(profile.PictureObjectKey, HttpContext.Request)
             },
             ct);
     }

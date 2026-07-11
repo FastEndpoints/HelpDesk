@@ -31,7 +31,16 @@ Invariant: **group name ≡ JWT role claim ≡ FE `AccessControl` groupName ≡ 
    - Idempotent if `permissions` already present
 4. **Endpoints** call `AccessControl(keyName, Apply.ToThisEndpoint, PermissionGroups.User)` so the generator places the code under `Allow.User`. Always pass `PermissionGroups.*` constants for group args—never raw string literals.
 
-Handler rules for `GET`/`PUT /profiles/me` still apply **after** the permission gate: missing `sub` → 401; missing profile → 404; non-Active → 403. Read uses `Profiles_Read_Own`; update uses `Profiles_Update_Own` (both group `User`).
+Handler rules for profile endpoints still apply **after** the permission gate: missing `sub` → 401; missing profile → 404; non-Active → 403.
+
+| Permission key | Endpoint |
+| --- | --- |
+| `Profiles_Read_Own` | `GET /profiles/me` |
+| `Profiles_Update_Own` | `PUT /profiles/me` |
+| `Profiles_Upload_Own_Picture` | `PUT /profiles/me/picture` |
+| `Profiles_Delete_Own_Picture` | `DELETE /profiles/me/picture` |
+
+All four are group `User`. AccessControl key names must be unique (generator emits const fields). Profile picture **files** are served anonymously under `/profile-pictures/**` (URL is not secret); only metadata mutation is permission-gated. Uploads honor configured `MaxUploadBytes` (default 5 MiB), accept only decoder-verified PNG/JPEG, reject multi-frame images, and cap input at 4096 px per dimension / 16 million pixels.
 
 Register / login / verify: `AllowAnonymous`.
 

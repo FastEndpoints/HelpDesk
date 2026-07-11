@@ -1,4 +1,4 @@
-namespace Endpoints.Profiles.GetCurrent;
+namespace Endpoints.Profiles.UploadPicture;
 
 sealed class Response
 {

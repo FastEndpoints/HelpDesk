@@ -61,5 +61,13 @@ public class Sut : AppFixture<Program>
     protected override async ValueTask OnCachedWafDisposedAsync()
     {
         await DB.Default.DropCollectionAsync<UserProfileEntity>();
+
+        var settings = Services.GetRequiredService<IOptions<UserProfileSettings>>().Value.UserProfile.ProfilePictures;
+        var absoluteRoot = Path.IsPathRooted(settings.StorageRoot)
+                               ? settings.StorageRoot
+                               : Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), settings.StorageRoot));
+
+        if (Directory.Exists(absoluteRoot))
+            Directory.Delete(absoluteRoot, recursive: true);
     }
 }

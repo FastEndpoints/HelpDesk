@@ -6,4 +6,5 @@ sealed class Response
     public string Email { get; init; } = null!;
     public string DisplayName { get; init; } = null!;
     public string Status { get; init; } = null!;
+    public string? PictureUrl { get; init; }
 }

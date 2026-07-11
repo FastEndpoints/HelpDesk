@@ -102,5 +102,20 @@ public class Cases(Sut App) : TestBase<Sut>
 
             return Task.CompletedTask;
         }
+
+        public Task<bool> TryUpdatePictureObjectKeyAsync(string userIdentityId,
+                                                              string? expectedPictureObjectKey,
+                                                              string? pictureObjectKey,
+                                                              CancellationToken ct)
+        {
+            var profile = Created.Single(p => p.UserIdentityId == userIdentityId);
+
+            if (profile.PictureObjectKey != expectedPictureObjectKey)
+                return Task.FromResult(false);
+
+            profile.PictureObjectKey = pictureObjectKey;
+
+            return Task.FromResult(true);
+        }
     }
 }
