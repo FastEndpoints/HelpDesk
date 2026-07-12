@@ -43,8 +43,12 @@
         <Content Remove="**\Tests\**"/>
     </ItemGroup>
 
+
     <ItemGroup>
-        <Folder Include="Endpoints\"/>
+        <Content Remove="data\**"/>
+        <Compile Remove="data\**"/>
+        <None Remove="data\**"/>
+        <EmbeddedResource Remove="data\**"/>
     </ItemGroup>
 
 </Project>
