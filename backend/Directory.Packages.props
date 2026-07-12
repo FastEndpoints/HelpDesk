@@ -3,6 +3,9 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
     <ItemGroup>
+        <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.6"/>
+        <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.4.6"/>
+        <PackageVersion Include="Aspire.Hosting.MongoDB" Version="13.4.6"/>
         <PackageVersion Include="FastEndpoints" Version="8.3.0-beta.12"/>
         <PackageVersion Include="FastEndpoints.Generator" Version="8.3.0-beta.12"/>
         <PackageVersion Include="FastEndpoints.Messaging.Core" Version="8.3.0-beta.12"/>

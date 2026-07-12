@@ -47,7 +47,7 @@ resource: README.md
 - Store interfaces + Mongo implementations registered in `Program.cs`
 - JWT: UserIdentity signs (private PEM) with `sub` + role group claims; UserProfile validates (public key) and expands groups to permissions
 - Notifications: `SmtpService` only when Production **and** `Smtp:Enabled`; else `NullEmailSender`
-- Testing env may load user secrets (`AddUserSecrets` when environment is `Testing`)
+- Local/testing defaults come from committed appsettings; environment variables override deployment-sensitive values
 
 ## Sources
 

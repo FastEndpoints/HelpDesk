@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: Architecture
-description: Brokerless FastEndpoints remote mesh with backend/Contracts/backend/Common/Services layering and event-only cross-service workflows.
+description: Brokerless FastEndpoints mesh with isolated services, a SvelteKit BFF, and Aspire local orchestration.
 tags: [architecture]
 resource: README.md
 ---
@@ -16,13 +16,20 @@ Brokerless microservice mesh:
 - **Common** = reusable infrastructure/helpers only
 - **Services** = isolated deployable FastEndpoints hosts
 - **Mesh** = FastEndpoints.Messaging.Remote event queues between nodes
+- **AppHost** = development orchestration, not a business service
 - **Broker** = none; **business RPC** = none
 
-Current topology is host-local and hardcoded in service startup: `ListenInterProcess(Service.Name)` + `MapRemote(publisherName, …)`, with public HTTP listeners bound through `ListenLocalhost`. No current configuration or deployment manifest implements a network transport or multi-host mesh; adding one is an architecture/deployment change even if handlers and contracts remain stable.
+Current service topology is host-local and hardcoded in startup: `ListenInterProcess(Service.Name)` + `MapRemote(publisherName, …)`, with Identity/Profile HTTP listeners bound through `ListenLocalhost`. No deployment manifest implements a network transport or multi-host mesh.
+
+## Local resource graph
+
+`backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator. Aspire 13.4.6 starts an ephemeral authenticated standalone MongoDB resource, then Identity, Profile, Notifications, and Vite. Dependencies enforce MongoDB-before-services and Identity/Profile-before-frontend ordering.
+
+Aspire assigns application HTTP ports dynamically. It injects the MongoDB connection into each service and the Identity/Profile HTTP endpoints into Vite as private `IDENTITY_API_BASE_URL` / `PROFILE_API_BASE_URL` values. The AppHost is local tooling; backend services remain independently deployable.
 
 ## Monorepo and external-client boundary
 
-`frontend/` is the SvelteKit adapter-node application; `backend/` contains the .NET solution and Common/Contracts/Services layers. Browsers use SvelteKit as a BFF. Only server modules under `frontend/src/lib/server/api/` know the private Identity/Profile origins and attach server-held bearer tokens. Their shared client middleware converts every backend non-success response to `ApiError`, preserving RFC problem details and the HTTP status. The existing frontend is a foundation page and API helpers, not completed auth/profile UI.
+`frontend/` is the SvelteKit adapter-node application; `backend/` contains the AppHost, .NET solution, and Common/Contracts/Services layers. Browsers use SvelteKit as a BFF. Only server modules under `frontend/src/lib/server/api/` know the private Identity/Profile origins and attach server-held bearer tokens. Their shared client middleware converts every backend non-success response to `ApiError`, preserving RFC problem details and the HTTP status.
 
 ## Components
 
@@ -30,14 +37,20 @@ Current topology is host-local and hardcoded in service startup: `ListenInterPro
 External client
   │ REST
   ▼
-UserIdentity ──events──► UserProfile
-     │                        │
-     └──events──────────────► Notifications (email jobs)
+SvelteKit BFF
+  │ private REST
+  ├──────────────► UserIdentity ──events──► UserProfile
+  │                     │                       │
+  └──────────────► UserProfile                  └─ own persistence
+                        └──events──────────► Notifications
+
+Aspire AppHost: local lifecycle, endpoint discovery, and configuration injection
 ```
 
 | Layer | Projects | Role |
 | --- | --- | --- |
-| Common | `StorageProvider`, `Tools` | Event storage provider; `NormalizeForLookup`; `PermissionGroups` (permission group names only) |
+| AppHost | `HelpDesk.AppHost` | Local resource graph and orchestration |
+| Common | `StorageProvider`, `Tools` | Event storage provider; helpers and permission group names |
 | Contracts | `UserIdentity`, `UserProfile`, `Notifications` | `Service.Name`, events, `EventSubscribers` |
 | Services | same three names | Endpoints, persistence, hubs, subscriptions |
 
@@ -46,10 +59,10 @@ UserIdentity ──events──► UserProfile
 **Allowed:**
 
 ```text
+AppHost → service host projects
 Services → Contracts
 Services → Common
-Contracts → package refs only (e.g. FastEndpoints.Messaging.Core)
-Common → package refs only
+Contracts/Common → package refs only
 ```
 
 **Forbidden:**
@@ -60,25 +73,22 @@ Contracts → Services or domain logic
 Common → domain / service-specific behavior
 ```
 
-Cross-service business flow: **events only**. A service may expose REST for external clients; must not call another service’s REST to finish an internal workflow. Events are facts after local commit, not commands.
+Cross-service business flow is events only. A service may expose REST for external clients; it must not call another service’s REST to finish an internal workflow. Events are facts after local commit, not commands.
 
-## Communication
+## Communication and persistence
 
-- Publisher: persist locally → `event.Broadcast()`; hubs registered in `Program.cs` via `MapHandlers` + `RegisterEventHub<TEvent>(subscriberIds)`.
-- Subscriber: `MapRemote(publisherServiceName, c => { c.SubscriberID = ownName; c.Subscribe<TEvent, THandler>(); })`.
+- Publisher: persist locally → `event.Broadcast()`; hubs registered through `MapHandlers` + `RegisterEventHub<TEvent>(subscriberIds)`.
+- Subscriber: `MapRemote(publisherServiceName, …)` with stable service-name subscriber IDs.
 - Durable event records: `Common.StorageProvider.EventRecord` + `EventStorageProvider` (MongoDB.Entities).
-- Notifications internal work: FastEndpoints job queue (`JobRecord` / `JobStorageProvider`) for `SendEmailCommand`.
+- Notifications internal work: FastEndpoints job queue for `SendEmailCommand`.
+- Each service owns its MongoDB database; no shared domain collections.
 
-## Persistence
+## Security / auth boundaries
 
-Each service owns its MongoDB database (config `*Settings` / `DatabaseName`). No shared domain collections. Event storage indexes created per service DB init. Notifications also stores job records.
-
-## Security / auth (boundaries)
-
-- UserIdentity issues RSA JWT (`sub` + role **group names** from identity `Groups`); signs with private PEM. Never references another service’s `Allow`.
-- UserProfile validates JWT with public key (asymmetric); expands roles → local permission codes via `IClaimsTransformation`; `GET /profiles/me` requires `Profiles_Read_Own`, `PUT /profiles/me` requires `Profiles_Update_Own` (both group `User`).
-- Shared group names live in `Common.Tools.PermissionGroups` (constants only—not a full RBAC engine).
-- Notifications has no public business API / no JWT surface today.
+- UserIdentity issues RSA JWTs; UserProfile validates them with the matching public value.
+- Matching development-only private/public values are committed in base appsettings so the Aspire stack runs directly; environment variables may override both.
+- The BFF holds JWTs in an HttpOnly session cookie and never exposes backend origins publicly.
+- Notifications has no public business API / JWT surface today.
 - Details: [security.md](security.md).
 
 ## Invariants
@@ -88,10 +98,12 @@ Each service owns its MongoDB database (config `*Settings` / `DatabaseName`). No
 3. Contracts stay free of endpoints, entities, stores, SMTP, handlers.
 4. Service names and `EventSubscribers` arrays stay aligned with real consumer `Service.Name` values.
 5. Tests prove REST boundaries and subscription reactions; topology-agnostic.
+6. Local full-stack startup flows through the AppHost; do not reintroduce parallel orchestration paths.
 
 ## Sources
 
 - `README.md`
+- `backend/AppHost/Program.cs`
 - `backend/Services/*/Program.cs`
 - `backend/Contracts/*/`
 - `backend/Common/StorageProvider/`

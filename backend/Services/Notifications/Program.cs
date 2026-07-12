@@ -14,9 +14,6 @@ if (args.Contains("@@"))
 
 var bld = WebApplication.CreateBuilder(args);
 
-if (bld.Environment.IsEnvironment("Testing"))
-    bld.Configuration.AddUserSecrets<Program>(optional: true);
-
 var settings = bld.Configuration.Get<NotificationSettings>() ?? new();
 bld.Services.Configure<NotificationSettings>(bld.Configuration);
 

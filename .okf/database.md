@@ -1,7 +1,7 @@
 ---
 type: Database
 title: Database
-description: Per-service MongoDB databases, collections, and startup indexes.
+description: Per-service MongoDB databases, collections, indexes, and Aspire local provisioning.
 tags: [data]
 ---
 
@@ -12,7 +12,21 @@ tags: [data]
 - **Engine:** MongoDB via MongoDB.Entities (`DB.InitAsync`, `DB.Default`)
 - **Isolation:** one database per service (config `DatabaseName`)
 - **No shared domain collections** across services
-- Event (and Notifications job) storage co-located in each service’s DB
+- Event storage, and Notifications job storage, are co-located in each owning service database
+
+## Local Aspire database
+
+`backend/AppHost/Program.cs` provisions an ephemeral authenticated standalone MongoDB container with committed development username/password parameters on `localhost:27017`. Aspire injects its connection as the `MongoDB` reference into all three services; the fixed development endpoint also lets repository tests use the same running resource.
+
+The local resource intentionally has:
+
+- no replica set or transaction support;
+- no keyfile;
+- no host volume or persistence guarantee;
+- no Compose or root `.env` configuration;
+- fixed development host port `27017` for direct MongoDB-backed test commands.
+
+Read connection details from the Aspire dashboard. Container replacement/removal loses local data. These local topology constraints do not define production MongoDB deployment requirements.
 
 ## Databases
 
@@ -27,18 +41,17 @@ tags: [data]
 | Service | Entity | Collection | Notable fields / indexes |
 | --- | --- | --- | --- |
 | UserIdentity | `UserIdentityEntity` | `UserIdentities` | Unique `NormalizedEmail`; unique sparse `VerificationCode`; password hash; status |
-| UserProfile | `UserProfileEntity` | `UserProfiles` | Unique `NormalizedEmail`; index `UserIdentityId`; mutable `DisplayName`; optional `PictureObjectKey` (relative storage key, not image bytes); status; EmailVerified |
-| Shared pattern | `EventRecord` | (MongoDB.Entities default for type) | Compound index EventType, SubscriberID, IsComplete, ExpireOn |
-| Notifications | `JobRecord` | (type default) | Queue/complete/execute/expire indexes; TrackingID index |
+| UserProfile | `UserProfileEntity` | `UserProfiles` | Unique `NormalizedEmail`; index `UserIdentityId`; display name; optional picture object key; status; EmailVerified |
+| Shared pattern | `EventRecord` | type default | Compound index EventType, SubscriberID, IsComplete, ExpireOn |
+| Notifications | `JobRecord` | type default | Queue/complete/execute/expire indexes; TrackingID index |
 
 ## Init
 
-`*Database.InitializeAsync` runs after `DB.InitAsync` in each `Program.cs`. Static ctors register BSON object/guid serializers.
-
-No schema migration framework—index create is idempotent startup work.
+`*Database.InitializeAsync` runs after `DB.InitAsync` in each service `Program.cs`. Static constructors register BSON object/guid serializers. There is no schema migration framework; index creation is idempotent startup work.
 
 ## Sources
 
+- `backend/AppHost/Program.cs`
 - `backend/Services/*/Persistence/*Database.cs`
 - `backend/Services/*/Persistence/*Entity.cs`
 - `backend/Common/StorageProvider/EventRecord.cs`

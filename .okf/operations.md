@@ -1,66 +1,64 @@
 ---
 type: Playbook
 title: Operations
-description: Local SvelteKit, backend service, and authenticated MongoDB runtime configuration.
+description: Aspire-managed local topology, dynamic endpoints, and runtime configuration injection.
 tags: [ops]
-resource: compose.yaml
+resource: backend/AppHost/Program.cs
 ---
 
 # Operations
 
-## Topology and ports
+## Supported local topology
 
-| Process | Local endpoint | Notes |
+Run `pnpm stack:dev`; it invokes `dotnet run --project backend/AppHost/HelpDesk.AppHost.csproj`. The AppHost `Program.cs` is the sole supported local full-stack orchestrator.
+
+| Resource | Endpoint | Notes |
 | --- | --- | --- |
-| SvelteKit | `http://localhost:5173` | External-client/BFF boundary |
-| UserIdentity | `http://localhost:5000` | OpenAPI/Scalar outside Production |
-| UserProfile | `http://localhost:5001` | OpenAPI/Scalar outside Production |
-| Notifications | none | IPC subscriber and jobs only |
-| MongoDB | `127.0.0.1:27017` by default (`MONGO_PORT` overrides host port) | authenticated single-node replica set `rs0` |
+| Aspire dashboard | emitted at startup | resource status, dynamic application endpoints, and logs |
+| SvelteKit/Vite | dynamically assigned | external-client/BFF boundary |
+| UserIdentity | dynamically assigned HTTP | OpenAPI/Scalar outside Production |
+| UserProfile | dynamically assigned HTTP | OpenAPI/Scalar outside Production |
+| Notifications | no public HTTP endpoint | IPC subscriber and jobs only |
+| MongoDB | `localhost:27017` | Aspire-managed authenticated standalone, ephemeral |
 
-Backend services are currently a host-local IPC FastEndpoints mesh: startup hardcodes `ListenInterProcess`, while Identity/Profile HTTP listeners use `ListenLocalhost`. SvelteKit calls Identity/Profile only from server modules. No current configuration or deployment manifest provides a network transport or multi-host topology.
+Application HTTP ports are dynamic; use the dashboard for the current run. MongoDB alone uses fixed development port `27017` so repository tests can share the Aspire-managed instance.
 
-`compose.yaml` starts MongoDB and its replica-set initializer only. It does not build or launch the frontend or backend services; start those processes separately. Compose health-checks MongoDB, but the application services currently expose no health/readiness endpoints.
+Backend services remain a host-local IPC FastEndpoints mesh: startup hardcodes `ListenInterProcess`, while Identity/Profile HTTP listeners use orchestrator-injected ports. SvelteKit calls Identity/Profile only from server modules. No deployment manifest provides a network transport or multi-host topology.
 
-## Private frontend environment
+## Aspire resource behavior
 
-- `IDENTITY_API_BASE_URL` (required when its client is used)
-- `PROFILE_API_BASE_URL` (required when its client is used)
+Aspire 13.4.6:
 
-Backend origins are private server variables. Never prefix them with `PUBLIC_`.
+1. starts MongoDB with committed development username/password parameters;
+2. injects the `MongoDB` connection into Identity, Profile, and Notifications;
+3. waits for MongoDB before starting dependent services;
+4. starts Identity before Profile/Notifications complete their dependency chain;
+5. starts Vite after Identity and Profile and injects their HTTP endpoints as `IDENTITY_API_BASE_URL` / `PROFILE_API_BASE_URL`.
 
-## MongoDB Compose
+The local MongoDB container is standalone: no replica set, transactions, keyfile, host volume, or durable local data. It is not started through Compose and uses no root `.env`. Container replacement/removal loses local data. The committed MongoDB credentials and matching base connection strings are development-only; deployment must override `ConnectionStrings__MongoDB`.
 
-1. Install Podman plus a Compose provider (for example, `podman-compose`).
-2. `cp .env.example .env`; set both Mongo credentials. Compose fails fast with an actionable error when either is absent.
-3. `./scripts/setup-mongodb.sh` creates `.local/mongodb-keyfile` with mode `400`, or preserves an existing keyfile. Stop MongoDB and pass `--rotate` only for intentional rotation.
-4. `podman compose up -d`; inspect with `podman compose ps` / `podman compose logs -f mongodb`.
-5. Stop with `podman compose down`; `down -v` also deletes local data.
+## Configuration names
 
-Connection string (substitute `.env` credentials):
+- Aspire-managed: `ConnectionStrings__MongoDB`, service HTTP-port configuration, `IDENTITY_API_BASE_URL`, `PROFILE_API_BASE_URL`
+- Service settings: `*:DatabaseName`, `UserIdentity:Jwt:{Issuer,Audience,AccessTokenDays,PrivateKeyPem}`, `UserProfile:Jwt:{Issuer,Audience,PublicKey}`, `UserProfile:ProfilePictures:{StorageRoot,PublicBaseUrl,MaxUploadBytes}`, `Smtp:*`
+- Environment override forms use ASP.NET Core double underscores, including `UserIdentity__Jwt__PrivateKeyPem` and `UserProfile__Jwt__PublicKey`
 
-```text
-mongodb://helpdesk_local_admin:<password>@localhost:27017/?authSource=admin&replicaSet=rs0&directConnection=true
-```
+Matching development JWT private/public values are committed in the Identity/Profile base appsettings. They support local development only and must be overridden with deployment-managed secrets outside development.
 
-The query parameters are required for root authentication and the local single-node transaction-capable topology. Set backend `ConnectionStrings__MongoDB` or equivalent user secrets; base appsettings still contain an unauthenticated placeholder and are not sufficient for Compose.
+## Live OpenAPI
 
-## Backend configuration names
-
-`ConnectionStrings:MongoDB`, `*:DatabaseName`, `UserIdentity:Jwt:{Issuer,Audience,AccessTokenDays,PrivateKeyPem}`, `UserProfile:Jwt:{Issuer,Audience,PublicKey}`, `UserProfile:ProfilePictures:{StorageRoot,PublicBaseUrl,MaxUploadBytes}`, and `Smtp:*`. Base JWT keys are empty. Generate one RSA pair, give Identity the private PEM and Profile its matching public PEM through user secrets or multiline-preserving environment variables; exact commands are in root `README.md`. Never commit real secrets or generated keys.
-
-All three service projects currently declare the same ASP.NET Core `UserSecretsId`; local settings therefore share one user-secrets store. Use fully qualified configuration keys and consider all service secrets co-located.
+Identity/Profile expose `/openapi/v1.json` outside Production. For `api:refresh` or `api:check:live`, copy each current HTTP endpoint from the Aspire dashboard, append `/openapi/v1.json`, and set both `IDENTITY_OPENAPI_URL` and `PROFILE_OPENAPI_URL`.
 
 ## Runtime caveats
 
+- Application services currently expose no health/readiness endpoints.
 - Notification jobs are non-distributed. Email processing is limited to one concurrent command per Notifications process with a two-minute execution limit; multiple instances are not coordinated. Handler failures are rescheduled one minute later.
 - Verification links and default profile-picture URLs derive from the raw request scheme/host. No service configures forwarded-header middleware; reverse-proxy deployments need an explicit public URL and trusted-header strategy.
-- Deployment destination for verification links and deployment/storage/public-URL strategy for profile pictures remain unresolved. Those decisions block shipping the associated frontend UI flows.
+- Deployment destination for verification links and deployment/storage/public-URL strategy for profile pictures remain unresolved.
 
 ## Sources
 
-- `compose.yaml`
-- `.env.example`
-- `frontend/.env.example`
-- `scripts/setup-mongodb.sh`
+- `backend/AppHost/Program.cs`
+- `backend/AppHost/HelpDesk.AppHost.csproj`
 - `backend/Services/`
+- `frontend/scripts/openapi.mjs`

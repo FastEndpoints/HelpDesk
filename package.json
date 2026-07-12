@@ -12,7 +12,7 @@
     "backend:build:release": "dotnet build HelpDesk.slnx -c Release",
     "backend:test": "dotnet test HelpDesk.slnx -c Debug",
     "backend:format:check": "dotnet format HelpDesk.slnx --verify-no-changes",
-    "stack:dev": "./scripts/dev-stack.sh",
+    "stack:dev": "dotnet run --project backend/AppHost/HelpDesk.AppHost.csproj",
     "frontend:dev": "pnpm --dir frontend dev",
     "frontend:check": "pnpm --dir frontend check",
     "frontend:lint": "pnpm --dir frontend lint",

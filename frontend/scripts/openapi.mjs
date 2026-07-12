@@ -7,8 +7,8 @@ import openapiTS, { astToString, COMMENT_HEADER } from 'openapi-typescript';
 
 const root = resolve(import.meta.dirname, '..');
 const services = {
-	identity: process.env.IDENTITY_OPENAPI_URL ?? 'http://localhost:5000/openapi/v1.json',
-	profile: process.env.PROFILE_OPENAPI_URL ?? 'http://localhost:5001/openapi/v1.json'
+	identity: process.env.IDENTITY_OPENAPI_URL,
+	profile: process.env.PROFILE_OPENAPI_URL
 };
 
 function sortObject(value) {
@@ -24,7 +24,9 @@ function sortObject(value) {
 }
 
 async function normalize(document) {
-	return `${JSON.stringify(sortObject(document), null, 2)}\n`;
+	const normalized = structuredClone(document);
+	delete normalized.servers;
+	return `${JSON.stringify(sortObject(normalized), null, 2)}\n`;
 }
 
 async function generate(specPath) {
@@ -32,7 +34,11 @@ async function generate(specPath) {
 	return `${COMMENT_HEADER}${astToString(ast)}`;
 }
 
-async function fetchSpec(url) {
+async function fetchSpec(name, url) {
+	if (!url)
+		throw new Error(
+			`Set ${name.toUpperCase()}_OPENAPI_URL to the service URL shown by Aspire plus /openapi/v1.json`
+		);
 	const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
 	if (!response.ok) throw new Error(`OpenAPI fetch failed: ${response.status} ${url}`);
 	return normalize(await response.json());
@@ -63,7 +69,7 @@ const generatedDirectory = join(root, 'src/lib/api/generated');
 
 if (command === 'refresh') {
 	const specs = await Promise.all(
-		Object.entries(services).map(async ([name, url]) => [name, await fetchSpec(url)])
+		Object.entries(services).map(async ([name, url]) => [name, await fetchSpec(name, url)])
 	);
 	for (const [name, contents] of specs)
 		await writeFile(join(specDirectory, `${name}.json`), contents);
@@ -78,7 +84,7 @@ if (command === 'refresh') {
 		for (const [name, url] of Object.entries(services)) {
 			const contents =
 				command === 'check-live'
-					? await fetchSpec(url)
+					? await fetchSpec(name, url)
 					: await readFile(join(specDirectory, `${name}.json`), 'utf8');
 			await writeFile(join(temporarySpecs, `${name}.json`), contents);
 			if (command === 'check-live')

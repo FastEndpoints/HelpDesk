@@ -23,9 +23,6 @@ if (args.Contains("@@"))
 
 var bld = WebApplication.CreateBuilder(args);
 
-if (bld.Environment.IsEnvironment("Testing"))
-    bld.Configuration.AddUserSecrets<Program>(optional: true);
-
 var settings = bld.Configuration.Get<UserProfileSettings>() ?? new();
 var maxUploadBytes = settings.UserProfile.ProfilePictures.MaxUploadBytes;
 

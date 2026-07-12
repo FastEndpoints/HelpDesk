@@ -7,7 +7,6 @@
         <OutputType>Exe</OutputType>
         <NoWarn>CS1591;CA2016;CS7022</NoWarn>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <UserSecretsId>f4709213-ea5b-483f-b487-370fc40b9db1</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>

@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: Code Map
-description: Monorepo layout for the SvelteKit frontend and .NET backend projects.
+description: Monorepo layout for Aspire orchestration, the SvelteKit frontend, and .NET backend projects.
 tags: [layout]
 resource: HelpDesk.slnx
 ---
@@ -18,16 +18,26 @@ HelpDesk/
 │   ├── openapi/                  # committed backend API snapshots
 │   └── scripts/openapi.mjs
 ├── backend/
+│   ├── AppHost/                  # Aspire local full-stack orchestrator
 │   ├── Common/{StorageProvider,Tools}/
 │   ├── Contracts/{UserIdentity,UserProfile,Notifications}/
 │   ├── Services/{UserIdentity,UserProfile,Notifications}/
 │   └── Directory.Packages.props
 ├── HelpDesk.slnx
-├── scripts/setup-mongodb.sh
-├── compose.yaml
 ├── package.json
 └── pnpm-workspace.yaml
 ```
+
+Removed migration-era paths must not be documented or recreated as active workflows: `compose.yaml`, root `.env.example`, `scripts/`, service `Properties/launchSettings.json`, and `frontend/.env.example`. The AppHost launch settings are active IDE configuration, not a service-local workflow.
+
+## Orchestration
+
+| Path | Contents |
+| --- | --- |
+| `backend/AppHost/HelpDesk.AppHost.csproj` | Aspire 13.4.6 executable and resource package references |
+| `backend/AppHost/Program.cs` | Sole supported local full-stack graph: MongoDB, three services, Vite, references, waits, and injected API origins |
+| `backend/AppHost/Properties/launchSettings.json` | Rider/.NET `HelpDesk.AppHost` Development launch profile |
+| `package.json` | Root commands; `stack:dev` runs the AppHost |
 
 ## Backend modules
 
@@ -50,18 +60,22 @@ HelpDesk/
 | `frontend/src/lib/server/api/` | BFF-only config, clients, errors, and session cookie convention |
 | `frontend/openapi/*.json` | Normalized Identity/Profile OpenAPI snapshots |
 | `frontend/src/lib/api/generated/*.d.ts` | Generated API path/schema types |
+| `frontend/scripts/openapi.mjs` | Snapshot/type workflow; live commands require explicit Aspire-derived URLs |
 
 No registration, login, verification, profile-edit, or profile-picture UI currently exists.
 
-## Entry points and ports
+## Entry points and endpoints
 
-| Process | Entry | Local port |
+| Resource | Entry | Local endpoint behavior |
 | --- | --- | --- |
-| Frontend | `frontend/` Vite/SvelteKit | 5173 (Playwright preview 4173) |
-| UserIdentity | `backend/Services/UserIdentity/Program.cs` | 5000 |
-| UserProfile | `backend/Services/UserProfile/Program.cs` | 5001 |
-| Notifications | `backend/Services/Notifications/Program.cs` | no public HTTP port |
-| MongoDB | `compose.yaml` | 127.0.0.1:27017 |
+| AppHost | `backend/AppHost/Program.cs` | Aspire dashboard and resource lifecycle |
+| Frontend | `frontend/` Vite/SvelteKit | Aspire-assigned during full-stack run; Playwright preview remains 4173 |
+| UserIdentity | `backend/Services/UserIdentity/Program.cs` | Aspire-assigned HTTP endpoint |
+| UserProfile | `backend/Services/UserProfile/Program.cs` | Aspire-assigned HTTP endpoint |
+| Notifications | `backend/Services/Notifications/Program.cs` | no public HTTP endpoint |
+| MongoDB | Aspire `mongodb` resource | ephemeral authenticated standalone container |
+
+Read dynamic application endpoints from the Aspire dashboard. MongoDB uses fixed development port `27017` so direct test commands can share the Aspire-managed resource.
 
 ## Sibling library sources
 
@@ -72,7 +86,7 @@ Outside this monorepo (paths relative to HelpDesk root):
 | FastEndpoints | `../FastEndpoints/` |
 | MongoDB.Entities | `../MongoDB.Entities/` |
 
-Use these when tracing FE messaging, endpoint generation, or MongoDB.Entities persistence behavior. HelpDesk still consumes NuGet packages via CPM; these are source trees for inspection, not in-solution project refs.
+These are inspection sources, not in-solution project references.
 
 ## Sources
 
@@ -80,7 +94,7 @@ Use these when tracing FE messaging, endpoint generation, or MongoDB.Entities pe
 - `frontend/package.json`
 - `frontend/src/`
 - `HelpDesk.slnx`
+- `backend/AppHost/`
 - `backend/Services/*/Program.cs`
-- `compose.yaml`
 - `../FastEndpoints/`
 - `../MongoDB.Entities/`

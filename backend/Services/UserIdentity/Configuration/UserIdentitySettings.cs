@@ -28,9 +28,9 @@ public sealed class UserIdentitySettings
     public sealed class UserIdentityServiceSettings
     {
         /// <summary>
-        /// The HTTP port used for local endpoint hosting.
+        /// The HTTP port assigned by the local orchestrator.
         /// </summary>
-        public int HttpPort { get; set; } = 5000;
+        public int HttpPort { get; set; }
 
         /// <summary>
         /// The MongoDB database name.

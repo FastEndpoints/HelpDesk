@@ -44,7 +44,7 @@ dotnet test backend/Services/Notifications/Services.Notifications.csproj
 
 - Environment: `Testing` via fixture `UseEnvironment("Testing")`
 - DB names: `*_TESTING` overrides in `appsettings.Testing.json`
-- Real MongoDB required for tests (connection from config/user secrets)
+- Real MongoDB required for tests; start `pnpm stack:dev` and use the committed development connection from base appsettings (environment variables may override it)
 - Fixtures drop owned collections on dispose (`UserIdentities` / `UserProfiles` / jobs+events)
 - Event assertions: `RegisterTestEventReceivers()` + `GetTestEventReceiver<TEvent>().WaitForMatchAsync(...)`
 - Notifications: replaces `IEmailSender` with `TestEmailSender` capture queue
