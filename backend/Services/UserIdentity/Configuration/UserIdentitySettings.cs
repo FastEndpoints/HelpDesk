@@ -38,6 +38,11 @@ public sealed class UserIdentitySettings
         public string DatabaseName { get; set; } = "HelpDesk_UserIdentity";
 
         /// <summary>
+        /// Public frontend origin used when building email verification links (no trailing path).
+        /// </summary>
+        public string FrontendBaseUrl { get; set; } = string.Empty;
+
+        /// <summary>
         /// JWT token configuration.
         /// </summary>
         public JwtSettings Jwt { get; set; } = new();

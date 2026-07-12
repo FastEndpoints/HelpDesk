@@ -58,7 +58,7 @@ All four are group `User`. Profile-picture files are served anonymously under `/
 
 ## Public URL trust
 
-Identity builds verification-link bases from the incoming request scheme/host. Profile pictures use configured `PublicBaseUrl` when present, otherwise the request scheme/host. Services do not enable forwarded-header middleware, so proxies need an explicit trusted proxy/public URL strategy.
+Identity builds verification-link bases from configured `UserIdentity:FrontendBaseUrl` (frontend origin + `/verify/{code}`). Register rejects when that setting is empty. Profile pictures use configured `PublicBaseUrl` when present, otherwise the request scheme/host. Services do not enable forwarded-header middleware, so proxies need an explicit trusted proxy/public URL strategy for non-configured public hosts.
 
 ## Email and mesh
 

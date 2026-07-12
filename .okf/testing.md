@@ -17,6 +17,7 @@ Frontend unit coverage:
 - server API client → `ApiError` middleware
 - problem-details field mapping (`mapProblemFieldErrors`)
 - register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success message fallback, field/form `ApiError` mapping, unreachable-service 500
+- verify BFF load/action (`routes/verify/[code]/page.server.spec.ts`): code trim/`hasCode`, missing/whitespace submit, path param to Identity GET, success message fallback, `ApiError` detail/title/status clamp, unreachable-service 500
 
 Playwright (`register.e2e.ts`):
 - form + shell smoke
@@ -24,7 +25,13 @@ Playwright (`register.e2e.ts`):
 - short password after `novalidate` hits server validation
 - Identity-unavailable path shows form-level error (preview has no backend URLs)
 
-Registration success against a live Identity service is not covered by Playwright without the Aspire stack. Do not infer that login, verification, profile, or picture UI exists.
+Playwright (`verify.e2e.ts`):
+- code present → verify prompt + button (no success state until submit)
+- whitespace/missing code → invalid-link UI, no verify button
+- Identity-unavailable after click → form error, stays on prompt
+- `/login` stub smoke (post-verify CTA target)
+
+Register/verify success against a live Identity service is not covered by Playwright without the Aspire stack (preview has no backend URLs; browser never calls Identity). `/login` is a stub only; do not infer real login, profile, or picture UI exists.
 
 ## Frameworks and layout
 

@@ -4,7 +4,18 @@ public sealed class NullEmailSender(ILogger<NullEmailSender> logger) : IEmailSen
 {
     public Task SendEmailAsync(EmailMessage msg, CancellationToken ct = default)
     {
-        logger.LogInformation("Email suppressed. To={ToEmail}, Subject={Subject}", msg.ToEmail, msg.Subject);
+        if (msg.MergeFields.TryGetValue("VerificationLink", out var verificationLink))
+        {
+            logger.LogInformation(
+                "Email suppressed. To={ToEmail}, Subject={Subject}, VerificationLink={VerificationLink}",
+                msg.ToEmail,
+                msg.Subject,
+                verificationLink);
+        }
+        else
+        {
+            logger.LogInformation("Email suppressed. To={ToEmail}, Subject={Subject}", msg.ToEmail, msg.Subject);
+        }
 
         return Task.CompletedTask;
     }

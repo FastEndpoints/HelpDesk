@@ -23,6 +23,8 @@ Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Regis
 - Register response body is a plain success string (not a token DTO); account remains deactivated until verify
 - Duplicate email (normalized) → problem details / validation error on register
 - Frontend BFF: `POST /register` form action → Identity `POST /identities/register` (confirm password is client-only)
+- Frontend BFF: `POST /verify/{code}` form action → Identity `GET /identities/verify/{VerificationCode}` (email links open the page; activation runs only on button click)
+- Email verification links use configured `UserIdentity:FrontendBaseUrl` + `/verify/{code}` (frontend), not Identity HTTP
 
 ## UserProfile
 

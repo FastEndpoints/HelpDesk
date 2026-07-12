@@ -62,7 +62,7 @@ public class Cases(Sut App) : TestBase<Sut>
 
         verificationIssued.Email.ShouldBe(stored.Email);
         verificationIssued.VerificationCode.ShouldBe(stored.VerificationCode);
-        verificationIssued.BaseUrl.ShouldBe(App.Client.BaseAddress!.ToString().TrimEnd('/'));
+        verificationIssued.BaseUrl.ShouldBe("https://frontend.test");
         verificationIssued.IssuedAt.ShouldBe(stored.CreatedAt, TimeSpan.FromMilliseconds(1));
     }
 

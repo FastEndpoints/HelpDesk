@@ -68,7 +68,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 | Utilities | Map Tailwind theme colors to the `feBlue` / `feDarkBlue` / `feLightBlue` scales (or equivalent CSS-var-backed tokens) |
 | Components | Build app-local UI; do not copy FE-Docs docs chrome (search modal, docs sidebar, kit-docs prose) unless a page truly needs it |
 | Current state | Dark-first FE-Docs navy/cyan tokens live in `frontend/src/app.css` (`fe-*` Tailwind theme); shared sticky shell in `+layout.svelte` |
-| Auth/profile UI | Registration form at `/register` (email, password, confirm password) uses this theme; login/verify/profile/picture UI still missing |
+| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), and login stub (`/login`) use this theme; real login/profile/picture UI still missing |
 
 ## Non-goals
 
@@ -86,6 +86,14 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - Validation: local field rules mirror Identity (email format, password 12–128); backend problem details mapped via `mapProblemFieldErrors`
 - Shell: sticky translucent navy header with brand + Create account nav link
 
+## Email verification UI notes
+
+- Route: `/verify/[code]` → `frontend/src/routes/verify/[code]/`
+- Email links open the page only; activation is a deliberate **Verify email** button → SvelteKit action → Identity `GET /identities/verify/{verificationCode}`
+- Missing code → error state without button; invalid/backend errors surface after click
+- Success → “Account verified” + CTA to `/login` (stub until real login ships)
+- Backend email link path is `/verify/{code}` on `UserIdentity:FrontendBaseUrl`, not Identity HTTP
+
 ## Sources
 
 - `../FE-Docs/src/vars.css`
@@ -98,4 +106,6 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - `frontend/src/routes/+layout.svelte`
 - `frontend/src/routes/+page.svelte`
 - `frontend/src/routes/register/`
+- `frontend/src/routes/verify/[code]/`
+- `frontend/src/routes/login/`
 - `frontend/package.json`

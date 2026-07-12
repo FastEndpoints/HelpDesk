@@ -33,15 +33,16 @@ Aspire 13.4.6:
 2. injects the `MongoDB` connection into Identity, Profile, and Notifications;
 3. waits for MongoDB before starting dependent services;
 4. starts Identity before Profile/Notifications complete their dependency chain;
-5. starts Vite after Identity and Profile and injects their HTTP endpoints as `IDENTITY_API_BASE_URL` / `PROFILE_API_BASE_URL`.
+5. starts Vite after Identity and Profile and injects their HTTP endpoints as `IDENTITY_API_BASE_URL` / `PROFILE_API_BASE_URL`;
+6. injects the Vite HTTP endpoint into Identity as `UserIdentity__FrontendBaseUrl` for email verification links.
 
 The local MongoDB container is standalone: no replica set, transactions, keyfile, host volume, or durable local data. It is not started through Compose and uses no root `.env`. Container replacement/removal loses local data. The committed MongoDB credentials and matching base connection strings are development-only; deployment must override `ConnectionStrings__MongoDB`.
 
 ## Configuration names
 
-- Aspire-managed: `ConnectionStrings__MongoDB`, service HTTP-port configuration, `IDENTITY_API_BASE_URL`, `PROFILE_API_BASE_URL`
-- Service settings: `*:DatabaseName`, `UserIdentity:Jwt:{Issuer,Audience,AccessTokenDays,PrivateKeyPem}`, `UserProfile:Jwt:{Issuer,Audience,PublicKey}`, `UserProfile:ProfilePictures:{StorageRoot,PublicBaseUrl,MaxUploadBytes}`, `Smtp:*`
-- Environment override forms use ASP.NET Core double underscores, including `UserIdentity__Jwt__PrivateKeyPem` and `UserProfile__Jwt__PublicKey`
+- Aspire-managed: `ConnectionStrings__MongoDB`, service HTTP-port configuration, `IDENTITY_API_BASE_URL`, `PROFILE_API_BASE_URL`, `UserIdentity__FrontendBaseUrl`
+- Service settings: `*:DatabaseName`, `UserIdentity:FrontendBaseUrl`, `UserIdentity:Jwt:{Issuer,Audience,AccessTokenDays,PrivateKeyPem}`, `UserProfile:Jwt:{Issuer,Audience,PublicKey}`, `UserProfile:ProfilePictures:{StorageRoot,PublicBaseUrl,MaxUploadBytes}`, `Smtp:*`
+- Environment override forms use ASP.NET Core double underscores, including `UserIdentity__FrontendBaseUrl`, `UserIdentity__Jwt__PrivateKeyPem` and `UserProfile__Jwt__PublicKey`
 
 Matching development JWT private/public values are committed in the Identity/Profile base appsettings. They support local development only and must be overridden with deployment-managed secrets outside development.
 
@@ -53,8 +54,8 @@ Identity/Profile expose `/openapi/v1.json` outside Production. For `api:refresh`
 
 - Application services currently expose no health/readiness endpoints.
 - Notification jobs are non-distributed. Email processing is limited to one concurrent command per Notifications process with a two-minute execution limit; multiple instances are not coordinated. Handler failures are rescheduled one minute later.
-- Verification links and default profile-picture URLs derive from the raw request scheme/host. No service configures forwarded-header middleware; reverse-proxy deployments need an explicit public URL and trusted-header strategy.
-- Deployment destination for verification links and deployment/storage/public-URL strategy for profile pictures remain unresolved.
+- Verification email links use configured `UserIdentity:FrontendBaseUrl` + `/verify/{code}` (frontend origin). Deployments must set this to the public SPA/BFF URL. Default profile-picture URLs still derive from request scheme/host or `UserProfile:ProfilePictures:PublicBaseUrl`. No service configures forwarded-header middleware; reverse-proxy deployments need an explicit public URL and trusted-header strategy.
+- Profile-picture deployment/storage/public-URL strategy remains unresolved.
 
 ## Sources
 

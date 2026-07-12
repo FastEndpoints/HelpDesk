@@ -16,8 +16,8 @@ tags: [gotcha]
 - Matching development JWT private/public values are committed in base Identity/Profile appsettings. Do not regenerate keys or require user-secrets for normal local startup. Environment variables may override both; keep overrides paired and never reuse repository development material in production.
 - `pnpm` still owns frontend package management and validation. `pnpm frontend:dev` is frontend-only, not an alternative full-stack orchestrator.
 - Frontend is a SvelteKit BFF: JWT stays in the HttpOnly session cookie and backend origins remain private.
-- Frontend has registration UI (`/register`) via BFF form action; do not claim login/verification/profile/picture UI exists yet.
-- Verification-link destination and profile-picture deployment/public URL are unresolved and block shipping those UI flows.
+- Frontend has registration (`/register`) and verification (`/verify/[code]`) via BFF form actions; `/login` is a stub only. Do not claim real login/profile/picture UI exists yet.
+- Verification emails use `UserIdentity:FrontendBaseUrl` + `/verify/{code}`. Local Aspire injects the Vite endpoint; deployments must set the public frontend origin. Profile-picture deployment/public URL remains unresolved.
 - **Never** reference `backend/Services/*` from another service—only projects under `backend/Contracts/*` or `backend/Common/*`. Cross-service workflow = events only, not REST callbacks. The AppHost may reference service host projects solely for orchestration.
 - Events are facts after commit, not commands. Publish only after local persistence succeeds.
 - Keep `backend/Contracts/*/EventSubscribers` arrays aligned with real consumer `Service.Name` values.
@@ -32,7 +32,7 @@ tags: [gotcha]
 - Release builds strip Tests; do not rely on test code in Release publish.
 - Current service communication supports host-local IPC only. Do not claim network or multi-host mesh transport is configured.
 - Verification codes have no expiry and are not cleared after activation; do not assume one-time or time-limited links.
-- Verification links and default profile-picture URLs use the raw request scheme/host. No forwarded-header middleware is configured.
+- Verification links no longer use the Identity request host; they require `UserIdentity:FrontendBaseUrl`. Default profile-picture URLs still use request scheme/host (or `PublicBaseUrl`). No forwarded-header middleware is configured.
 - Do not invent a central broker; architecture is brokerless FastEndpoints remote messaging.
 
 ## Sources

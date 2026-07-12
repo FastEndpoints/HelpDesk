@@ -15,7 +15,7 @@ All business events implement `IEvent` and live in Contracts of the **owning** s
 | Event | Payload (fields) | Hub subscribers (`EventSubscribers`) |
 | --- | --- | --- |
 | `UserIdentityRegisteredEvent` | `UserIdentityId`, `Email`, `RegisteredAt` | `USER_PROFILE_SERVICE` |
-| `UserIdentityVerificationIssuedEvent` | `UserIdentityId`, `Email`, `VerificationCode`, `BaseUrl`, `IssuedAt` | `NOTIFICATIONS_SERVICE` |
+| `UserIdentityVerificationIssuedEvent` | `UserIdentityId`, `Email`, `VerificationCode`, `BaseUrl` (frontend origin from `UserIdentity:FrontendBaseUrl`), `IssuedAt` | `NOTIFICATIONS_SERVICE` |
 | `UserIdentityVerifiedEvent` | `UserIdentityId`, `Email`, `VerifiedAt` | `USER_PROFILE_SERVICE` |
 
 Published from register/verify endpoints after persistence (register also issues verification event).

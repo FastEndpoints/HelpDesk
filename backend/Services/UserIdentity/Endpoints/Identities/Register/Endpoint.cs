@@ -1,9 +1,13 @@
 using Contracts.UserIdentity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace Identities.Register;
 
-sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEntity> hasher)
+sealed class Endpoint(
+    IUserIdentityStore store,
+    IPasswordHasher<UserIdentityEntity> hasher,
+    IOptions<UserIdentitySettings> settings)
     : Endpoint<Request, string>
 {
     public override void Configure()
@@ -14,6 +18,11 @@ sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEnti
 
     public override async Task HandleAsync(Request r, CancellationToken ct)
     {
+        var frontendBaseUrl = settings.Value.UserIdentity.FrontendBaseUrl?.Trim();
+
+        if (string.IsNullOrWhiteSpace(frontendBaseUrl))
+            ThrowError("Frontend base URL is not configured.");
+
         var passwordHash = hasher.HashPassword(null!, r.Password);
         var identity = UserIdentityEntity.Create(r.Email, passwordHash, DateTime.UtcNow);
 
@@ -26,8 +35,7 @@ sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEnti
             ThrowError(x => x.Email, "Email address is in use!");
         }
 
-        var request = HttpContext.Request;
-        var baseUrl = $"{request.Scheme}://{request.Host}{request.PathBase}".TrimEnd('/');
+        var baseUrl = frontendBaseUrl.TrimEnd('/');
 
         new UserIdentityRegisteredEvent(identity.ID, identity.Email, identity.CreatedAt)
             .Broadcast();

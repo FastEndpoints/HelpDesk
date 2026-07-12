@@ -37,5 +37,5 @@ public sealed class UserIdentityVerificationIssuedEventHandler
     }
 
     static string GetVerificationLink(string baseUrl, string verificationCode)
-        => $"{baseUrl.TrimEnd('/')}/identities/verify/{Uri.EscapeDataString(verificationCode)}";
+        => $"{baseUrl.TrimEnd('/')}/verify/{Uri.EscapeDataString(verificationCode)}";
 }

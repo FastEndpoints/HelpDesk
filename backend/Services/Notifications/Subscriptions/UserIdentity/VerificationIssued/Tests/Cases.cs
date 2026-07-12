@@ -26,7 +26,7 @@ public class Cases(Sut App) : TestBase<Sut>
         email.HtmlTemplate.ShouldBe(EmailTemplate.Welcome);
         email.MergeFields["DisplayName"].ShouldBe("user");
         email.MergeFields["VerificationLink"].ShouldBe(
-            "https://helpdesk.test/identities/verify/verification%20code%2Fwith%20symbols%3F");
+            "https://helpdesk.test/verify/verification%20code%2Fwith%20symbols%3F");
     }
 
     [Fact]
@@ -44,6 +44,6 @@ public class Cases(Sut App) : TestBase<Sut>
         await handler.HandleAsync(eventModel, Cancellation);
 
         var email = await sender.WaitForEmailAsync(Cancellation);
-        email.MergeFields["VerificationLink"].ShouldBe("https://helpdesk.test/identities/verify/abc123");
+        email.MergeFields["VerificationLink"].ShouldBe("https://helpdesk.test/verify/abc123");
     }
 }
