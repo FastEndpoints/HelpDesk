@@ -46,9 +46,11 @@ Production Compose is independent of the local Aspire workflow:
 scripts/deploy-init.sh helpdesk.example.com
 # Optionally configure SMTP in .env.
 scripts/deploy.sh
+# Podman-only hosts: install boot-time systemd unit after a successful deploy.
+scripts/install-host-service.sh
 ```
 
-Only Caddy publishes host ports 80/443 and it manages HTTPS automatically. Follow root `DEPLOYMENT.md`; never commit `.env`, production JWT keys, or MongoDB/SMTP credentials.
+Only Caddy publishes host ports 80/443 and it manages HTTPS automatically. Follow root `DEPLOYMENT.md`; never commit `.env`, production JWT keys, or MongoDB/SMTP credentials. `install-host-service.sh` is Podman/systemd-only and re-runnable after clone moves; remove with `--remove`.
 
 ## Root commands
 

@@ -25,10 +25,11 @@ HelpDesk/
 │   └── Services/{UserIdentity,UserProfile,Notifications}/
 ├── compose.yaml                  # production Caddy edge and private service topology
 ├── Caddyfile                     # automatic HTTPS and BFF reverse proxy
-├── scripts/{deploy-init,deploy}.sh # production bootstrap and deployment
+├── deploy/helpdesk.service.in    # systemd unit template for Podman boot start
+├── scripts/{deploy-init,deploy,install-host-service}.sh
 ├── {backend,frontend}/Dockerfile
 ├── .env.example                  # production variable template; no real secrets
-├── DEPLOYMENT.md                 # VPS/Caddy deployment playbook
+├── DEPLOYMENT.md                 # VPS/Caddy/Podman host-service playbook
 ├── HelpDesk.slnx
 ├── package.json
 └── pnpm-workspace.yaml

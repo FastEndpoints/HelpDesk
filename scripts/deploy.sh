@@ -56,3 +56,7 @@ if ! curl --fail --show-error --silent --retry 10 --retry-delay 3 --retry-all-er
 fi
 
 printf 'Public edge reachable: https://%s/\n' "$domain"
+
+if [[ ${compose[0]} == podman ]]; then
+	printf 'Podman host: install or refresh the boot unit with scripts/install-host-service.sh\n'
+fi

@@ -44,6 +44,8 @@ The local MongoDB container is standalone: no replica set, transactions, keyfile
 
 Production values come from uncommitted `.env`; `.env.example` is only a manual template. `scripts/deploy-init.sh <domain>` safely creates `.env` once with a random hexadecimal MongoDB password and matching production JWT keys. Compose derives the public `https://` origins and MongoDB connection string from `DOMAIN` and the MongoDB credentials. `scripts/deploy.sh` selects Docker Compose or Podman Compose, validates, builds, starts, prints status, and performs a public HTTPS smoke test. `GET /profile-pictures/**` is proxied by the BFF to Profile.
 
+Compose services use `restart: unless-stopped` for in-process/container crashes while the engine can supervise them. That does not by itself restore a Podman stack after host reboot. For Podman-only hosts, `scripts/install-host-service.sh` installs a systemd oneshot unit from `deploy/helpdesk.service.in` that runs `podman compose --env-file .env up -d` on boot (and `compose stop` on unit stop). Rootful installs `/etc/systemd/system/helpdesk.service`; rootless installs a user unit and enables linger. The install script is separate from `deploy-init.sh` (secrets) and from `deploy.sh` (build/release). Docker hosts rely on `docker.service` plus Compose restart policy instead of this unit.
+
 See root `DEPLOYMENT.md` for provisioning and operations.
 
 ## Configuration names
@@ -69,5 +71,11 @@ Identity/Profile expose `/openapi/v1.json` outside Production. For `api:refresh`
 
 - `backend/AppHost/Program.cs`
 - `backend/AppHost/HelpDesk.AppHost.csproj`
+- `compose.yaml`
+- `deploy/helpdesk.service.in`
+- `scripts/deploy-init.sh`
+- `scripts/deploy.sh`
+- `scripts/install-host-service.sh`
+- `DEPLOYMENT.md`
 - `backend/Services/`
 - `frontend/scripts/openapi.mjs`

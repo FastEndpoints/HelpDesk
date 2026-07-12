@@ -43,9 +43,11 @@ cd HelpDesk
 scripts/deploy-init.sh helpdesk.example.com
 # Optionally enable and configure SMTP in .env.
 scripts/deploy.sh
+# Podman-only hosts: install the boot-time systemd unit after a successful deploy.
+scripts/install-host-service.sh
 ```
 
-Compose is production-only. Local full-stack development continues to use Aspire.
+Compose is production-only. Local full-stack development continues to use Aspire. On Podman-only hosts, `scripts/install-host-service.sh` installs a systemd unit so the stack returns after reboot; see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Prerequisites and bootstrap
 

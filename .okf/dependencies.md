@@ -14,7 +14,7 @@ resource: backend/Directory.Packages.props
 - **Local orchestration:** Aspire AppHost SDK and hosting packages 13.4.6; a running compatible container runtime supplies MongoDB
 - **Frontend:** Node.js 26 or newer; `.node-version` selects 26.4.0; SvelteKit 2/Svelte 5 with adapter-node
 - **Package manager:** pnpm 11 or newer; `packageManager` selects 11.10.0 by default; workspace package is `frontend`
-- **Production host tools:** Docker Compose (Podman Compose is a script fallback on hosts configured for privileged ports and SELinux bind mounts), OpenSSL for bootstrap, and curl for the public smoke test
+- **Production host tools:** Docker Compose (Podman Compose is a script fallback on hosts configured for privileged ports and SELinux bind mounts), OpenSSL for bootstrap, and curl for the public smoke test. Podman-only boot integration additionally needs systemd; `scripts/install-host-service.sh` installs a host unit from `deploy/helpdesk.service.in` (rootless also needs `loginctl` linger and unprivileged bind of ports 80/443).
 - Root `.npmrc` sets `engine-strict=true`
 
 Bootstrap with Corepack when available (`corepack enable` + `corepack prepare pnpm@11.10.0 --activate`); otherwise use `npm install --global pnpm@11.10.0`.

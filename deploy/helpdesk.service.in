@@ -1,0 +1,20 @@
+[Unit]
+Description=HelpDesk production Compose stack
+Documentation=file://@REPO_ROOT@/DEPLOYMENT.md
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=@REPO_ROOT@
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=@REPO_ROOT@
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=@PODMAN@ compose --env-file .env up -d
+ExecStop=@PODMAN@ compose --env-file .env stop
+TimeoutStartSec=0
+TimeoutStopSec=120
+SyslogIdentifier=helpdesk
+
+[Install]
+WantedBy=@WANTED_BY@
