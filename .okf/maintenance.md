@@ -28,6 +28,7 @@ Sync `.okf/` when work changes:
 - Security / auth
 - Config keys, ports, ops assumptions
 - Conventions / directory layout
+- Frontend look-and-feel / theme tokens / visual design language
 - Gotchas
 
 If unaffected, say so explicitly before finishing (`OKF unaffected (non-behavioral edit)` for pure comment/typo/format).

@@ -24,6 +24,7 @@ resource: README.md
 - Global usings in service `Meta.cs` / test `Tests/Meta.cs`
 - Nullable enabled; `ImplicitUsings` on
 - KISS / no speculative shared domain in Common
+- Frontend look-and-feel: dark navy + cyan theme aligned with FastEndpoints docs — see [Frontend UI](frontend-ui.md)
 
 ## Errors and validation
 

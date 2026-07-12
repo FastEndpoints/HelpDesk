@@ -57,6 +57,7 @@ Removed migration-era paths must not be documented or recreated as active workfl
 | Path | Contents |
 | --- | --- |
 | `frontend/src/routes/` | SvelteKit routes; currently only the foundation landing page |
+| `frontend/src/app.css` | Global styles / Tailwind entry; theme tokens belong here (or colocated theme CSS) |
 | `frontend/src/lib/server/api/` | BFF-only config, clients, errors, and session cookie convention |
 | `frontend/openapi/*.json` | Normalized Identity/Profile OpenAPI snapshots |
 | `frontend/src/lib/api/generated/*.d.ts` | Generated API path/schema types |

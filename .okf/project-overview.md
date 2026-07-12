@@ -36,7 +36,7 @@ Current system covers the **user onboarding path**:
 
 ## Status
 
-Active monorepo development. `backend/` targets .NET 10; `frontend/` requires Node 26 or newer and pnpm 11 or newer. `backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator and is run by `pnpm stack:dev`. The frontend currently provides a landing page and API foundations—not auth/profile UI.
+Active monorepo development. `backend/` targets .NET 10; `frontend/` requires Node 26 or newer and pnpm 11 or newer. `backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator and is run by `pnpm stack:dev`. The frontend currently provides a landing page and API foundations—not auth/profile UI. UI theming targets the FastEndpoints docs dark navy/cyan look (see [Frontend UI](frontend-ui.md)).
 
 Deployment decisions for verification-link routing and profile-picture serving/public URLs remain unresolved and block shipping those corresponding UI flows.
 
