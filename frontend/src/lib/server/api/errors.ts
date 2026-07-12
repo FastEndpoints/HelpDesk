@@ -1,10 +1,18 @@
+export type ProblemFieldError = {
+	name?: string;
+	reason?: string;
+	code?: string;
+	severity?: string;
+};
+
 export interface ProblemDetails {
 	type?: string;
 	title?: string;
 	status: number;
 	detail?: string;
 	instance?: string;
-	errors?: Record<string, string[]>;
+	/** FastEndpoints may return an array of field errors or a record bag. */
+	errors?: ProblemFieldError[] | Record<string, string[] | string>;
 	[key: string]: unknown;
 }
 

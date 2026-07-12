@@ -56,14 +56,15 @@ Removed migration-era paths must not be documented or recreated as active workfl
 
 | Path | Contents |
 | --- | --- |
-| `frontend/src/routes/` | SvelteKit routes; currently only the foundation landing page |
-| `frontend/src/app.css` | Global styles / Tailwind entry; theme tokens belong here (or colocated theme CSS) |
-| `frontend/src/lib/server/api/` | BFF-only config, clients, errors, and session cookie convention |
+| `frontend/src/routes/` | SvelteKit routes: landing (`/`), registration (`/register`), shared shell layout |
+| `frontend/src/routes/register/` | Registration form + server action BFF to Identity `POST /identities/register` |
+| `frontend/src/app.css` | Global styles / Tailwind v4 entry; FE-Docs navy/cyan theme tokens (`fe-*`) |
+| `frontend/src/lib/server/api/` | BFF-only config, clients, `ApiError`/problem mapping, and session cookie convention |
 | `frontend/openapi/*.json` | Normalized Identity/Profile OpenAPI snapshots |
 | `frontend/src/lib/api/generated/*.d.ts` | Generated API path/schema types |
 | `frontend/scripts/openapi.mjs` | Snapshot/type workflow; live commands require explicit Aspire-derived URLs |
 
-No registration, login, verification, profile-edit, or profile-picture UI currently exists.
+Registration UI exists. Login, verification, profile-edit, and profile-picture UI do not yet.
 
 ## Entry points and endpoints
 

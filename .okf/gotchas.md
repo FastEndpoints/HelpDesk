@@ -16,7 +16,7 @@ tags: [gotcha]
 - Matching development JWT private/public values are committed in base Identity/Profile appsettings. Do not regenerate keys or require user-secrets for normal local startup. Environment variables may override both; keep overrides paired and never reuse repository development material in production.
 - `pnpm` still owns frontend package management and validation. `pnpm frontend:dev` is frontend-only, not an alternative full-stack orchestrator.
 - Frontend is a SvelteKit BFF: JWT stays in the HttpOnly session cookie and backend origins remain private.
-- Current frontend is foundation only. Do not claim registration/login/verification/profile/picture UI exists.
+- Frontend has registration UI (`/register`) via BFF form action; do not claim login/verification/profile/picture UI exists yet.
 - Verification-link destination and profile-picture deployment/public URL are unresolved and block shipping those UI flows.
 - **Never** reference `backend/Services/*` from another service—only projects under `backend/Contracts/*` or `backend/Common/*`. Cross-service workflow = events only, not REST callbacks. The AppHost may reference service host projects solely for orchestration.
 - Events are facts after commit, not commands. Publish only after local persistence succeeds.

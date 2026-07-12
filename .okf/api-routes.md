@@ -20,7 +20,9 @@ Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Regis
 ### Request notes
 
 - Register/Login: email + password; FluentValidation (email format; register password min 12 / max 128)
+- Register response body is a plain success string (not a token DTO); account remains deactivated until verify
 - Duplicate email (normalized) → problem details / validation error on register
+- Frontend BFF: `POST /register` form action → Identity `POST /identities/register` (confirm password is client-only)
 
 ## UserProfile
 

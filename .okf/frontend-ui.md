@@ -67,8 +67,8 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 | Token home | Prefer CSS variables in `frontend/src/app.css` (or colocated theme CSS) named for brand/surface/text/focus; mirror FE-Docs values above |
 | Utilities | Map Tailwind theme colors to the `feBlue` / `feDarkBlue` / `feLightBlue` scales (or equivalent CSS-var-backed tokens) |
 | Components | Build app-local UI; do not copy FE-Docs docs chrome (search modal, docs sidebar, kit-docs prose) unless a page truly needs it |
-| Current state | Landing page already leans slate/cyan-on-dark; new UI should tighten toward the FE-Docs navy/cyan tokens rather than invent a second palette |
-| Auth/profile UI | Does not exist yet; when added, use this theme for forms, buttons, alerts, and shell |
+| Current state | Dark-first FE-Docs navy/cyan tokens live in `frontend/src/app.css` (`fe-*` Tailwind theme); shared sticky shell in `+layout.svelte` |
+| Auth/profile UI | Registration form at `/register` (email, password, confirm password) uses this theme; login/verify/profile/picture UI still missing |
 
 ## Non-goals
 
@@ -76,6 +76,15 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - Shipping FE-Docs components/search/docs layout as HelpDesk product UI
 - Light-mode parity by default
 - Third-party component libraries that impose a conflicting design system (e.g. Material-style light themes)
+
+## Registration UI notes
+
+- Route: `/register` → `frontend/src/routes/register/+page.svelte` + `+page.server.ts`
+- Browser never calls Identity directly; form posts to a SvelteKit action which uses `createIdentityApi().POST('/identities/register')`
+- Client-only confirm password; only email + password reach the backend
+- Success: hide form, show centered check-email notice with backend message
+- Validation: local field rules mirror Identity (email format, password 12–128); backend problem details mapped via `mapProblemFieldErrors`
+- Shell: sticky translucent navy header with brand + Create account nav link
 
 ## Sources
 
@@ -86,5 +95,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - `../FE-Docs/src/lib/components/site/`
 - `../FE-Docs/src/routes/+page.svelte`
 - `frontend/src/app.css`
+- `frontend/src/routes/+layout.svelte`
 - `frontend/src/routes/+page.svelte`
+- `frontend/src/routes/register/`
 - `frontend/package.json`

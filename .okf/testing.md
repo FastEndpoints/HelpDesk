@@ -13,7 +13,18 @@ resource: README.md
 
 From `frontend/`: `pnpm test:unit` runs Vitest and `pnpm test:e2e` runs Playwright. Install browser binaries once with `pnpm exec playwright install`. Playwright builds and previews the app on port 4173, with that origin configured as `baseURL`. Root aliases are `pnpm frontend:test:unit` and `pnpm frontend:test:e2e`; `pnpm check:quick` includes unit tests and `pnpm check:full` includes self-contained E2E without a separate prebuild.
 
-Current frontend unit coverage verifies server API error middleware/client behavior; the landing-page browser smoke is Playwright coverage. Do not infer that registration, login, verification, profile, or picture UI exists.
+Frontend unit coverage:
+- server API client → `ApiError` middleware
+- problem-details field mapping (`mapProblemFieldErrors`)
+- register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success message fallback, field/form `ApiError` mapping, unreachable-service 500
+
+Playwright (`register.e2e.ts`):
+- form + shell smoke
+- password mismatch keeps form and repopulates email
+- short password after `novalidate` hits server validation
+- Identity-unavailable path shows form-level error (preview has no backend URLs)
+
+Registration success against a live Identity service is not covered by Playwright without the Aspire stack. Do not infer that login, verification, profile, or picture UI exists.
 
 ## Frameworks and layout
 

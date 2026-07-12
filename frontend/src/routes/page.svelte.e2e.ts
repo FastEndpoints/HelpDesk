@@ -6,4 +6,7 @@ test('renders the Tailwind-styled landing page', async ({ page }) => {
 		page.getByRole('heading', { name: 'A secure home for your support profile.' })
 	).toBeVisible();
 	await expect(page.getByText('Frontend foundation ready')).toBeVisible();
+	await expect(
+		page.getByRole('main').getByRole('link', { name: 'Create account' })
+	).toHaveAttribute('href', '/register');
 });
