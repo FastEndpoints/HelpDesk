@@ -18,7 +18,8 @@ Frontend unit coverage:
 - session cookie helpers (`lib/server/api/session.spec.ts`): `helpdesk_session` name, HttpOnly/SameSite/Path, maxAge default + 7-day cap, Secure in production, clear attributes
 - problem-details field mapping (`mapProblemFieldErrors`)
 - register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success message fallback, field/form `ApiError` mapping, unreachable-service 500
-- login BFF action (`routes/login/page.server.spec.ts`): local validation, email trim, Identity POST body shape, session cookie maxAge from string/Date `expiresAt` (unparseable → default; past → 0), missing-token 502, redirect home, field/form `ApiError` mapping (email/password), title/generic fallbacks, out-of-range status clamp, unreachable-service 500
+- login BFF action (`routes/login/page.server.spec.ts`): local validation, email trim, Identity POST body shape, session cookie maxAge from string/Date `expiresAt` (unparseable → default; past → 0), missing-token 502, redirect home or safe `redirectTo`, open-redirect rejection, field/form `ApiError` mapping (email/password), title/generic fallbacks, out-of-range status clamp, unreachable-service 500
+- profile BFF load/actions (`routes/settings/profile/page.server.spec.ts`): no session → login redirect with return URL; load maps profile + null picture; incomplete payload 502; 401/403/404 clear session + redirect; unreachable 503; update validation/trim/PUT body; upload local type/size gates + multipart FormData body; delete success; field/form `ApiError` mapping; unreachable action 500
 - root layout load (`routes/layout.server.spec.ts`): no cookie → anonymous; session → Profile `GET /profiles/me` maps `displayName`/`pictureUrl` (null/undefined → null); empty/missing displayName or empty body → anonymous without clear; 401/403/404 clears session; other errors keep cookie and stay anonymous
 - verify BFF load/action (`routes/verify/[code]/page.server.spec.ts`): code trim/`hasCode`, missing/whitespace submit, path param to Identity GET, success message fallback, `ApiError` detail/title/status clamp, unreachable-service 500
 
@@ -44,7 +45,7 @@ Playwright (`verify.e2e.ts`):
 - Identity-unavailable after click → form error, stays on prompt
 - `/login` form smoke (post-verify CTA target)
 
-Register/login/verify success against a live Identity service is not covered by Playwright without the Aspire stack (preview has no backend URLs; browser never calls Identity). Signed-in shell chrome depends on Profile `GET /profiles/me` in root layout load; live success path needs Aspire. Profile-edit/picture management UI still does not exist.
+Register/login/verify/profile success against live Identity/Profile services is not covered by Playwright without the Aspire stack (preview has no backend URLs; browser never calls backends). Signed-in shell chrome and `/settings/profile` depend on Profile `GET /profiles/me`; live success paths need Aspire.
 
 ## Frameworks and layout
 

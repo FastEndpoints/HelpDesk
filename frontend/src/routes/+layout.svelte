@@ -10,6 +10,7 @@
 	const user = $derived(data.user);
 	const registerActive = $derived(page.url.pathname === '/register');
 	const loginActive = $derived(page.url.pathname === '/login');
+	const profileActive = $derived(page.url.pathname === '/settings/profile');
 
 	const initials = $derived.by(() => {
 		if (!user?.displayName) return '?';
@@ -33,9 +34,16 @@
 			</a>
 			<nav class="flex items-center gap-4 text-sm">
 				{#if user}
-					<span
-						class="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-fe-heading"
+					<a
+						href={resolve('/settings/profile')}
+						class={[
+							'flex items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors',
+							profileActive
+								? 'bg-[linear-gradient(90deg,rgb(0_223_255_/_0.16),transparent)] text-fe-light-500'
+								: 'text-fe-heading hover:text-white'
+						]}
 						data-testid="shell-profile"
+						aria-current={profileActive ? 'page' : undefined}
 					>
 						{#if user.pictureUrl}
 							<img
@@ -52,7 +60,7 @@
 							</span>
 						{/if}
 						<span class="max-w-[12rem] truncate font-medium">{user.displayName}</span>
-					</span>
+					</a>
 				{:else}
 					<a
 						href={resolve('/login')}

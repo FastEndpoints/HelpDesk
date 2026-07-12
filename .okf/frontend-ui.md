@@ -68,7 +68,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 | Utilities | Map Tailwind theme colors to the `feBlue` / `feDarkBlue` / `feLightBlue` scales (or equivalent CSS-var-backed tokens) |
 | Components | Build app-local UI; do not copy FE-Docs docs chrome (search modal, docs sidebar, kit-docs prose) unless a page truly needs it |
 | Current state | Dark-first FE-Docs navy/cyan tokens live in `frontend/src/app.css` (`fe-*` Tailwind theme); shared sticky shell in `+layout.svelte` + `+layout.server.ts` |
-| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), and login (`/login`) use this theme; shell shows signed-in name/avatar from Profile `GET /profiles/me`; profile-edit/picture management UI still missing |
+| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), login (`/login`), and profile (`/settings/profile`) use this theme; shell shows signed-in name/avatar from Profile `GET /profiles/me` and links to the profile page |
 
 ## Non-goals
 
@@ -98,18 +98,29 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 
 - Route: `/login` → `frontend/src/routes/login/+page.svelte` + `+page.server.ts`
 - Browser never calls Identity directly; form posts to a SvelteKit action which uses `createIdentityApi().POST('/identities/login')`
-- On success: BFF writes JWT to HttpOnly `helpdesk_session` cookie via `writeSessionToken` (maxAge from Identity `expiresAt`, capped at 7 days; `Secure` in production) then redirects home
+- On success: BFF writes JWT to HttpOnly `helpdesk_session` cookie via `writeSessionToken` (maxAge from Identity `expiresAt`, capped at 7 days; `Secure` in production) then redirects to a safe relative `redirectTo` (default `/`; rejects protocol-relative/absolute URLs)
+- Optional `?redirectTo=` query (e.g. from protected profile page) is echoed as a hidden form field
 - Validation: local field rules mirror Identity login (email format/max 320; password required/max 128); backend problem details mapped via `mapProblemFieldErrors`
 - Shell nav includes Sign in + Create account when anonymous; post-verify CTA targets this page
+
+## Profile UI notes
+
+- Route: `/settings/profile` → `frontend/src/routes/settings/profile/+page.svelte` + `+page.server.ts`
+- Auth-gated: no session or Profile 401/403/404 → clear cookie (auth failures) and redirect to `/login?redirectTo=/settings/profile`
+- Load: BFF `GET /profiles/me` → `{ profile: { id, email, displayName, status, pictureUrl } }`
+- UX: read-only summary by default; **Edit profile** toggles edit mode
+- Actions (named): `update` → `PUT /profiles/me` (`displayName` required, max 100, trim); `uploadPicture` → `PUT /profiles/me/picture` multipart field `file` (PNG/JPEG, max 5 MiB); `deletePicture` → `DELETE /profiles/me/picture` when a picture exists
+- Browser never calls Profile directly; JWT stays server-only; email is display-only (not client-writable)
+- Local validation mirrors Profile rules; backend problem details mapped via `mapProblemFieldErrors`
 
 ## Shell session chrome
 
 - Root layout load: `frontend/src/routes/+layout.server.ts`
 - Reads `helpdesk_session` via `readSessionToken`; if present, BFF calls Profile `GET /profiles/me` with bearer token via `createProfileApi(token)`
-- On success: layout data `{ user: { displayName, pictureUrl } }` — header shows avatar (or initials) + name; Sign in / Create account hidden
+- On success: layout data `{ user: { displayName, pictureUrl } }` — header shows avatar (or initials) + name as a link to `/settings/profile` (`data-testid="shell-profile"`, active cyan wash); Sign in / Create account hidden
 - On 401/403/404: clear invalid session cookie and treat as anonymous; other failures keep cookie and fall back to anonymous chrome (no throw)
 - JWT never sent to the browser; only display fields reach the client
-- No logout control and no profile-edit route yet
+- No logout control yet
 
 ## Sources
 
@@ -126,5 +137,6 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - `frontend/src/routes/register/`
 - `frontend/src/routes/verify/[code]/`
 - `frontend/src/routes/login/`
+- `frontend/src/routes/settings/profile/`
 - `frontend/src/lib/server/api/session.ts`
 - `frontend/package.json`

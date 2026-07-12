@@ -56,18 +56,19 @@ Removed migration-era paths must not be documented or recreated as active workfl
 
 | Path | Contents |
 | --- | --- |
-| `frontend/src/routes/` | SvelteKit routes: landing (`/`), registration (`/register`), verify (`/verify/[code]`), login (`/login`), shared shell layout |
+| `frontend/src/routes/` | SvelteKit routes: landing (`/`), registration (`/register`), verify (`/verify/[code]`), login (`/login`), profile (`/settings/profile`), shared shell layout |
 | `frontend/src/routes/+layout.server.ts` | Root layout load: session cookie → Profile `GET /profiles/me` for shell user chrome |
 | `frontend/src/routes/register/` | Registration form + server action BFF to Identity `POST /identities/register` |
 | `frontend/src/routes/verify/[code]/` | Email verification page; button posts to BFF action → Identity `GET /identities/verify/{code}` |
-| `frontend/src/routes/login/` | Sign-in form + server action BFF to Identity `POST /identities/login`; sets `helpdesk_session` cookie |
+| `frontend/src/routes/login/` | Sign-in form + server action BFF to Identity `POST /identities/login`; sets `helpdesk_session` cookie; optional safe `redirectTo` |
+| `frontend/src/routes/settings/profile/` | Auth-gated profile view/edit BFF: load + update/upload/delete picture actions against Profile |
 | `frontend/src/app.css` | Global styles / Tailwind v4 entry; FE-Docs navy/cyan theme tokens (`fe-*`) |
 | `frontend/src/lib/server/api/` | BFF-only config, clients, `ApiError`/problem mapping, and session cookie convention |
 | `frontend/openapi/*.json` | Normalized Identity/Profile OpenAPI snapshots |
 | `frontend/src/lib/api/generated/*.d.ts` | Generated API path/schema types |
 | `frontend/scripts/openapi.mjs` | Snapshot/type workflow; live commands require explicit Aspire-derived URLs |
 
-Registration, email-verification, login UI, and signed-in shell chrome (name/avatar from Profile) exist. Profile-edit and profile-picture management UI do not yet.
+Registration, email-verification, login, profile view/edit (including picture upload/delete), and signed-in shell chrome (name/avatar link to `/settings/profile`) exist. Logout UI does not yet.
 
 ## Entry points and endpoints
 

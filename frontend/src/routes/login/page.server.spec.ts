@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/server/api/errors';
 import { createIdentityApi } from '$lib/server/api/identity';
 import { writeSessionToken } from '$lib/server/api/session';
-import { actions, type LoginFormState } from './+page.server';
+import { actions, load, type LoginFormState } from './+page.server';
 
 vi.mock('$lib/server/api/identity', () => ({
 	createIdentityApi: vi.fn()
@@ -39,6 +39,12 @@ async function submit(fields: Record<string, string>) {
 	const action = actions.default;
 	if (typeof action !== 'function') throw new Error('default action missing');
 	return action({ request: requestOf(fields), cookies } as never);
+}
+
+async function loadWith(search = '') {
+	return load({
+		url: new URL(`http://frontend.test/login${search}`)
+	} as never);
 }
 
 function expectFailure(result: unknown): { status: number; data: LoginFormState } {
@@ -113,6 +119,15 @@ describe('login form action', () => {
 		expect(createIdentityApiMock).not.toHaveBeenCalled();
 	});
 
+	it('defaults redirectTo to home and accepts a safe relative path', async () => {
+		expect(await loadWith()).toEqual({ redirectTo: '/' });
+		expect(await loadWith('?redirectTo=%2Fsettings%2Fprofile')).toEqual({
+			redirectTo: '/settings/profile'
+		});
+		expect(await loadWith('?redirectTo=https://evil.example')).toEqual({ redirectTo: '/' });
+		expect(await loadWith('?redirectTo=//evil.example')).toEqual({ redirectTo: '/' });
+	});
+
 	it('trims email, posts credentials, sets session cookie from expiresAt, and redirects home', async () => {
 		const expiresAt = '2026-01-08T00:00:00.000Z';
 		post.mockResolvedValue({
@@ -147,6 +162,56 @@ describe('login form action', () => {
 			'jwt-access-token',
 			7 * 24 * 60 * 60
 		);
+	});
+
+	it('redirects to a safe redirectTo after successful login', async () => {
+		post.mockResolvedValue({
+			data: {
+				id: 'user-1',
+				email: 'user@example.test',
+				accessToken: 'jwt-access-token',
+				expiresAt: '2026-01-08T00:00:00.000Z'
+			},
+			error: undefined,
+			response: new Response()
+		});
+
+		try {
+			await submit({
+				...VALID,
+				redirectTo: '/settings/profile'
+			});
+			throw new Error('expected redirect');
+		} catch (error) {
+			expect(isRedirect(error)).toBe(true);
+			if (!isRedirect(error)) throw error;
+			expect(error.status).toBe(303);
+			expect(error.location).toBe('/settings/profile');
+		}
+	});
+
+	it('ignores open-redirect targets after successful login', async () => {
+		post.mockResolvedValue({
+			data: {
+				id: 'user-1',
+				email: 'user@example.test',
+				accessToken: 'jwt-access-token'
+			},
+			error: undefined,
+			response: new Response()
+		});
+
+		try {
+			await submit({
+				...VALID,
+				redirectTo: 'https://evil.example'
+			});
+			throw new Error('expected redirect');
+		} catch (error) {
+			expect(isRedirect(error)).toBe(true);
+			if (!isRedirect(error)) throw error;
+			expect(error.location).toBe('/');
+		}
 	});
 
 	it('uses default cookie maxAge when expiresAt is missing', async () => {

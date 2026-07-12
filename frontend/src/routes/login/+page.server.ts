@@ -39,8 +39,17 @@ function sessionMaxAgeSeconds(expiresAt: string | Date | undefined): number | un
 	return Math.max(0, Math.floor((expiresMs - Date.now()) / 1000));
 }
 
-export const load: PageServerLoad = async () => {
-	return {};
+function safeRedirectPath(raw: FormDataEntryValue | null | undefined): string {
+	if (typeof raw !== 'string') return '/';
+	const path = raw.trim();
+	if (!path.startsWith('/') || path.startsWith('//') || path.includes('://')) return '/';
+	return path;
+}
+
+export const load: PageServerLoad = async ({ url }) => {
+	return {
+		redirectTo: safeRedirectPath(url.searchParams.get('redirectTo'))
+	};
 };
 
 export const actions: Actions = {
@@ -48,6 +57,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const email = String(formData.get('email') ?? '').trim();
 		const password = String(formData.get('password') ?? '');
+		const redirectTo = safeRedirectPath(formData.get('redirectTo'));
 
 		const errors: LoginFieldErrors = {};
 
@@ -130,6 +140,6 @@ export const actions: Actions = {
 		}
 
 		writeSessionToken(cookies, accessToken, maxAge);
-		redirect(303, '/');
+		redirect(303, redirectTo);
 	}
 };

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import type { ActionData } from './$types';
+	import type { ActionData, PageData } from './$types';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let pending = $state(false);
 </script>
@@ -34,6 +34,8 @@
 				};
 			}}
 		>
+			<input type="hidden" name="redirectTo" value={data.redirectTo} />
+
 			{#if form?.errors.form?.[0]}
 				<div
 					class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200"
