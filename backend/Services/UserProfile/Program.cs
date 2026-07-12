@@ -35,8 +35,12 @@ bld.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = maxUploadB
 bld.WebHost.ConfigureKestrel(
     o =>
     {
-        o.ListenInterProcess(UserProfileService.Name);    // grpc transport
-        o.ListenLocalhost(settings.UserProfile.HttpPort); // http endpoints
+        o.ListenInterProcess(UserProfileService.Name); // grpc transport
+
+        if (bld.Environment.IsProduction())
+            o.ListenAnyIP(settings.UserProfile.HttpPort); // private container HTTP endpoint
+        else
+            o.ListenLocalhost(settings.UserProfile.HttpPort); // local orchestrator HTTP endpoint
     });
 
 bld.Services

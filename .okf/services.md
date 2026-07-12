@@ -36,6 +36,10 @@ tags: [architecture]
 - **Subscribes:** `UserIdentityVerificationIssuedEvent` → queue `SendEmailCommand`
 - **REST:** no business API (dummy root endpoint present)
 
+## Production process topology
+
+Production Compose publishes the three service projects into one Ubuntu Chiseled .NET 10 backend image. `backend/Deployment/BackendLauncher` is PID 1: it starts all service DLLs, forwards SIGINT/SIGTERM, terminates siblings when one exits, and reports unexpected child exits as failure. Identity/Profile bind private container ports 8080/8081 in Production; Notifications remains IPC-only. This co-location preserves host-local FastEndpoints IPC and does not alter service project-reference boundaries.
+
 ## Mesh edges
 
 ```text

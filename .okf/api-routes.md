@@ -36,7 +36,7 @@ Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Regis
 | PUT | `/profiles/me/picture` | JWT + `Profiles_Upload_Own_Picture` (`User`) | Multipart upload; decoder-verified PNG/JPEG only, configurable size limit (default 5 MiB); center-crop resize 300×300; store key + public URL; frontend BFF `?/uploadPicture` |
 | DELETE | `/profiles/me/picture` | JWT + `Profiles_Delete_Own_Picture` (`User`) | Clear picture metadata and delete local file; idempotent when none; frontend BFF `?/deletePicture` |
 
-Public static files: `GET /profile-pictures/**` (no auth) from local storage root.
+Public static files: Profile owns `GET /profile-pictures/**` (no auth) from its local storage root. In production the public SvelteKit route `GET /profile-pictures/[...path]` proxies to that private endpoint and forwards image/cache metadata headers.
 
 Implementation: `backend/Services/UserProfile/Endpoints/Profiles/{GetCurrent,UpdateCurrent,UploadPicture,DeletePicture}/`.
 

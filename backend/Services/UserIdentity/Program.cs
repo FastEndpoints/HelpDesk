@@ -20,8 +20,12 @@ bld.Services.Configure<UserIdentitySettings>(bld.Configuration);
 bld.WebHost.ConfigureKestrel(
     o =>
     {
-        o.ListenInterProcess(Service.Name);                // grpc transport
-        o.ListenLocalhost(settings.UserIdentity.HttpPort); // http endpoints
+        o.ListenInterProcess(Service.Name); // grpc transport
+
+        if (bld.Environment.IsProduction())
+            o.ListenAnyIP(settings.UserIdentity.HttpPort); // private container HTTP endpoint
+        else
+            o.ListenLocalhost(settings.UserIdentity.HttpPort); // local orchestrator HTTP endpoint
     });
 
 bld.Services

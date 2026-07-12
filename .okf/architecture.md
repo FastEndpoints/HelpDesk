@@ -19,7 +19,7 @@ Brokerless microservice mesh:
 - **AppHost** = development orchestration, not a business service
 - **Broker** = none; **business RPC** = none
 
-Current service topology is host-local and hardcoded in startup: `ListenInterProcess(Service.Name)` + `MapRemote(publisherName, …)`, with Identity/Profile HTTP listeners bound through `ListenLocalhost`. No deployment manifest implements a network transport or multi-host mesh.
+Service messaging remains host-local and hardcoded in startup: `ListenInterProcess(Service.Name)` + `MapRemote(publisherName, …)`. Aspire development binds Identity/Profile HTTP through `ListenLocalhost`; Production binds their configured ports through `ListenAnyIP`. The production Compose deployment uses Caddy as its automatic-HTTPS public edge and co-locates all three service processes in one backend container so IPC remains valid; it does not implement network or multi-host mesh transport.
 
 ## Local resource graph
 

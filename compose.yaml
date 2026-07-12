@@ -1,0 +1,110 @@
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      - bff
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro,Z
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - edge
+
+  bff:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    stop_grace_period: 40s
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      ORIGIN: https://${DOMAIN:?Set DOMAIN in .env}
+      IDENTITY_API_BASE_URL: http://backend:8080
+      PROFILE_API_BASE_URL: http://backend:8081
+    expose:
+      - "3000"
+    networks:
+      - edge
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    stop_grace_period: 40s
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DOTNET_ENVIRONMENT: Production
+      UserIdentity__HttpPort: 8080
+      UserProfile__HttpPort: 8081
+      ConnectionStrings__MongoDB: mongodb://${MONGO_INITDB_ROOT_USERNAME:?Set MONGO_INITDB_ROOT_USERNAME in .env}:${MONGO_INITDB_ROOT_PASSWORD:?Set MONGO_INITDB_ROOT_PASSWORD in .env}@mongodb:27017/?authSource=admin&authMechanism=SCRAM-SHA-256
+      UserIdentity__FrontendBaseUrl: https://${DOMAIN:?Set DOMAIN in .env}
+      UserIdentity__Jwt__PrivateKeyPem: ${JWT_PRIVATE_KEY:?Set JWT_PRIVATE_KEY in .env}
+      UserProfile__Jwt__PublicKey: ${JWT_PUBLIC_KEY:?Set JWT_PUBLIC_KEY in .env}
+      UserProfile__ProfilePictures__StorageRoot: /data/profile-pictures
+      UserProfile__ProfilePictures__PublicBaseUrl: https://${DOMAIN:?Set DOMAIN in .env}/profile-pictures
+      Smtp__Enabled: ${SMTP_ENABLED:-false}
+      Smtp__Host: ${SMTP_HOST:-}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__UseSsl: ${SMTP_USE_SSL:-true}
+      Smtp__Username: ${SMTP_USERNAME:-}
+      Smtp__Password: ${SMTP_PASSWORD:-}
+      Smtp__SenderName: ${SMTP_SENDER_NAME:-HelpDesk}
+      Smtp__SenderEmail: ${SMTP_SENDER_EMAIL:-}
+      Smtp__AdminName: ${SMTP_ADMIN_NAME:-}
+      Smtp__AdminEmail: ${SMTP_ADMIN_EMAIL:-}
+    expose:
+      - "8080"
+      - "8081"
+    volumes:
+      - profile_pictures:/data/profile-pictures
+    networks:
+      - edge
+      - data
+
+  mongodb:
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:?Set MONGO_INITDB_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Set MONGO_INITDB_ROOT_PASSWORD in .env}
+    expose:
+      - "27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mongosh --quiet --username "$${MONGO_INITDB_ROOT_USERNAME}" --password "$${MONGO_INITDB_ROOT_PASSWORD}" --authenticationDatabase admin --eval "db.adminCommand('ping').ok" | grep 1
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - data
+
+networks:
+  edge:
+    driver: bridge
+  data:
+    driver: bridge
+    internal: true
+
+volumes:
+  caddy_data:
+  caddy_config:
+  mongodb_data:
+  profile_pictures:

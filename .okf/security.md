@@ -30,6 +30,12 @@ Matching development-only RSA values are intentionally committed in base appsett
 
 This pair lets the Aspire development stack run without key generation or user-secrets setup. These values are public repository development material, not production credentials. Never reuse them in deployed environments. Environment variables `UserIdentity__Jwt__PrivateKeyPem` and `UserProfile__Jwt__PublicKey` may override them; override both with a matching pair. Never put a private key in frontend configuration or browser code.
 
+## Production edge and secrets
+
+Caddy is the production public edge and terminates HTTPS with automatically obtained, publicly trusted certificates persisted in the `caddy_data` volume. Caddy alone publishes host ports 80/443 and reverse-proxies to the private HTTP BFF. The simple deployment path uses direct DNS; a later CDN proxy requires strict origin TLS and source-restricted origin firewall rules. Keep production ports 3000, 8080, 8081, and 27017 closed publicly.
+
+Production `.env` is uncommitted. `scripts/deploy-init.sh` creates it with mode 600, a random hexadecimal MongoDB password, and a new matching 3072-bit RSA JWT pair; it refuses to overwrite an existing file. `DOMAIN` derives the public HTTPS origins used by the application and Caddy. Optional SMTP credentials remain operator-supplied. Separate Compose edge (Caddy/BFF/backend) and internal data (backend/MongoDB) networks prevent direct edge-to-MongoDB access. The BFF proxies public anonymous `/profile-pictures/**` requests to private Profile storage.
+
 ## Authorization (mesh RBAC)
 
 Invariant: **group name ≡ JWT role claim ≡ FE `AccessControl` groupName ≡ `Allow.{Name}`**.

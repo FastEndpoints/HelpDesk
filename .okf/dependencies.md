@@ -14,9 +14,14 @@ resource: backend/Directory.Packages.props
 - **Local orchestration:** Aspire AppHost SDK and hosting packages 13.4.6; a running compatible container runtime supplies MongoDB
 - **Frontend:** Node.js 26 or newer; `.node-version` selects 26.4.0; SvelteKit 2/Svelte 5 with adapter-node
 - **Package manager:** pnpm 11 or newer; `packageManager` selects 11.10.0 by default; workspace package is `frontend`
+- **Production host tools:** Docker Compose (Podman Compose is a script fallback on hosts configured for privileged ports and SELinux bind mounts), OpenSSL for bootstrap, and curl for the public smoke test
 - Root `.npmrc` sets `engine-strict=true`
 
 Bootstrap with Corepack when available (`corepack enable` + `corepack prepare pnpm@11.10.0 --activate`); otherwise use `npm install --global pnpm@11.10.0`.
+
+## Production container runtime
+
+Production builds the frontend with Node 26 Alpine and runs the generated adapter-node HTTP server behind `caddy:2.10-alpine`, which provides automatic HTTPS. Backend service processes and the dependency-free `net10.0` PID 1 launcher run on `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled`; builds use the matching Ubuntu Noble SDK. MongoDB uses the pinned `mongo:8.0` image.
 
 ## Central package management
 

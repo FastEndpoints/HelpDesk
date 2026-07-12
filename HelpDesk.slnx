@@ -1,35 +1,38 @@
 <Solution>
-  <Folder Name="/Common/" />
-  <Folder Name="/Common/StorageProvider/">
-    <Project Path="backend/Common/StorageProvider/Common.StorageProvider.csproj" />
-  </Folder>
-  <Folder Name="/Common/Tools/">
-    <Project Path="backend/Common/Tools/Common.Tools.csproj" />
-  </Folder>
-  <Folder Name="/Contracts/" />
-  <Folder Name="/Contracts/Notifications/">
-    <Project Path="backend/Contracts/Notifications/Contracts.Notifications.csproj" />
-  </Folder>
-  <Folder Name="/Contracts/UserIdentity/">
-    <Project Path="backend/Contracts/UserIdentity/Contracts.UserIdentity.csproj" />
-  </Folder>
-  <Folder Name="/Contracts/UserProfile/">
-    <Project Path="backend/Contracts/UserProfile/Contracts.UserProfile.csproj" />
-  </Folder>
-  <Folder Name="/Services/" />
-  <Folder Name="/Services/Notifications/">
-    <Project Path="backend/Services/Notifications/Services.Notifications.csproj" />
-  </Folder>
-  <Folder Name="/Services/UserIdentity/">
-    <Project Path="backend/Services/UserIdentity/Services.UserIdentity.csproj" />
-  </Folder>
-  <Folder Name="/Services/UserProfile/">
-    <Project Path="backend/Services/UserProfile/Services.UserProfile.csproj" />
-  </Folder>
-  <Folder Name="/Solution Items/">
-    <File Path="backend/Directory.Packages.props" />
-  </Folder>
-  <Folder Name="/Solution Items/AppHost/">
-    <Project Path="backend/AppHost/HelpDesk.AppHost.csproj" />
-  </Folder>
+    <Folder Name="/Solution Items/">
+        <File Path="backend/Directory.Packages.props"/>
+    </Folder>
+    <Folder Name="/Solution Items/AppHost/">
+        <Project Path="backend/AppHost/HelpDesk.AppHost.csproj"/>
+    </Folder>
+    <Folder Name="/Solution Items/Deployment/">
+        <Project Path="backend/Deployment/BackendLauncher/HelpDesk.BackendLauncher.csproj"/>
+    </Folder>
+    <Folder Name="/Common/"/>
+    <Folder Name="/Common/StorageProvider/">
+        <Project Path="backend/Common/StorageProvider/Common.StorageProvider.csproj"/>
+    </Folder>
+    <Folder Name="/Common/Tools/">
+        <Project Path="backend/Common/Tools/Common.Tools.csproj"/>
+    </Folder>
+    <Folder Name="/Contracts/"/>
+    <Folder Name="/Contracts/Notifications/">
+        <Project Path="backend/Contracts/Notifications/Contracts.Notifications.csproj"/>
+    </Folder>
+    <Folder Name="/Contracts/UserIdentity/">
+        <Project Path="backend/Contracts/UserIdentity/Contracts.UserIdentity.csproj"/>
+    </Folder>
+    <Folder Name="/Contracts/UserProfile/">
+        <Project Path="backend/Contracts/UserProfile/Contracts.UserProfile.csproj"/>
+    </Folder>
+    <Folder Name="/Services/"/>
+    <Folder Name="/Services/Notifications/">
+        <Project Path="backend/Services/Notifications/Services.Notifications.csproj"/>
+    </Folder>
+    <Folder Name="/Services/UserIdentity/">
+        <Project Path="backend/Services/UserIdentity/Services.UserIdentity.csproj"/>
+    </Folder>
+    <Folder Name="/Services/UserProfile/">
+        <Project Path="backend/Services/UserProfile/Services.UserProfile.csproj"/>
+    </Folder>
 </Solution>

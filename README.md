@@ -29,7 +29,23 @@ Backend services remain independently deployable. Cross-service business workflo
 - backend origins are private runtime variables named `IDENTITY_API_BASE_URL` and `PROFILE_API_BASE_URL`; Aspire injects both into Vite—never expose them with a `PUBLIC_` prefix;
 - JWTs returned by UserIdentity are held by the BFF in the `helpdesk_session` cookie, with `HttpOnly`, `SameSite=Lax`, `Path=/`, a maximum seven-day lifetime, and `Secure` in production. Do not expose JWTs to browser JavaScript or browser storage.
 
-The current frontend is a foundation/landing page with server API helpers. Registration, login, verification, profile editing, and profile-picture UI flows are **not implemented**. Deployment decisions for the verification-link destination and profile-picture serving/public URL remain unresolved; those decisions block shipping the corresponding UI flows.
+The frontend implements registration, login, email verification, profile editing, profile-picture upload/delete, and signed-in shell chrome through server-side BFF actions. Production serves picture URLs through the BFF's public `/profile-pictures/**` proxy while the Profile origin remains private.
+
+## Production deployment
+
+Production uses the committed `compose.yaml`: Caddy is the only public service and manages HTTPS automatically, SvelteKit runs behind it as the BFF, all three .NET services run together for host-local IPC, and MongoDB/profile pictures use persistent named volumes.
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for DNS, production secrets, firewall rules, automatic HTTPS, startup, and operations.
+
+```bash
+git clone <repository-url> HelpDesk
+cd HelpDesk
+scripts/deploy-init.sh helpdesk.example.com
+# Optionally enable and configure SMTP in .env.
+scripts/deploy.sh
+```
+
+Compose is production-only. Local full-stack development continues to use Aspire.
 
 ## Prerequisites and bootstrap
 

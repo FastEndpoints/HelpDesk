@@ -1,0 +1,14 @@
+.git
+.idea
+.serena
+.local
+.env
+.env.*
+!.env.example
+**/node_modules
+**/bin
+**/obj
+**/.svelte-kit
+frontend/build
+frontend/test-results
+frontend/playwright-report

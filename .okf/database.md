@@ -28,6 +28,10 @@ The local resource intentionally has:
 
 Read connection details from the Aspire dashboard. Container replacement/removal loses local data. These local topology constraints do not define production MongoDB deployment requirements.
 
+## Production persistence
+
+Production Compose runs private `mongo:8.0` with authentication and the `mongodb_data` named volume. All backend processes use the externally supplied `ConnectionStrings__MongoDB`; committed development credentials must not be reused. Profile files live at `/data/profile-pictures` on the `profile_pictures` named volume. Removing Compose volumes destroys this data.
+
 ## Databases
 
 | Service | Production default | Testing default |

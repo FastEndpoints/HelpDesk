@@ -19,16 +19,22 @@ HelpDesk/
 │   └── scripts/openapi.mjs
 ├── backend/
 │   ├── AppHost/                  # Aspire local full-stack orchestrator
+│   ├── Deployment/               # production backend PID 1 launcher + volume seed
 │   ├── Common/{StorageProvider,Tools}/
 │   ├── Contracts/{UserIdentity,UserProfile,Notifications}/
-│   ├── Services/{UserIdentity,UserProfile,Notifications}/
-│   └── Directory.Packages.props
+│   └── Services/{UserIdentity,UserProfile,Notifications}/
+├── compose.yaml                  # production Caddy edge and private service topology
+├── Caddyfile                     # automatic HTTPS and BFF reverse proxy
+├── scripts/{deploy-init,deploy}.sh # production bootstrap and deployment
+├── {backend,frontend}/Dockerfile
+├── .env.example                  # production variable template; no real secrets
+├── DEPLOYMENT.md                 # VPS/Caddy deployment playbook
 ├── HelpDesk.slnx
 ├── package.json
 └── pnpm-workspace.yaml
 ```
 
-Removed migration-era paths must not be documented or recreated as active workflows: `compose.yaml`, root `.env.example`, `scripts/`, service `Properties/launchSettings.json`, and `frontend/.env.example`. The AppHost launch settings are active IDE configuration, not a service-local workflow.
+`compose.yaml`, root `.env.example`, Dockerfiles, and `backend/Deployment/` are production-only artifacts. They do not replace Aspire local orchestration. Removed service `Properties/launchSettings.json`, root `scripts/`, and `frontend/.env.example` remain obsolete; the AppHost launch settings are active IDE configuration.
 
 ## Orchestration
 

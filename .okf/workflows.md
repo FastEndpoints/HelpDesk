@@ -38,6 +38,18 @@ Do not document running service projects in separate terminals as a supported fu
 
 MongoDB-backed backend test commands require `pnpm stack:dev` to be running; they use the Aspire-managed instance on `localhost:27017`.
 
+## Production deployment
+
+Production Compose is independent of the local Aspire workflow:
+
+```bash
+scripts/deploy-init.sh helpdesk.example.com
+# Optionally configure SMTP in .env.
+scripts/deploy.sh
+```
+
+Only Caddy publishes host ports 80/443 and it manages HTTPS automatically. Follow root `DEPLOYMENT.md`; never commit `.env`, production JWT keys, or MongoDB/SMTP credentials.
+
 ## Root commands
 
 ```bash
