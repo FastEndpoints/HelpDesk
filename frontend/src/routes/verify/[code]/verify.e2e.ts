@@ -29,10 +29,10 @@ test('shows Identity unavailable error after Verify email click', async ({ page 
 	await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
 });
 
-test('login stub is reachable as the post-verify destination', async ({ page }) => {
+test('login form is reachable as the post-verify destination', async ({ page }) => {
 	await page.goto('/login');
 
 	await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
-	await expect(page.getByText('Login is not available yet.')).toBeVisible();
-	await expect(page.getByRole('link', { name: 'Back to home' })).toBeVisible();
+	await expect(page.getByLabel('Email')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
 });

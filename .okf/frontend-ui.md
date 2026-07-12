@@ -67,8 +67,8 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 | Token home | Prefer CSS variables in `frontend/src/app.css` (or colocated theme CSS) named for brand/surface/text/focus; mirror FE-Docs values above |
 | Utilities | Map Tailwind theme colors to the `feBlue` / `feDarkBlue` / `feLightBlue` scales (or equivalent CSS-var-backed tokens) |
 | Components | Build app-local UI; do not copy FE-Docs docs chrome (search modal, docs sidebar, kit-docs prose) unless a page truly needs it |
-| Current state | Dark-first FE-Docs navy/cyan tokens live in `frontend/src/app.css` (`fe-*` Tailwind theme); shared sticky shell in `+layout.svelte` |
-| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), and login stub (`/login`) use this theme; real login/profile/picture UI still missing |
+| Current state | Dark-first FE-Docs navy/cyan tokens live in `frontend/src/app.css` (`fe-*` Tailwind theme); shared sticky shell in `+layout.svelte` + `+layout.server.ts` |
+| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), and login (`/login`) use this theme; shell shows signed-in name/avatar from Profile `GET /profiles/me`; profile-edit/picture management UI still missing |
 
 ## Non-goals
 
@@ -91,8 +91,25 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - Route: `/verify/[code]` → `frontend/src/routes/verify/[code]/`
 - Email links open the page only; activation is a deliberate **Verify email** button → SvelteKit action → Identity `GET /identities/verify/{verificationCode}`
 - Missing code → error state without button; invalid/backend errors surface after click
-- Success → “Account verified” + CTA to `/login` (stub until real login ships)
+- Success → “Account verified” + CTA to `/login`
 - Backend email link path is `/verify/{code}` on `UserIdentity:FrontendBaseUrl`, not Identity HTTP
+
+## Login UI notes
+
+- Route: `/login` → `frontend/src/routes/login/+page.svelte` + `+page.server.ts`
+- Browser never calls Identity directly; form posts to a SvelteKit action which uses `createIdentityApi().POST('/identities/login')`
+- On success: BFF writes JWT to HttpOnly `helpdesk_session` cookie via `writeSessionToken` (maxAge from Identity `expiresAt`, capped at 7 days; `Secure` in production) then redirects home
+- Validation: local field rules mirror Identity login (email format/max 320; password required/max 128); backend problem details mapped via `mapProblemFieldErrors`
+- Shell nav includes Sign in + Create account when anonymous; post-verify CTA targets this page
+
+## Shell session chrome
+
+- Root layout load: `frontend/src/routes/+layout.server.ts`
+- Reads `helpdesk_session` via `readSessionToken`; if present, BFF calls Profile `GET /profiles/me` with bearer token via `createProfileApi(token)`
+- On success: layout data `{ user: { displayName, pictureUrl } }` — header shows avatar (or initials) + name; Sign in / Create account hidden
+- On 401/403/404: clear invalid session cookie and treat as anonymous; other failures keep cookie and fall back to anonymous chrome (no throw)
+- JWT never sent to the browser; only display fields reach the client
+- No logout control and no profile-edit route yet
 
 ## Sources
 
@@ -104,8 +121,10 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - `../FE-Docs/src/routes/+page.svelte`
 - `frontend/src/app.css`
 - `frontend/src/routes/+layout.svelte`
+- `frontend/src/routes/+layout.server.ts`
 - `frontend/src/routes/+page.svelte`
 - `frontend/src/routes/register/`
 - `frontend/src/routes/verify/[code]/`
 - `frontend/src/routes/login/`
+- `frontend/src/lib/server/api/session.ts`
 - `frontend/package.json`

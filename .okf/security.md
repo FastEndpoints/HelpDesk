@@ -19,6 +19,7 @@ SvelteKit is the external-client boundary. `frontend/src/lib/server/api/` reads 
 - Empty/null groups on old documents fall back to `PermissionGroups.Defaults` (`User`).
 - UserProfile validates asymmetrically with the matching public value, issuer, and audience.
 - Login requires `UserIdentityStatus.Active`.
+- BFF login (`POST /login` action → Identity `POST /identities/login`) persists `accessToken` only in the HttpOnly `helpdesk_session` cookie via `writeSessionToken`; cookie `maxAge` is derived from response `expiresAt` and capped at seven days. Token never goes to `localStorage` / JS.
 
 ## Development JWT configuration
 

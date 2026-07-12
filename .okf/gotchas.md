@@ -16,7 +16,7 @@ tags: [gotcha]
 - Matching development JWT private/public values are committed in base Identity/Profile appsettings. Do not regenerate keys or require user-secrets for normal local startup. Environment variables may override both; keep overrides paired and never reuse repository development material in production.
 - `pnpm` still owns frontend package management and validation. `pnpm frontend:dev` is frontend-only, not an alternative full-stack orchestrator.
 - Frontend is a SvelteKit BFF: JWT stays in the HttpOnly session cookie and backend origins remain private.
-- Frontend has registration (`/register`) and verification (`/verify/[code]`) via BFF form actions; `/login` is a stub only. Do not claim real login/profile/picture UI exists yet.
+- Frontend has registration (`/register`), verification (`/verify/[code]`), and login (`/login`) via BFF form actions; signed-in shell loads Profile `GET /profiles/me` from the session cookie. Profile-edit/picture management UI does not exist yet.
 - Verification emails use `UserIdentity:FrontendBaseUrl` + `/verify/{code}`. Local Aspire injects the Vite endpoint; deployments must set the public frontend origin. Profile-picture deployment/public URL remains unresolved.
 - **Never** reference `backend/Services/*` from another service—only projects under `backend/Contracts/*` or `backend/Common/*`. Cross-service workflow = events only, not REST callbacks. The AppHost may reference service host projects solely for orchestration.
 - Events are facts after commit, not commands. Publish only after local persistence succeeds.

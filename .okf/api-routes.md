@@ -23,6 +23,7 @@ Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Regis
 - Register response body is a plain success string (not a token DTO); account remains deactivated until verify
 - Duplicate email (normalized) → problem details / validation error on register
 - Frontend BFF: `POST /register` form action → Identity `POST /identities/register` (confirm password is client-only)
+- Frontend BFF: `POST /login` form action → Identity `POST /identities/login`; JWT stored in HttpOnly `helpdesk_session` cookie (maxAge from `expiresAt`, capped at 7 days); browser never sees the bearer token
 - Frontend BFF: `POST /verify/{code}` form action → Identity `GET /identities/verify/{VerificationCode}` (email links open the page; activation runs only on button click)
 - Email verification links use configured `UserIdentity:FrontendBaseUrl` + `/verify/{code}` (frontend), not Identity HTTP
 
@@ -30,7 +31,7 @@ Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Regis
 
 | Method | Route | Auth | Behavior |
 | --- | --- | --- | --- |
-| GET | `/profiles/me` | JWT + `Profiles_Read_Own` (`User`) | Resolve `sub` / nameidentifier → active profile; 401/404/403 otherwise; includes nullable `PictureUrl` |
+| GET | `/profiles/me` | JWT + `Profiles_Read_Own` (`User`) | Resolve `sub` / nameidentifier → active profile; 401/404/403 otherwise; includes nullable `PictureUrl`; frontend root layout BFF uses this for signed-in shell chrome |
 | PUT | `/profiles/me` | JWT + `Profiles_Update_Own` (`User`) | Update own active profile `DisplayName` (trim); same 401/404/403 gates; returns updated profile + `PictureUrl` |
 | PUT | `/profiles/me/picture` | JWT + `Profiles_Upload_Own_Picture` (`User`) | Multipart upload; decoder-verified PNG/JPEG only, configurable size limit (default 5 MiB); center-crop resize 300×300; store key + public URL |
 | DELETE | `/profiles/me/picture` | JWT + `Profiles_Delete_Own_Picture` (`User`) | Clear picture metadata and delete local file; idempotent when none |

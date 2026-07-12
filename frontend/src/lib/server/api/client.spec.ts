@@ -38,4 +38,52 @@ describe('server API client', () => {
 			}
 		} satisfies Partial<ApiError>);
 	});
+
+	it('sends Authorization bearer when a token is provided', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			Response.json(
+				{
+					id: 'id-1',
+					email: 'user@example.test',
+					accessToken: 'jwt',
+					expiresAt: '2026-01-08T00:00:00.000Z'
+				},
+				{ status: 200 }
+			)
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await createServerClient<paths>('http://identity.test', 'server-held-jwt').POST(
+			'/identities/login',
+			{
+				body: { email: 'user@example.test', password: 'password' }
+			}
+		);
+
+		expect(fetchMock).toHaveBeenCalledOnce();
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.headers.get('Authorization')).toBe('Bearer server-held-jwt');
+	});
+
+	it('omits Authorization when no token is provided', async () => {
+		const fetchMock = vi.fn().mockResolvedValue(
+			Response.json(
+				{
+					id: 'id-1',
+					email: 'user@example.test',
+					accessToken: 'jwt',
+					expiresAt: '2026-01-08T00:00:00.000Z'
+				},
+				{ status: 200 }
+			)
+		);
+		vi.stubGlobal('fetch', fetchMock);
+
+		await createServerClient<paths>('http://identity.test').POST('/identities/login', {
+			body: { email: 'user@example.test', password: 'password' }
+		});
+
+		const request = fetchMock.mock.calls[0]?.[0] as Request;
+		expect(request.headers.get('Authorization')).toBeNull();
+	});
 });

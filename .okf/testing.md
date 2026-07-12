@@ -14,9 +14,12 @@ resource: README.md
 From `frontend/`: `pnpm test:unit` runs Vitest and `pnpm test:e2e` runs Playwright. Install browser binaries once with `pnpm exec playwright install`. Playwright builds and previews the app on port 4173, with that origin configured as `baseURL`. Root aliases are `pnpm frontend:test:unit` and `pnpm frontend:test:e2e`; `pnpm check:quick` includes unit tests and `pnpm check:full` includes self-contained E2E without a separate prebuild.
 
 Frontend unit coverage:
-- server API client → `ApiError` middleware
+- server API client → `ApiError` middleware; bearer `Authorization` header only when token passed
+- session cookie helpers (`lib/server/api/session.spec.ts`): `helpdesk_session` name, HttpOnly/SameSite/Path, maxAge default + 7-day cap, Secure in production, clear attributes
 - problem-details field mapping (`mapProblemFieldErrors`)
 - register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success message fallback, field/form `ApiError` mapping, unreachable-service 500
+- login BFF action (`routes/login/page.server.spec.ts`): local validation, email trim, Identity POST body shape, session cookie maxAge from string/Date `expiresAt` (unparseable → default; past → 0), missing-token 502, redirect home, field/form `ApiError` mapping (email/password), title/generic fallbacks, out-of-range status clamp, unreachable-service 500
+- root layout load (`routes/layout.server.spec.ts`): no cookie → anonymous; session → Profile `GET /profiles/me` maps `displayName`/`pictureUrl` (null/undefined → null); empty/missing displayName or empty body → anonymous without clear; 401/403/404 clears session; other errors keep cookie and stay anonymous
 - verify BFF load/action (`routes/verify/[code]/page.server.spec.ts`): code trim/`hasCode`, missing/whitespace submit, path param to Identity GET, success message fallback, `ApiError` detail/title/status clamp, unreachable-service 500
 
 Playwright (`register.e2e.ts`):
@@ -25,13 +28,23 @@ Playwright (`register.e2e.ts`):
 - short password after `novalidate` hits server validation
 - Identity-unavailable path shows form-level error (preview has no backend URLs)
 
+Playwright (`login.e2e.ts`):
+- form + anonymous shell smoke (Sign in / Create account visible; no `shell-profile`)
+- empty fields after `novalidate` hit server validation
+- invalid email after `novalidate` keeps form and repopulates email
+- Identity-unavailable path shows form-level error (preview has no backend URLs)
+
+Playwright (`page.svelte.e2e.ts`):
+- landing content smoke
+- anonymous shell chrome (banner Sign in / Create account; no `shell-profile`)
+
 Playwright (`verify.e2e.ts`):
 - code present → verify prompt + button (no success state until submit)
 - whitespace/missing code → invalid-link UI, no verify button
 - Identity-unavailable after click → form error, stays on prompt
-- `/login` stub smoke (post-verify CTA target)
+- `/login` form smoke (post-verify CTA target)
 
-Register/verify success against a live Identity service is not covered by Playwright without the Aspire stack (preview has no backend URLs; browser never calls Identity). `/login` is a stub only; do not infer real login, profile, or picture UI exists.
+Register/login/verify success against a live Identity service is not covered by Playwright without the Aspire stack (preview has no backend URLs; browser never calls Identity). Signed-in shell chrome depends on Profile `GET /profiles/me` in root layout load; live success path needs Aspire. Profile-edit/picture management UI still does not exist.
 
 ## Frameworks and layout
 

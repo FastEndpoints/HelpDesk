@@ -27,11 +27,12 @@
 			>
 				Create account
 			</a>
-			<span
-				class="inline-flex rounded-full border border-fe-light-500/30 bg-fe-light-500/10 px-5 py-2 text-sm text-cyan-200"
+			<a
+				href={resolve('/login')}
+				class="inline-flex items-center justify-center rounded-md border border-fe-border px-6 py-3 text-sm font-semibold tracking-wide text-fe-heading uppercase transition-colors hover:border-fe-light-500/40 hover:text-white focus-visible:outline-fe-focus"
 			>
-				Frontend foundation ready
-			</span>
+				Sign in
+			</a>
 		</div>
 	</section>
 </main>
