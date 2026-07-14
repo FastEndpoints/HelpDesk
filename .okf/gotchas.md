@@ -31,6 +31,7 @@ tags: [gotcha]
 - Production Compose derives MongoDB's connection string from raw root credentials, so manual values must contain only URI-unreserved characters and avoid Compose-special `$`; `deploy-init.sh` generates safe hexadecimal values. Mongo initialization credentials apply only to a new data volume; changing `.env` later does not rotate the database user.
 - Docker-published ports can bypass plain UFW INPUT rules. Enforce public-port policy at the provider firewall and, when needed, Docker's `DOCKER-USER`/Docker-aware nftables layer.
 - Email lookup always uses `NormalizeForLookup` (trim + uppercase). Duplicate checks depend on normalized unique indexes.
+- Profile activation on `UserIdentityVerifiedEvent` correlates by `UserIdentityId`, not email. Email on the profile is denormalized for display/unique lookup only.
 - Profile create on identity registration is idempotent on duplicate email; identity registration is not.
 - Profile pictures store object keys, never image bytes, in MongoDB. Static `/profile-pictures` files are unauthenticated by design.
 - Release builds strip Tests; do not rely on test code in Release publish.

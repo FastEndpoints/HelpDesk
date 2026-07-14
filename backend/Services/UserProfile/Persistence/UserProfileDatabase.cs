@@ -22,6 +22,7 @@ static class UserProfileDatabase
 
         await db.Index<UserProfileEntity>()
                 .Key(p => p.UserIdentityId, KeyType.Ascending)
+                .Option(o => o.Unique = true)
                 .CreateAsync();
 
         await db.Index<EventRecord>()

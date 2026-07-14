@@ -1,4 +1,3 @@
-using Common.Tools;
 using MongoDB.Driver;
 
 namespace Persistence;
@@ -38,10 +37,10 @@ sealed class MongoUserProfileStore : IUserProfileStore
         }
     }
 
-    public async Task ActivateByEmailAsync(string email, CancellationToken ct)
+    public async Task ActivateByUserIdentityIdAsync(string userIdentityId, CancellationToken ct)
         => await DB.Default
                    .Update<UserProfileEntity>()
-                   .Match(p => p.NormalizedEmail == email.NormalizeForLookup())
+                   .Match(p => p.UserIdentityId == userIdentityId)
                    .Modify(p => p.Status, UserProfileStatus.Active)
                    .Modify(p => p.EmailVerified, true)
                    .ExecuteAsync(ct);

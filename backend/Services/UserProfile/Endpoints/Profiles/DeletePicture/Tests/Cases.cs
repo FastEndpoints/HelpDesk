@@ -214,7 +214,7 @@ public class Cases(Sut App) : TestBase<Sut>
 
         public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct) => throw new NotSupportedException();
         public Task CreateAsync(UserProfileEntity value, CancellationToken ct) => throw new NotSupportedException();
-        public Task ActivateByEmailAsync(string email, CancellationToken ct) => throw new NotSupportedException();
+        public Task ActivateByUserIdentityIdAsync(string userIdentityId, CancellationToken ct) => throw new NotSupportedException();
         public Task UpdateDisplayNameAsync(string userIdentityId, string displayName, CancellationToken ct) => throw new NotSupportedException();
     }
 }

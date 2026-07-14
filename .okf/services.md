@@ -23,7 +23,7 @@ tags: [architecture]
 - **Refs:** `Contracts.UserProfile`, `Contracts.UserIdentity`, `Common.StorageProvider`, `Common.Tools`
 - **Packages:** SixLabors.ImageSharp (300×300 center-crop encode)
 - **Publishes:** `UserProfileRegisteredEvent` (hub registered; subscriber list empty today)
-- **Subscribes:** `UserIdentityRegisteredEvent` → create deactivated profile; `UserIdentityVerifiedEvent` → activate by email + `EmailVerified`
+- **Subscribes:** `UserIdentityRegisteredEvent` → create deactivated profile; `UserIdentityVerifiedEvent` → activate by `UserIdentityId` + `EmailVerified`
 - **REST:** authenticated current profile read/update + picture upload/delete; public static `/profile-pictures`
 
 ## Notifications (`NOTIFICATIONS_SERVICE`)

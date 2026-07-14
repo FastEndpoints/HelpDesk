@@ -37,7 +37,7 @@ No owned events currently (`Contracts.Notifications` has `Service.Name` only).
 | Handler | Listens | Side effect |
 | --- | --- | --- |
 | `UserIdentityRegisteredEventHandler` | Registered | Create deactivated profile; broadcast profile registered |
-| `UserIdentityVerifiedEventHandler` | Verified | Activate profile by normalized email; set EmailVerified |
+| `UserIdentityVerifiedEventHandler` | Verified | Activate profile by `UserIdentityId`; set EmailVerified |
 | `UserIdentityVerificationIssuedEventHandler` | VerificationIssued | Queue welcome email with verify link |
 
 ## Adding an event

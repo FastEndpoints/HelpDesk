@@ -92,7 +92,7 @@ public class Cases(Sut App) : TestBase<Sut>
             return Task.CompletedTask;
         }
 
-        public Task ActivateByEmailAsync(string email, CancellationToken ct)
+        public Task ActivateByUserIdentityIdAsync(string userIdentityId, CancellationToken ct)
             => Task.CompletedTask;
 
         public Task UpdateDisplayNameAsync(string userIdentityId, string displayName, CancellationToken ct)
