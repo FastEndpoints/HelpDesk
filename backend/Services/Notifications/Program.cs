@@ -46,6 +46,7 @@ app.UseJobQueues(
     o =>
     {
         o.LimitsFor<SendEmailCommand>(maxConcurrency: 1, timeLimit: TimeSpan.FromMinutes(2));
+        o.IdempotencyKeyFor<SendEmailCommand>(c => c.IdempotencyKey);
     });
 
 app.MapRemote(

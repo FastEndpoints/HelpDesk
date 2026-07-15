@@ -6,7 +6,7 @@ var mongodbUserName = builder.AddParameter("mongodb-username", "helpdesk", publi
 var mongodbPassword = builder.AddParameter("mongodb-password", "helpdesk-local-password", publishValueAsDefault: true);
 var mongodb = builder
               .AddMongoDB("mongodb", 27017, mongodbUserName, mongodbPassword)
-              .WithImageTag("7.0.30");
+              .WithImageTag("8.2");
 
 var identity = builder
                .AddProject<Projects.Services_UserIdentity>(

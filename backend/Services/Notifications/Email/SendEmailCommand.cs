@@ -2,6 +2,11 @@ namespace Email;
 
 public sealed class SendEmailCommand : ICommand
 {
+    /// <summary>
+    /// Optional business key for job-queue idempotency. Null/empty/whitespace is not deduped.
+    /// </summary>
+    public string? IdempotencyKey { get; set; }
+
     public required EmailMessage Message { get; set; }
 }
 

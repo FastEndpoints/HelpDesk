@@ -1,3 +1,5 @@
+using MongoDB.Driver;
+
 namespace Jobs;
 
 public sealed class JobStorageProvider : IJobStorageProvider<JobRecord>
@@ -5,7 +7,27 @@ public sealed class JobStorageProvider : IJobStorageProvider<JobRecord>
     public bool DistributedJobProcessingEnabled => false;
 
     public async Task StoreJobAsync(JobRecord job, CancellationToken ct)
-        => await DB.Default.SaveAsync(job, ct);
+    {
+        try
+        {
+            await DB.Default.SaveAsync(job, ct);
+        }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        {
+            if (string.IsNullOrWhiteSpace(job.IdempotencyKey))
+                throw;
+
+            var existing = await DB.Default
+                                   .Find<JobRecord>()
+                                   .Match(r => r.QueueID == job.QueueID && r.IdempotencyKey == job.IdempotencyKey)
+                                   .ExecuteFirstAsync(ct);
+
+            if (existing is null)
+                throw;
+
+            throw new DuplicateJobException(existing.TrackingID, job.IdempotencyKey, job.QueueID, inner: ex);
+        }
+    }
 
     public async Task<ICollection<JobRecord>> GetNextBatchAsync(PendingJobSearchParams<JobRecord> p)
     {

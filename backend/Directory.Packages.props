@@ -6,19 +6,19 @@
         <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.4.6"/>
         <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.4.6"/>
         <PackageVersion Include="Aspire.Hosting.MongoDB" Version="13.4.6"/>
-        <PackageVersion Include="FastEndpoints" Version="8.3.0-beta.12"/>
-        <PackageVersion Include="FastEndpoints.Generator" Version="8.3.0-beta.12"/>
-        <PackageVersion Include="FastEndpoints.Messaging.Core" Version="8.3.0-beta.12"/>
-        <PackageVersion Include="FastEndpoints.Messaging.Remote" Version="8.3.0-beta.12"/>
-        <PackageVersion Include="FastEndpoints.Messaging.Remote.Testing" Version="8.3.0-beta.12"/>
-        <PackageVersion Include="FastEndpoints.OpenApi" Version="8.3.0-beta.12"/>
-        <PackageVersion Include="FastEndpoints.Security" Version="8.3.0-beta.12"/>
-        <PackageVersion Include="FastEndpoints.Testing" Version="8.3.0-beta.12"/>
+        <PackageVersion Include="FastEndpoints" Version="8.3.0-beta.14"/>
+        <PackageVersion Include="FastEndpoints.Generator" Version="8.3.0-beta.14"/>
+        <PackageVersion Include="FastEndpoints.Messaging.Core" Version="8.3.0-beta.14"/>
+        <PackageVersion Include="FastEndpoints.Messaging.Remote" Version="8.3.0-beta.14"/>
+        <PackageVersion Include="FastEndpoints.Messaging.Remote.Testing" Version="8.3.0-beta.14"/>
+        <PackageVersion Include="FastEndpoints.OpenApi" Version="8.3.0-beta.14"/>
+        <PackageVersion Include="FastEndpoints.Security" Version="8.3.0-beta.14"/>
+        <PackageVersion Include="FastEndpoints.Testing" Version="8.3.0-beta.14"/>
         <PackageVersion Include="MailKit" Version="4.17.0"/>
-        <PackageVersion Include="Microsoft.OpenApi" Version="2.9.0"/>
-        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0"/>
+        <PackageVersion Include="Microsoft.OpenApi" Version="2.10.0"/>
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1"/>
         <PackageVersion Include="MongoDB.Entities" Version="25.1.0"/>
-        <PackageVersion Include="Scalar.AspNetCore" Version="2.16.7"/>
+        <PackageVersion Include="Scalar.AspNetCore" Version="2.16.12"/>
         <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12"/>
         <PackageVersion Include="Shouldly" Version="4.3.0"/>
         <PackageVersion Include="xunit.v3" Version="3.2.2"/>

@@ -29,7 +29,7 @@ Backend services remain a host-local IPC FastEndpoints mesh. Aspire injects deve
 
 Aspire 13.4.6:
 
-1. starts MongoDB with committed development username/password parameters;
+1. starts MongoDB (`mongo:8.2`) with committed development username/password parameters;
 2. injects the `MongoDB` connection into Identity, Profile, and Notifications;
 3. waits for MongoDB before starting dependent services;
 4. starts Identity before Profile/Notifications complete their dependency chain;

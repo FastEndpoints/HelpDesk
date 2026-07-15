@@ -31,6 +31,7 @@ tags: [architecture]
 - **Project:** `backend/Services/Notifications`
 - **Owns:** email templates, SMTP/null sender, durable email jobs
 - **Job limits:** non-distributed processing; `SendEmailCommand` concurrency 1 per process with a 2-minute execution limit; multiple instances are not coordinated; handler failures reschedule the job one minute later
+- **Job idempotency:** `JobRecord` implements `IHasIdempotencyKey`; unique partial index on `(QueueID, IdempotencyKey)` while the row exists (including completed); `StoreJobAsync` maps `MongoWriteException` duplicate-key to `DuplicateJobException` with the existing `TrackingID` (null/whitespace keys rethrow). `IdempotencyKeyFor<SendEmailCommand>` uses `SendEmailCommand.IdempotencyKey`. Verification emails use `UserIdentityVerificationIssuedEventHandler.JobIdempotencyKey` → `user-identity-verification:{UserIdentityId}` so duplicate `UserIdentityVerificationIssuedEvent` deliveries enqueue once.
 - **Refs:** `Contracts.Notifications`, `Contracts.UserIdentity`, `Common.StorageProvider`
 - **Publishes:** none
 - **Subscribes:** `UserIdentityVerificationIssuedEvent` → queue `SendEmailCommand`

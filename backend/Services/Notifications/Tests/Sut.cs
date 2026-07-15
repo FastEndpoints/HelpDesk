@@ -26,27 +26,54 @@ public sealed class Sut : AppFixture<Program>
 
 public sealed class TestEmailSender : IEmailSender
 {
-    readonly Queue<EmailMessage> _sent = [];
-    TaskCompletionSource<EmailMessage> _nextEmail = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    readonly object _gate = new();
+    readonly List<EmailMessage> _sent = [];
+    TaskCompletionSource _signal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    public IReadOnlyCollection<EmailMessage> Sent => _sent;
+    public IReadOnlyCollection<EmailMessage> Sent
+    {
+        get
+        {
+            lock (_gate)
+                return _sent.ToArray();
+        }
+    }
 
     public Task SendEmailAsync(EmailMessage message, CancellationToken ct)
     {
-        _sent.Enqueue(message);
-        _nextEmail.TrySetResult(message);
+        lock (_gate)
+        {
+            _sent.Add(message);
+            _signal.TrySetResult();
+            _signal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
 
         return Task.CompletedTask;
     }
 
-    public async Task<EmailMessage> WaitForEmailAsync(CancellationToken ct)
+    public Task<EmailMessage> WaitForEmailAsync(CancellationToken ct)
+        => WaitForEmailAsync(_ => true, ct);
+
+    public async Task<EmailMessage> WaitForEmailAsync(Func<EmailMessage, bool> match, CancellationToken ct)
     {
-        if (_sent.TryDequeue(out var existing))
-            return existing;
+        while (true)
+        {
+            Task wait;
+            lock (_gate)
+            {
+                var index = _sent.FindIndex(m => match(m));
+                if (index >= 0)
+                {
+                    var email = _sent[index];
+                    _sent.RemoveAt(index);
 
-        await _nextEmail.Task.WaitAsync(ct);
-        _nextEmail = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                    return email;
+                }
 
-        return _sent.Dequeue();
+                wait = _signal.Task;
+            }
+
+            await wait.WaitAsync(ct);
+        }
     }
 }

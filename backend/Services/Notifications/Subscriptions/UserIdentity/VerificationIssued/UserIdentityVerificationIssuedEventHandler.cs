@@ -11,6 +11,7 @@ public sealed class UserIdentityVerificationIssuedEventHandler
 
         return new SendEmailCommand
         {
+            IdempotencyKey = JobIdempotencyKey(eventModel.UserIdentityId),
             Message = new()
             {
                 ToEmail = eventModel.Email,
@@ -25,6 +26,10 @@ public sealed class UserIdentityVerificationIssuedEventHandler
             }
         }.QueueJobAsync(ct: ct);
     }
+
+    /// <summary>Job-queue key so duplicate VerificationIssued deliveries enqueue once per identity.</summary>
+    internal static string JobIdempotencyKey(string userIdentityId)
+        => $"user-identity-verification:{userIdentityId}";
 
     static string GetDefaultDisplayName(string email)
     {

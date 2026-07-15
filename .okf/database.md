@@ -16,7 +16,7 @@ tags: [data]
 
 ## Local Aspire database
 
-`backend/AppHost/Program.cs` provisions an ephemeral authenticated standalone MongoDB container with committed development username/password parameters on `localhost:27017`. Aspire injects its connection as the `MongoDB` reference into all three services; the fixed development endpoint also lets repository tests use the same running resource.
+`backend/AppHost/Program.cs` provisions an ephemeral authenticated standalone `mongo:8.2` container (`WithImageTag("8.2")`) with committed development username/password parameters on `localhost:27017`. Aspire injects its connection as the `MongoDB` reference into all three services; the fixed development endpoint also lets repository tests use the same running resource.
 
 The local resource intentionally has:
 
@@ -30,7 +30,7 @@ Read connection details from the Aspire dashboard. Container replacement/removal
 
 ## Production persistence
 
-Production Compose runs private `mongo:8.0` with authentication and the `mongodb_data` named volume. All backend processes use the externally supplied `ConnectionStrings__MongoDB`; committed development credentials must not be reused. Profile files live at `/data/profile-pictures` on the `profile_pictures` named volume. Removing Compose volumes destroys this data.
+Local Aspire and production Compose both pin `mongo:8.2`. Production uses authenticated private Mongo with the `mongodb_data` named volume. All backend processes use the externally supplied `ConnectionStrings__MongoDB`; committed development credentials must not be reused. Profile files live at `/data/profile-pictures` on the `profile_pictures` named volume. Removing Compose volumes destroys this data.
 
 ## Databases
 
@@ -47,7 +47,7 @@ Production Compose runs private `mongo:8.0` with authentication and the `mongodb
 | UserIdentity | `UserIdentityEntity` | `UserIdentities` | Unique `NormalizedEmail`; unique sparse `VerificationCode`; password hash; status |
 | UserProfile | `UserProfileEntity` | `UserProfiles` | Unique `NormalizedEmail`; unique `UserIdentityId`; display name; optional picture object key; status; EmailVerified |
 | Shared pattern | `EventRecord` | type default | Compound index EventType, SubscriberID, IsComplete, ExpireOn |
-| Notifications | `JobRecord` | type default | Queue/complete/execute/expire indexes; TrackingID index |
+| Notifications | `JobRecord` | type default | Queue/complete/execute/expire indexes; TrackingID index; unique partial `(QueueID, IdempotencyKey)` for non-empty keys |
 
 ## Init
 

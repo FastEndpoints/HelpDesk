@@ -1,7 +1,7 @@
 ---
 type: Reference
 title: Dependencies
-description: .NET 10, Aspire 13.4.6, central package management, and frontend toolchain dependencies.
+description: .NET 10, Aspire 13.4.6, FastEndpoints 8.3 beta, central package management, and frontend toolchain dependencies.
 tags: [deps]
 resource: backend/Directory.Packages.props
 ---
@@ -21,7 +21,7 @@ Bootstrap with Corepack when available (`corepack enable` + `corepack prepare pn
 
 ## Production container runtime
 
-Production builds the frontend with Node 26 Alpine and runs the generated adapter-node HTTP server behind `caddy:2.10-alpine`, which provides automatic HTTPS. Backend service processes and the dependency-free `net10.0` PID 1 launcher run on `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled`; builds use the matching Ubuntu Noble SDK. MongoDB uses the pinned `mongo:8.0` image.
+Production builds the frontend with Node 26 Alpine and runs the generated adapter-node HTTP server behind `caddy:2.10-alpine`, which provides automatic HTTPS. Backend service processes and the dependency-free `net10.0` PID 1 launcher run on `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled`; builds use the matching Ubuntu Noble SDK. MongoDB uses the pinned `mongo:8.2` image (Aspire AppHost and production Compose).
 
 ## Central package management
 
@@ -43,7 +43,10 @@ Versions live in `backend/Directory.Packages.props` (`ManagePackageVersionsCentr
 ## Constraints
 
 - Keep all Aspire references at 13.4.6 unless intentionally upgrading the AppHost SDK and hosting packages together.
-- Keep FastEndpoints family versions aligned (currently `8.3.0-beta.12`).
+- Keep FastEndpoints family versions aligned (currently `8.3.0-beta.14`).
+- Keep `Microsoft.OpenApi` on 2.x while `Microsoft.AspNetCore.OpenApi` 10 depends on OpenAPI 2; do not jump to 3.x without a stack migration.
+- Keep `SixLabors.ImageSharp` on 3.x; 4.0 requires a Six Labors commercial license key at build time.
+- Prefer stable xunit.v3 / xunit.runner.visualstudio / Shouldly until previews are intentionally adopted.
 - Do not add a message broker package without an architecture change.
 - Service project refs remain Services → Contracts/Common only; the AppHost may reference service hosts for orchestration.
 - Bump package versions centrally, not in service csproj files.

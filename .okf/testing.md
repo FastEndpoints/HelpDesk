@@ -79,7 +79,7 @@ dotnet test backend/Services/Notifications/Services.Notifications.csproj
 - Real MongoDB required for tests; start `pnpm stack:dev` and use the committed development connection from base appsettings (environment variables may override it)
 - Fixtures drop owned collections on dispose (`UserIdentities` / `UserProfiles` / jobs+events)
 - Event assertions: `RegisterTestEventReceivers()` + `GetTestEventReceiver<TEvent>().WaitForMatchAsync(...)`
-- Notifications: replaces `IEmailSender` with `TestEmailSender` capture queue
+- Notifications: replaces `IEmailSender` with `TestEmailSender` capture queue; use unique `UserIdentityId` per case because verification emails share `JobIdempotencyKey(UserIdentityId)`
 
 ## Expectations
 

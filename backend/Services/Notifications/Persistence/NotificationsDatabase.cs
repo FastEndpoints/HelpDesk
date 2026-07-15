@@ -31,5 +31,22 @@ static class NotificationsDatabase
         await db.Index<JobRecord>()
                 .Key(r => r.TrackingID, KeyType.Ascending)
                 .CreateAsync();
+
+        // Unique while row exists (incl. completed); null/empty keys excluded so non-idempotent jobs do not collide.
+        await db.Index<JobRecord>()
+                .Key(r => r.QueueID, KeyType.Ascending)
+                .Key(r => r.IdempotencyKey, KeyType.Ascending)
+                .Option(o =>
+                {
+                    o.Unique = true;
+                    o.PartialFilterExpression = new BsonDocument(
+                        "IdempotencyKey",
+                        new BsonDocument
+                        {
+                            { "$type", "string" },
+                            { "$gt", "" }
+                        });
+                })
+                .CreateAsync();
     }
 }
