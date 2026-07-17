@@ -32,11 +32,11 @@ Versions live in `backend/Directory.Packages.props` (`ManagePackageVersionsCentr
 | `Aspire.Hosting.AppHost`, `.JavaScript`, `.MongoDB` | Local application model, Vite, and MongoDB resources |
 | FastEndpoints (+ Generator, OpenApi, Security, Testing) | HTTP endpoints, DI helpers, OpenAPI |
 | FastEndpoints.Messaging.Core / Remote (+ Testing) | Events, hubs, IPC/remote mesh |
-| MongoDB.Entities | Persistence + indexes |
+| MongoDB.Entities (`26.0.0-beta.1`) | Persistence + indexes |
 | MailKit | SMTP (Notifications) |
-| Scalar.AspNetCore | API reference UI (non-production) |
-| SixLabors.ImageSharp | Profile picture processing |
-| Microsoft.OpenApi | OpenAPI documents |
+| Scalar.AspNetCore (`2.16.15`) | API reference UI (non-production) |
+| SixLabors.ImageSharp (`[3.1.12]`) | Profile picture processing |
+| Microsoft.OpenApi (`[2.10.0]`) | OpenAPI documents |
 | xunit.v3, Shouldly, Microsoft.NET.Test.Sdk | Tests |
 | ASP.NET Core Identity `PasswordHasher<T>` | Password hashing |
 
@@ -44,12 +44,13 @@ Versions live in `backend/Directory.Packages.props` (`ManagePackageVersionsCentr
 
 - Keep all Aspire references at 13.4.6 unless intentionally upgrading the AppHost SDK and hosting packages together.
 - Keep FastEndpoints family versions aligned (currently `8.3.0-beta.14`).
-- Keep `Microsoft.OpenApi` on 2.x while `Microsoft.AspNetCore.OpenApi` 10 depends on OpenAPI 2; do not jump to 3.x without a stack migration.
-- Keep `SixLabors.ImageSharp` on 3.x; 4.0 requires a Six Labors commercial license key at build time.
+- Keep MongoDB.Entities on the intentionally adopted `26.0.0-beta.1` until a stable 26.x is chosen.
+- Keep `Microsoft.OpenApi` on 2.x while `Microsoft.AspNetCore.OpenApi` 10 depends on OpenAPI 2; do not jump to 3.x without a stack migration. CPM uses an exact pin (`[2.10.0]`).
+- Keep `SixLabors.ImageSharp` on 3.x; 4.0 requires a Six Labors commercial license key at build time. CPM uses an exact pin (`[3.1.12]`).
 - Prefer stable xunit.v3 / xunit.runner.visualstudio / Shouldly until previews are intentionally adopted.
 - Do not add a message broker package without an architecture change.
 - Service project refs remain Services → Contracts/Common only; the AppHost may reference service hosts for orchestration.
-- Bump package versions centrally, not in service csproj files.
+- Bump package versions centrally, not in service csproj files. Use NuGet exact-range syntax (`[x.y.z]`) only for packages that must not float.
 
 ## Frontend libraries
 

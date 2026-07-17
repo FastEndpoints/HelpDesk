@@ -17,7 +17,7 @@ tags: [maintain]
 
 ## Update triggers
 
-Sync `.okf/` when work changes:
+Normative finish gate: repo `AGENTS.md` (incomplete until synced or explicitly unaffected). This list is the detailed trigger inventory agents should check:
 
 - Architecture / layering / mesh topology assumptions
 - Public APIs, routes, schemas, events, contracts
@@ -41,5 +41,6 @@ If unaffected, say so explicitly before finishing (`OKF unaffected (non-behavior
 
 ## Sources
 
-- OKF skill / repo `AGENTS.md` OKF block
+- Repo `AGENTS.md` (normative OKF use/update gates)
+- OKF skill (setup/maintain procedure only)
 - This file’s inventory via `index.md`

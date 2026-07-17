@@ -59,9 +59,11 @@ public sealed class TestEmailSender : IEmailSender
         while (true)
         {
             Task wait;
+
             lock (_gate)
             {
                 var index = _sent.FindIndex(m => match(m));
+
                 if (index >= 0)
                 {
                     var email = _sent[index];
