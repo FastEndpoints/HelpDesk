@@ -22,6 +22,7 @@ Frontend unit coverage:
 - profile BFF load/actions (`routes/settings/profile/page.server.spec.ts`): no session → login redirect with return URL; load maps profile + null picture; incomplete payload 502; 401/403/404 clear session + redirect; unreachable 503; update validation/trim/PUT body; upload local type/size gates + multipart FormData body; delete success; field/form `ApiError` mapping; unreachable action 500
 - root layout load (`routes/layout.server.spec.ts`): no cookie → anonymous; session → Profile `GET /profiles/me` maps `displayName`/`pictureUrl` (null/undefined → null); empty/missing displayName or empty body → anonymous without clear; 401/403/404 clears session; other errors keep cookie and stay anonymous
 - verify BFF load/action (`routes/verify/[code]/page.server.spec.ts`): code trim/`hasCode`, missing/whitespace submit, path param to Identity GET, success message fallback, `ApiError` detail/title/status clamp, unreachable-service 500
+- profile-pictures proxy (`routes/profile-pictures/[...path]/server.spec.ts`): encodes path segments to private Profile origin; forwards range/`if-range` request headers; preserves 206 content-range, 304 etag, and 416 content-range response metadata
 
 Playwright (`register.e2e.ts`):
 - form + shell smoke
