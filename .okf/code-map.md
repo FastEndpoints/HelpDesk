@@ -35,7 +35,7 @@ HelpDesk/
 └── pnpm-workspace.yaml
 ```
 
-`compose.yaml`, root `.env.example`, Dockerfiles, and `backend/Deployment/` are production-only artifacts. They do not replace Aspire local orchestration. Removed service `Properties/launchSettings.json`, root `scripts/`, and `frontend/.env.example` remain obsolete; the AppHost launch settings are active IDE configuration.
+`compose.yaml`, root `.env.example`, root `scripts/` (deploy tooling), Dockerfiles, and `backend/Deployment/` are production-only artifacts. They do not replace Aspire local orchestration. Service-level `Properties/launchSettings.json` and `frontend/.env.example` remain removed/obsolete; the AppHost launch settings are active IDE configuration.
 
 ## Orchestration
 
