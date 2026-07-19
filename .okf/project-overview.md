@@ -36,7 +36,7 @@ Current system covers the **user onboarding path**:
 
 ## Status
 
-Active monorepo development. `backend/` targets .NET 10; `frontend/` requires Node 26 or newer and pnpm 11 or newer. `backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator and is run by `pnpm stack:dev`. The frontend provides a shared shell, landing page, registration/login/verify, and profile view/edit (BFF to Identity/Profile). UI theming targets the FastEndpoints docs dark navy/cyan look (see [Frontend UI](frontend-ui.md)).
+Active monorepo development. `backend/` targets .NET 10; `frontend/` requires Node 26 or newer and pnpm 11 or newer. `backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator and is run by `pnpm stack:dev`. The frontend provides a shared shell (account menu with Edit Profile / Log Out), landing page, registration/login/verify/logout, and profile view/edit (BFF to Identity/Profile). UI theming targets the FastEndpoints docs dark navy/cyan look (see [Frontend UI](frontend-ui.md)).
 
 Production Compose uses Caddy for automatic HTTPS, sets verification links to the public BFF origin, and serves persistent profile pictures through the BFF's public proxy to the private Profile service. Root `DEPLOYMENT.md` is the VPS deployment playbook.
 

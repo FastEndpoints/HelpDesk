@@ -17,7 +17,7 @@ Compact operational knowledge for agents working on the HelpDesk brokerless micr
 * [Testing](testing.md) — commands, layout, fixtures
 
 ## Task-specific
-* [Dependencies](dependencies.md) · [Operations](operations.md) · [Services](services.md) · [API Routes](api-routes.md) · [Events](events.md) · [Database](database.md) · [Security](security.md) · [Frontend UI](frontend-ui.md) · [Gotchas](gotchas.md) · [Maintenance](maintenance.md)
+* [Dependencies](dependencies.md) · [Operations](operations.md) · [Services](services.md) · [API Routes](api-routes.md) · [Events](events.md) · [Database](database.md) · [Security](security.md) · [Frontend UI](frontend-ui.md) · [Todo](todo.md) · [Gotchas](gotchas.md) · [Maintenance](maintenance.md)
 
 ## Authority
 If OKF conflicts with source, tests, generated artifacts, or manifests: verify those, then update OKF.

@@ -24,6 +24,7 @@ Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Regis
 - Duplicate email (normalized) → problem details / validation error on register
 - Frontend BFF: `POST /register` form action → Identity `POST /identities/register` (confirm password is client-only)
 - Frontend BFF: `POST /login` form action → Identity `POST /identities/login`; JWT stored in HttpOnly `helpdesk_session` cookie (maxAge from `expiresAt`, capped at 7 days); browser never sees the bearer token; optional safe relative `redirectTo` (default `/`)
+- Frontend BFF: `POST /logout` → `clearSessionToken` + redirect `/` (no Identity call). `GET /logout` redirects `/` without clearing
 - Frontend BFF: `POST /verify/{code}` form action → Identity `GET /identities/verify/{VerificationCode}` (email links open the page; activation runs only on button click)
 - Email verification links use configured `UserIdentity:FrontendBaseUrl` + `/verify/{code}` (frontend), not Identity HTTP
 

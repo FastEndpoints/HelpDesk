@@ -19,6 +19,7 @@ Frontend unit coverage:
 - problem-details field mapping (`mapProblemFieldErrors`)
 - register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success message fallback, field/form `ApiError` mapping, unreachable-service 500
 - login BFF action (`routes/login/page.server.spec.ts`): local validation, email trim, Identity POST body shape, session cookie maxAge from string/Date `expiresAt` (unparseable → default; past → 0), missing-token 502, redirect home or safe `redirectTo`, open-redirect rejection, field/form `ApiError` mapping (email/password), title/generic fallbacks, out-of-range status clamp, unreachable-service 500
+- logout BFF action (`routes/logout/page.server.spec.ts`): POST clears `helpdesk_session` and 303 `/`; GET/load 303 `/` without clear
 - profile BFF load/actions (`routes/settings/profile/page.server.spec.ts`): no session → login redirect with return URL; load maps profile + null picture; incomplete payload 502; 401/403/404 clear session + redirect; unreachable 503; update validation/trim/PUT body; upload local type/size gates + multipart FormData body; delete success; field/form `ApiError` mapping; unreachable action 500
 - root layout load (`routes/layout.server.spec.ts`): no cookie → anonymous; session → Profile `GET /profiles/me` maps `displayName`/`pictureUrl` (null/undefined → null); empty/missing displayName or empty body → anonymous without clear; 401/403/404 clears session; other errors keep cookie and stay anonymous
 - verify BFF load/action (`routes/verify/[code]/page.server.spec.ts`): code trim/`hasCode`, missing/whitespace submit, path param to Identity GET, success message fallback, `ApiError` detail/title/status clamp, unreachable-service 500
@@ -38,7 +39,7 @@ Playwright (`login.e2e.ts`):
 
 Playwright (`page.svelte.e2e.ts`):
 - landing content smoke
-- anonymous shell chrome (banner Sign in / Create account; no `shell-profile`)
+- anonymous shell chrome (banner Sign in / Create account; no `shell-profile` / menu)
 
 Playwright (`verify.e2e.ts`):
 - code present → verify prompt + button (no success state until submit)

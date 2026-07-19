@@ -68,7 +68,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 | Utilities | Map Tailwind theme colors to the `feBlue` / `feDarkBlue` / `feLightBlue` scales (or equivalent CSS-var-backed tokens) |
 | Components | Build app-local UI; do not copy FE-Docs docs chrome (search modal, docs sidebar, kit-docs prose) unless a page truly needs it |
 | Current state | Dark-first FE-Docs navy/cyan tokens live in `frontend/src/app.css` (`fe-*` Tailwind theme); shared sticky shell in `+layout.svelte` + `+layout.server.ts` |
-| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), login (`/login`), and profile (`/settings/profile`) use this theme; shell shows signed-in name/avatar from Profile `GET /profiles/me` and links to the profile page |
+| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), login (`/login`), logout (`POST /logout`), and profile (`/settings/profile`) use this theme; shell shows signed-in name/avatar menu (Edit Profile, Log Out) from Profile `GET /profiles/me` |
 
 ## Non-goals
 
@@ -117,10 +117,17 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 
 - Root layout load: `frontend/src/routes/+layout.server.ts`
 - Reads `helpdesk_session` via `readSessionToken`; if present, BFF calls Profile `GET /profiles/me` with bearer token via `createProfileApi(token)`
-- On success: layout data `{ user: { displayName, pictureUrl } }` — header shows avatar (or initials) + name as a link to `/settings/profile` (`data-testid="shell-profile"`, active cyan wash); Sign in / Create account hidden
+- On success: layout data `{ user: { displayName, pictureUrl } }` — header shows avatar (or initials) + name as a menu button (`data-testid="shell-profile"`, cyan wash when open or on profile page); Sign in / Create account hidden
+- Menu (`data-testid="shell-profile-menu"`): **Edit Profile** → `/settings/profile`; **Log Out** → `POST /logout` (clears session, redirects `/`). Closes on outside pointer, Escape, or Edit Profile click
 - On 401/403/404: clear invalid session cookie and treat as anonymous; other failures keep cookie and fall back to anonymous chrome (no throw)
 - JWT never sent to the browser; only display fields reach the client
-- No logout control yet
+
+## Logout
+
+- Route: `/logout` → `frontend/src/routes/logout/+page.server.ts`
+- `POST` default action: `clearSessionToken` then `303` to `/` (no Identity API call; JWT is BFF cookie only)
+- `GET`/`load`: `303` to `/` without clearing (bookmark-safe; logout is POST-only from the shell form)
+- Destination `/` is temporary; see [Todo](todo.md) for public issues list redirect
 
 ## Sources
 
@@ -137,6 +144,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - `frontend/src/routes/register/`
 - `frontend/src/routes/verify/[code]/`
 - `frontend/src/routes/login/`
+- `frontend/src/routes/logout/`
 - `frontend/src/routes/settings/profile/`
 - `frontend/src/lib/server/api/session.ts`
 - `frontend/package.json`
