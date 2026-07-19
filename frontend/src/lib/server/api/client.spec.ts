@@ -18,7 +18,7 @@ describe('server API client', () => {
 						errors: { email: ['Email is already registered.'] },
 						traceId: 'test-trace'
 					},
-					{ status: 409 }
+					{ status: 409, headers: { 'Resend-Available-In': '1200' } }
 				)
 			)
 		);
@@ -37,6 +37,16 @@ describe('server API client', () => {
 				traceId: 'test-trace'
 			}
 		} satisfies Partial<ApiError>);
+
+		try {
+			await createServerClient<paths>('http://identity.test').POST('/identities/login', {
+				body: { email: 'user@example.test', password: 'password' }
+			});
+			throw new Error('expected ApiError');
+		} catch (error) {
+			expect(error).toBeInstanceOf(ApiError);
+			expect((error as ApiError).headers.get('Resend-Available-In')).toBe('1200');
+		}
 	});
 
 	it('sends Authorization bearer when a token is provided', async () => {

@@ -44,7 +44,7 @@ Local Aspire and production Compose both pin `mongo:8.2`. Production uses authen
 
 | Service | Entity | Collection | Notable fields / indexes |
 | --- | --- | --- | --- |
-| UserIdentity | `UserIdentityEntity` | `UserIdentities` | Unique `NormalizedEmail`; unique sparse `VerificationCode`; password hash; status |
+| UserIdentity | `UserIdentityEntity` | `UserIdentities` | Unique `NormalizedEmail`; unique sparse `VerificationCode`; password hash; status; `CreatedAt`; `VerificationIssuedAt` (last verification email/code issue; resend cooldown) |
 | UserProfile | `UserProfileEntity` | `UserProfiles` | Unique `NormalizedEmail`; unique `UserIdentityId`; display name; optional picture object key; status; EmailVerified |
 | Shared pattern | `EventRecord` | type default | Compound index EventType, SubscriberID, IsComplete, ExpireOn |
 | Notifications | `JobRecord` | type default | Queue/complete/execute/expire indexes; TrackingID index; unique partial `(QueueID, IdempotencyKey)` for non-empty keys |

@@ -3,17 +3,30 @@ import type { Actions, PageServerLoad } from './$types';
 import { createIdentityApi } from '$lib/server/api/identity';
 import { ApiError } from '$lib/server/api/errors';
 import { mapProblemFieldErrors } from '$lib/server/api/problem';
+import {
+	ACCOUNT_NOT_VERIFIED_MESSAGE,
+	postResendVerification,
+	readResendAvailableInSeconds,
+	RESEND_VERIFICATION_SUCCESS_FALLBACK,
+	validateResendEmail
+} from '$lib/server/api/resend-verification';
 import { writeSessionToken } from '$lib/server/api/session';
+import { RESEND_COOLDOWN_MS } from '$lib/resend-cooldown';
 
 export type LoginFieldErrors = {
 	email?: string[];
 	password?: string[];
 	form?: string[];
+	resend?: string[];
 };
 
 export type LoginFormState = {
 	success: boolean;
 	message?: string;
+	resendSuccess?: boolean;
+	needsVerification?: boolean;
+	/** Remaining resend cooldown from Identity (`Resend-Available-In`), when known. */
+	resendAvailableInSeconds?: number;
 	values: {
 		email: string;
 	};
@@ -22,11 +35,21 @@ export type LoginFormState = {
 
 function formState(
 	partial: Omit<LoginFormState, 'values' | 'errors'> &
-		Partial<Pick<LoginFormState, 'values' | 'errors'>> & { values?: { email?: string } }
+		Partial<
+			Pick<
+				LoginFormState,
+				'values' | 'errors' | 'resendSuccess' | 'needsVerification' | 'resendAvailableInSeconds'
+			>
+		> & {
+			values?: { email?: string };
+		}
 ): LoginFormState {
 	return {
 		success: partial.success,
 		message: partial.message,
+		resendSuccess: partial.resendSuccess,
+		needsVerification: partial.needsVerification,
+		resendAvailableInSeconds: partial.resendAvailableInSeconds,
 		values: { email: partial.values?.email ?? '' },
 		errors: partial.errors ?? {}
 	};
@@ -46,6 +69,10 @@ function safeRedirectPath(raw: FormDataEntryValue | null | undefined): string {
 	return path;
 }
 
+function isAccountNotVerified(detail: string | undefined, title: string | undefined): boolean {
+	return detail === ACCOUNT_NOT_VERIFIED_MESSAGE || title === ACCOUNT_NOT_VERIFIED_MESSAGE;
+}
+
 export const load: PageServerLoad = async ({ url }) => {
 	return {
 		redirectTo: safeRedirectPath(url.searchParams.get('redirectTo'))
@@ -53,7 +80,7 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, cookies }) => {
+	login: async ({ request, cookies }) => {
 		const formData = await request.formData();
 		const email = String(formData.get('email') ?? '').trim();
 		const password = String(formData.get('password') ?? '');
@@ -110,9 +137,17 @@ export const actions: Actions = {
 				if (fieldErrors.email?.length) mapped.email = fieldErrors.email;
 				if (fieldErrors.password?.length) mapped.password = fieldErrors.password;
 
+				const detail = error.problem.detail;
+				const title = error.problem.title;
+				const needsVerification =
+					!mapped.email && !mapped.password && isAccountNotVerified(detail, title);
+				const resendAvailableInSeconds = needsVerification
+					? readResendAvailableInSeconds(error.headers)
+					: undefined;
+
 				if (!mapped.email && !mapped.password) {
 					mapped.form = [
-						error.problem.detail ?? error.problem.title ?? 'Sign-in failed. Please try again.'
+						detail ?? title ?? 'Sign-in failed. Please try again.'
 					];
 				}
 
@@ -122,7 +157,9 @@ export const actions: Actions = {
 						success: false,
 						values: { email },
 						errors: mapped,
-						message: error.problem.detail ?? error.problem.title
+						message: detail ?? title,
+						needsVerification,
+						resendAvailableInSeconds
 					})
 				);
 			}
@@ -141,5 +178,78 @@ export const actions: Actions = {
 
 		writeSessionToken(cookies, accessToken, maxAge);
 		redirect(303, redirectTo);
+	},
+
+	resend: async ({ request }) => {
+		const formData = await request.formData();
+		const email = String(formData.get('email') ?? '').trim();
+		const emailError = validateResendEmail(email);
+
+		if (emailError) {
+			return fail(
+				400,
+				formState({
+					success: false,
+					values: { email },
+					needsVerification: true,
+					errors: {
+						form: [ACCOUNT_NOT_VERIFIED_MESSAGE],
+						resend: [emailError]
+					}
+				})
+			);
+		}
+
+		try {
+			const message = await postResendVerification(email);
+
+			return formState({
+				success: false,
+				resendSuccess: true,
+				needsVerification: true,
+				resendAvailableInSeconds: Math.ceil(RESEND_COOLDOWN_MS / 1000),
+				message,
+				values: { email },
+				errors: {
+					form: [ACCOUNT_NOT_VERIFIED_MESSAGE]
+				}
+			});
+		} catch (error) {
+			if (error instanceof ApiError) {
+				const fieldErrors = mapProblemFieldErrors(error.problem);
+				const resendError =
+					fieldErrors.email?.[0] ??
+					error.problem.detail ??
+					error.problem.title ??
+					'Unable to resend verification email. Please try again.';
+
+				return fail(
+					error.status >= 400 && error.status < 600 ? error.status : 400,
+					formState({
+						success: false,
+						values: { email },
+						needsVerification: true,
+						errors: {
+							form: [ACCOUNT_NOT_VERIFIED_MESSAGE],
+							resend: [resendError]
+						},
+						message: RESEND_VERIFICATION_SUCCESS_FALLBACK
+					})
+				);
+			}
+
+			return fail(
+				500,
+				formState({
+					success: false,
+					values: { email },
+					needsVerification: true,
+					errors: {
+						form: [ACCOUNT_NOT_VERIFIED_MESSAGE],
+						resend: ['Unable to reach the identity service. Please try again later.']
+					}
+				})
+			);
+		}
 	}
 };

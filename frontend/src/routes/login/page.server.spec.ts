@@ -36,8 +36,8 @@ function requestOf(fields: Record<string, string>): Request {
 }
 
 async function submit(fields: Record<string, string>) {
-	const action = actions.default;
-	if (typeof action !== 'function') throw new Error('default action missing');
+	const action = actions.login;
+	if (typeof action !== 'function') throw new Error('login action missing');
 	return action({ request: requestOf(fields), cookies } as never);
 }
 
@@ -377,11 +377,54 @@ describe('login form action', () => {
 			success: false,
 			values: { email: VALID.email },
 			message: 'Invalid email or password.',
+			needsVerification: false,
 			errors: {
 				form: ['Invalid email or password.']
 			}
 		});
 		expect(writeSessionTokenMock).not.toHaveBeenCalled();
+	});
+
+	it('marks account-not-verified failures for the resend recovery UI', async () => {
+		post.mockRejectedValue(
+			new ApiError(
+				400,
+				{
+					status: 400,
+					title: 'One or more errors occurred!',
+					detail: 'Account not verified.'
+				},
+				new Headers({ 'Resend-Available-In': '1200' })
+			)
+		);
+
+		const result = expectFailure(await submit(VALID));
+
+		expect(result.status).toBe(400);
+		expect(result.data).toMatchObject({
+			success: false,
+			values: { email: VALID.email },
+			needsVerification: true,
+			resendAvailableInSeconds: 1200,
+			errors: {
+				form: ['Account not verified.']
+			}
+		});
+		expect(writeSessionTokenMock).not.toHaveBeenCalled();
+	});
+
+	it('omits resendAvailableInSeconds when the header is absent', async () => {
+		post.mockRejectedValue(
+			new ApiError(400, {
+				status: 400,
+				detail: 'Account not verified.'
+			})
+		);
+
+		const result = expectFailure(await submit(VALID));
+
+		expect(result.data.needsVerification).toBe(true);
+		expect(result.data.resendAvailableInSeconds).toBeUndefined();
 	});
 
 	it('falls back to problem title when detail is missing', async () => {
@@ -439,5 +482,168 @@ describe('login form action', () => {
 		});
 		expect(result.data.values.email).toBe(VALID.email);
 		expect(writeSessionTokenMock).not.toHaveBeenCalled();
+	});
+});
+
+async function submitResend(fields: Record<string, string>) {
+	const action = actions.resend;
+	if (typeof action !== 'function') throw new Error('resend action missing');
+	return action({ request: requestOf(fields), cookies } as never);
+}
+
+describe('login resend action', () => {
+	beforeEach(() => {
+		post.mockReset();
+		createIdentityApiMock.mockReset();
+		writeSessionTokenMock.mockReset();
+		createIdentityApiMock.mockReturnValue({ POST: post } as never);
+	});
+
+	afterEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it('rejects invalid email before calling Identity', async () => {
+		const result = expectFailure(await submitResend({ email: 'not-an-email' }));
+
+		expect(result.status).toBe(400);
+		expect(result.data).toMatchObject({
+			success: false,
+			needsVerification: true,
+			values: { email: 'not-an-email' },
+			errors: {
+				form: ['Account not verified.'],
+				resend: ['Email must be a valid email address.']
+			}
+		});
+		expect(createIdentityApiMock).not.toHaveBeenCalled();
+	});
+
+	it('rejects empty and overlong emails before calling Identity', async () => {
+		const empty = expectFailure(await submitResend({ email: '' }));
+		expect(empty.status).toBe(400);
+		expect(empty.data).toMatchObject({
+			needsVerification: true,
+			errors: {
+				form: ['Account not verified.'],
+				resend: ['Email is required.']
+			}
+		});
+
+		const longEmail = `${'a'.repeat(310)}@example.com`;
+		const overlong = expectFailure(await submitResend({ email: longEmail }));
+		expect(overlong.status).toBe(400);
+		expect(overlong.data.errors).toMatchObject({
+			resend: ['Email must be at most 320 characters.']
+		});
+		expect(createIdentityApiMock).not.toHaveBeenCalled();
+	});
+
+	it('posts trimmed email and keeps the not-verified recovery state', async () => {
+		post.mockResolvedValue({
+			data: 'If an account needs verification, we sent a link.',
+			error: undefined,
+			response: new Response()
+		});
+
+		const result = await submitResend({ email: '  user@example.test  ' });
+
+		expect(isActionFailure(result)).toBe(false);
+		expect(result).toMatchObject({
+			success: false,
+			resendSuccess: true,
+			needsVerification: true,
+			resendAvailableInSeconds: 1800,
+			message: 'If an account needs verification, we sent a link.',
+			values: { email: 'user@example.test' },
+			errors: {
+				form: ['Account not verified.']
+			}
+		});
+		expect(post).toHaveBeenCalledWith('/identities/resend-verification', {
+			body: { email: 'user@example.test' }
+		});
+		expect(writeSessionTokenMock).not.toHaveBeenCalled();
+	});
+
+	it('falls back to the default resend message when Identity returns an empty body', async () => {
+		post.mockResolvedValue({ data: '', error: undefined, response: new Response() });
+
+		const result = await submitResend({ email: VALID.email });
+
+		expect(result).toMatchObject({
+			resendSuccess: true,
+			message: 'If an account needs verification, we sent a link.'
+		});
+	});
+
+	it('maps Identity field errors onto the resend error', async () => {
+		post.mockRejectedValue(
+			new ApiError(400, {
+				status: 400,
+				errors: [{ name: 'Email', reason: 'Email is required.' }]
+			})
+		);
+
+		const result = expectFailure(await submitResend({ email: VALID.email }));
+
+		expect(result.status).toBe(400);
+		expect(result.data).toMatchObject({
+			success: false,
+			needsVerification: true,
+			errors: {
+				form: ['Account not verified.'],
+				resend: ['Email is required.']
+			}
+		});
+	});
+
+	it('surfaces non-field ApiError details as the resend error', async () => {
+		post.mockRejectedValue(
+			new ApiError(503, {
+				status: 503,
+				detail: 'Identity is busy.'
+			})
+		);
+
+		const result = expectFailure(await submitResend({ email: VALID.email }));
+
+		expect(result.status).toBe(503);
+		expect(result.data).toMatchObject({
+			needsVerification: true,
+			errors: {
+				form: ['Account not verified.'],
+				resend: ['Identity is busy.']
+			}
+		});
+	});
+
+	it('clamps out-of-range ApiError status to 400 on resend', async () => {
+		post.mockRejectedValue(
+			new ApiError(399, {
+				status: 399,
+				title: 'Weird status'
+			})
+		);
+
+		const result = expectFailure(await submitResend({ email: VALID.email }));
+
+		expect(result.status).toBe(400);
+		expect(result.data.errors).toMatchObject({ resend: ['Weird status'] });
+	});
+
+	it('uses a safe resend error when Identity is unreachable', async () => {
+		post.mockRejectedValue(new Error('ECONNREFUSED'));
+
+		const result = expectFailure(await submitResend({ email: VALID.email }));
+
+		expect(result.status).toBe(500);
+		expect(result.data).toMatchObject({
+			needsVerification: true,
+			errors: {
+				form: ['Account not verified.'],
+				resend: ['Unable to reach the identity service. Please try again later.']
+			}
+		});
 	});
 });

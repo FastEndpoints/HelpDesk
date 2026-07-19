@@ -17,8 +17,10 @@ Frontend unit coverage:
 - server API client → `ApiError` middleware; bearer `Authorization` header only when token passed
 - session cookie helpers (`lib/server/api/session.spec.ts`): `helpdesk_session` name, HttpOnly/SameSite/Path, maxAge default + 7-day cap, Secure in production, clear attributes
 - problem-details field mapping (`mapProblemFieldErrors`)
-- register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success message fallback, field/form `ApiError` mapping, unreachable-service 500
-- login BFF action (`routes/login/page.server.spec.ts`): local validation, email trim, Identity POST body shape, session cookie maxAge from string/Date `expiresAt` (unparseable → default; past → 0), missing-token 502, redirect home or safe `redirectTo`, open-redirect rejection, field/form `ApiError` mapping (email/password), title/generic fallbacks, out-of-range status clamp, unreachable-service 500
+- register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success keeps email + message fallback, field/form `ApiError` mapping, unreachable-service 500; `?/resend` empty/invalid/overlong validation, Identity resend body, success/`resendSuccess`, field + non-field `ApiError` (detail/title) + status clamp, unreachable errors while staying on check-email state
+- shared resend helper (`lib/server/api/resend-verification.spec.ts`): `validateResendEmail` empty/invalid/320; `postResendVerification` body + empty-body fallback
+- resend cooldown helpers (`lib/resend-cooldown.spec.ts`): 30-minute constant + `m:ss`; register vs login start rules; countdown visibility; button label (pending / first send / send again); disable when pending, cooling down, or missing email — used by register success + login recovery UI
+- login BFF action (`routes/login/page.server.spec.ts`): local validation, email trim, Identity POST body shape, session cookie maxAge from string/Date `expiresAt` (unparseable → default; past → 0), missing-token 502, redirect home or safe `redirectTo`, open-redirect rejection, field/form `ApiError` mapping (email/password), `Account not verified.` → `needsVerification`, title/generic fallbacks, out-of-range status clamp, unreachable-service 500; `?/resend` empty/invalid/overlong validation, Identity resend body, keeps not-verified recovery state, field + non-field `ApiError` + status clamp, unreachable resend error
 - logout BFF action (`routes/logout/page.server.spec.ts`): POST clears `helpdesk_session` and 303 `/`; GET/load 303 `/` without clear
 - profile BFF load/actions (`routes/settings/profile/page.server.spec.ts`): no session → login redirect with return URL; load maps profile + null picture; incomplete payload 502; 401/403/404 clear session + redirect; unreachable 503; update validation/trim/PUT body; upload local type/size gates + multipart FormData body; delete success; field/form `ApiError` mapping; unreachable action 500
 - root layout load (`routes/layout.server.spec.ts`): no cookie → anonymous; session → Profile `GET /profiles/me` maps `displayName`/`pictureUrl` (null/undefined → null); empty/missing displayName or empty body → anonymous without clear; 401/403/404 clears session; other errors keep cookie and stay anonymous
@@ -81,7 +83,7 @@ dotnet test backend/Services/Notifications/Services.Notifications.csproj
 - Real MongoDB required for tests; start `pnpm stack:dev` and use the committed development connection from base appsettings (environment variables may override it)
 - Fixtures drop owned collections on dispose (`UserIdentities` / `UserProfiles` / jobs+events)
 - Event assertions: `RegisterTestEventReceivers()` + `GetTestEventReceiver<TEvent>().WaitForMatchAsync(...)`
-- Notifications: replaces `IEmailSender` with `TestEmailSender` capture queue; use unique `UserIdentityId` per case because verification emails share `JobIdempotencyKey(UserIdentityId)`
+- Notifications: replaces `IEmailSender` with `TestEmailSender` capture queue; use unique `UserIdentityId`+`VerificationCode` pairs when asserting job keys because verification emails share `JobIdempotencyKey(UserIdentityId, VerificationCode)`
 
 ## Expectations
 

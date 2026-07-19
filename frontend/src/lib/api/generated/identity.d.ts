@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/identities/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["IdentitiesResendVerificationEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/identities/verify/{verificationCode}": {
         parameters: {
             query?: never;
@@ -110,6 +126,10 @@ export interface components {
             email: string;
             password: string;
         };
+        IdentitiesResendVerificationRequest: {
+            /** Format: email */
+            email: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -162,6 +182,39 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["IdentitiesRegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["FastEndpointsProblemDetails"];
+                };
+            };
+        };
+    };
+    IdentitiesResendVerificationEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentitiesResendVerificationRequest"];
             };
         };
         responses: {

@@ -66,14 +66,15 @@ HelpDesk/
 | `frontend/src/routes/` | SvelteKit routes: landing (`/`), registration (`/register`), verify (`/verify/[code]`), login (`/login`), logout (`/logout`), profile (`/settings/profile`), picture proxy (`/profile-pictures/**`), shared shell layout |
 | `frontend/src/routes/+layout.server.ts` | Root layout load: session cookie → Profile `GET /profiles/me` for shell user chrome |
 | `frontend/src/routes/+layout.svelte` | Shared shell; signed-in account menu (Edit Profile, Log Out) |
-| `frontend/src/routes/register/` | Registration form + server action BFF to Identity `POST /identities/register` |
+| `frontend/src/routes/register/` | Registration form + server actions BFF to Identity register + resend-verification |
 | `frontend/src/routes/verify/[code]/` | Email verification page; button posts to BFF action → Identity `GET /identities/verify/{code}` |
-| `frontend/src/routes/login/` | Sign-in form + server action BFF to Identity `POST /identities/login`; sets `helpdesk_session` cookie; optional safe `redirectTo` |
+| `frontend/src/routes/login/` | Sign-in form + server actions BFF to Identity login + resend-verification; sets `helpdesk_session` cookie; optional safe `redirectTo`; not-verified recovery UI |
 | `frontend/src/routes/logout/` | POST clears `helpdesk_session` and redirects `/`; GET redirects `/` without clear |
 | `frontend/src/routes/settings/profile/` | Auth-gated profile view/edit BFF: load + update/upload/delete picture actions against Profile |
 | `frontend/src/routes/profile-pictures/[...path]/` | Public BFF proxy to private Profile `GET /profile-pictures/**`; forwards range/cache headers and image metadata |
 | `frontend/src/app.css` | Global styles / Tailwind v4 entry; FE-Docs navy/cyan theme tokens (`fe-*`) |
-| `frontend/src/lib/server/api/` | BFF-only config, clients, `ApiError`/problem mapping, and session cookie convention |
+| `frontend/src/lib/server/api/` | BFF-only config, clients, `ApiError`/problem mapping, session cookie, shared resend-verification helper |
+| `frontend/src/lib/resend-cooldown.ts` | Client-only 30m resend cooldown: constant, `m:ss` formatter, register/login start + countdown visibility, button label/disable helpers |
 | `frontend/openapi/*.json` | Normalized Identity/Profile OpenAPI snapshots |
 | `frontend/src/lib/api/generated/*.d.ts` | Generated API path/schema types |
 | `frontend/scripts/openapi.mjs` | Snapshot/type workflow; live commands require explicit Aspire-derived URLs |

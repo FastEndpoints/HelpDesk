@@ -1,5 +1,6 @@
 using Common.Tools;
 using FastEndpoints.Security;
+using Identities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -29,7 +30,11 @@ sealed class Endpoint(IUserIdentityStore store, IPasswordHasher<UserIdentityEnti
             ThrowError("Invalid email or password.");
 
         if (identity.Status != UserIdentityStatus.Active)
+        {
+            var seconds = VerificationResend.AvailableInSeconds(identity.VerificationIssuedAt, DateTime.UtcNow);
+            HttpContext.Response.Headers[VerificationResend.AvailableInHeaderName] = seconds.ToString();
             ThrowError("Account not verified.");
+        }
 
         var expiresAt = DateTime.UtcNow.AddDays(_jwtSettings.AccessTokenDays);
         var groups = identity.Groups is { Length: > 0 } ? identity.Groups : PermissionGroups.Defaults;

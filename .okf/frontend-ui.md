@@ -80,9 +80,11 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 ## Registration UI notes
 
 - Route: `/register` → `frontend/src/routes/register/+page.svelte` + `+page.server.ts`
-- Browser never calls Identity directly; form posts to a SvelteKit action which uses `createIdentityApi().POST('/identities/register')`
+- Browser never calls Identity directly; named actions only (no `default` — Kit forbids mixing with named): `?/register` → `createIdentityApi().POST('/identities/register')`; success card `?/resend` → Identity `POST /identities/resend-verification`
 - Client-only confirm password; only email + password reach the backend
-- Success: hide form, show centered check-email notice with backend message
+- Success: hide form, show centered check-email notice with backend message; keeps email in form state
+- Resend: secondary button; generic success copy; stays on check-email state
+- Client-only 30-minute cooldown starts with the success card (register just issued verification; aligns with Identity `ResendCooldown`, no remaining-time from API); live `m:ss` countdown disables the button; after a successful resend the label is **Send again** (CSS uppercase → SEND AGAIN) and the cooldown restarts
 - Validation: local field rules mirror Identity (email format, password 12–128); backend problem details mapped via `mapProblemFieldErrors`
 - Shell: sticky translucent navy header with brand + Create account nav link
 
@@ -97,9 +99,11 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 ## Login UI notes
 
 - Route: `/login` → `frontend/src/routes/login/+page.svelte` + `+page.server.ts`
-- Browser never calls Identity directly; form posts to a SvelteKit action which uses `createIdentityApi().POST('/identities/login')`
+- Browser never calls Identity directly; named actions only (no `default` — Kit forbids mixing with named): `?/login` → `createIdentityApi().POST('/identities/login')`; recovery `?/resend` → Identity resend-verification
 - On success: BFF writes JWT to HttpOnly `helpdesk_session` cookie via `writeSessionToken` (maxAge from Identity `expiresAt`, capped at 7 days; `Secure` in production) then redirects to a safe relative `redirectTo` (default `/`; rejects protocol-relative/absolute URLs)
 - Optional `?redirectTo=` query (e.g. from protected profile page) is echoed as a hidden form field
+- Not verified: Identity `Account not verified.` sets `needsVerification`; recovery block offers `?/resend` (prefilled email); generic success banner; keeps sign-in form
+- After successful resend: button label **Send again** (CSS uppercase → SEND AGAIN); client-only 30-minute cooldown (aligned with Identity `ResendCooldown`, no remaining-time from API) disables the button and shows a live `m:ss` countdown; first resend from the not-verified state stays immediately available
 - Validation: local field rules mirror Identity login (email format/max 320; password required/max 128); backend problem details mapped via `mapProblemFieldErrors`
 - Shell nav includes Sign in + Create account when anonymous; post-verify CTA targets this page
 

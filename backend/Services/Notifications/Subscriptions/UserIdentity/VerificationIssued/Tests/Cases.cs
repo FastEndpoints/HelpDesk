@@ -57,7 +57,9 @@ public class Cases(Sut App) : TestBase<Sut>
             "abc123",
             "https://helpdesk.test",
             DateTime.UtcNow);
-        var expectedKey = UserIdentityVerificationIssuedEventHandler.JobIdempotencyKey(eventModel.UserIdentityId);
+        var expectedKey = UserIdentityVerificationIssuedEventHandler.JobIdempotencyKey(
+            eventModel.UserIdentityId,
+            eventModel.VerificationCode);
 
         await handler.HandleAsync(eventModel, Cancellation);
         await handler.HandleAsync(eventModel, Cancellation);
@@ -77,7 +79,7 @@ public class Cases(Sut App) : TestBase<Sut>
     {
         var command = new SendEmailCommand
         {
-            IdempotencyKey = UserIdentityVerificationIssuedEventHandler.JobIdempotencyKey("queue-return"),
+            IdempotencyKey = UserIdentityVerificationIssuedEventHandler.JobIdempotencyKey("queue-return", "code-1"),
             Message = new()
             {
                 ToEmail = "queue-return@example.com",
@@ -100,5 +102,33 @@ public class Cases(Sut App) : TestBase<Sut>
 
         jobs.Count.ShouldBe(1);
         jobs[0].TrackingID.ShouldBe(firstTrackingId);
+    }
+
+    [Fact]
+    public async Task Different_Verification_Codes_Store_Separate_Jobs()
+    {
+        var handler = new UserIdentityVerificationIssuedEventHandler();
+        var identityId = "identity-id-resend";
+        var first = new UserIdentityVerificationIssuedEvent(
+            identityId,
+            "resend-user@example.com",
+            "code-first",
+            "https://helpdesk.test",
+            DateTime.UtcNow);
+        var second = first with { VerificationCode = "code-second", IssuedAt = DateTime.UtcNow };
+
+        await handler.HandleAsync(first, Cancellation);
+        await handler.HandleAsync(second, Cancellation);
+
+        var firstKey = UserIdentityVerificationIssuedEventHandler.JobIdempotencyKey(identityId, "code-first");
+        var secondKey = UserIdentityVerificationIssuedEventHandler.JobIdempotencyKey(identityId, "code-second");
+
+        var jobs = await DB.Default
+                           .Find<JobRecord>()
+                           .Match(r => r.IdempotencyKey == firstKey || r.IdempotencyKey == secondKey)
+                           .ExecuteAsync(Cancellation);
+
+        jobs.Count.ShouldBe(2);
+        jobs.Select(j => j.IdempotencyKey).ShouldBe([firstKey, secondKey], ignoreOrder: true);
     }
 }

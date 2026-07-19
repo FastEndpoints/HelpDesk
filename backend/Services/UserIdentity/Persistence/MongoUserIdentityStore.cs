@@ -38,4 +38,12 @@ sealed class MongoUserIdentityStore : IUserIdentityStore
                    .MatchID(id)
                    .Modify(i => i.Status, UserIdentityStatus.Active)
                    .ExecuteAsync(ct);
+
+    public async Task ReplaceVerificationCodeAsync(string id, string verificationCode, DateTime issuedAt, CancellationToken ct)
+        => await DB.Default
+                   .Update<UserIdentityEntity>()
+                   .MatchID(id)
+                   .Modify(i => i.VerificationCode, verificationCode)
+                   .Modify(i => i.VerificationIssuedAt, issuedAt)
+                   .ExecuteAsync(ct);
 }

@@ -1,11 +1,65 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import {
+		formatResendCountdown,
+		isResendButtonDisabled,
+		RESEND_COOLDOWN_MS,
+		resendButtonLabel,
+		shouldShowResendCountdown,
+		shouldStartResendCooldown
+	} from '$lib/resend-cooldown';
 	import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
 
 	let pending = $state(false);
+	let resendPending = $state(false);
+	let cooldownEndsAt = $state<number | null>(null);
+	let nowMs = $state(Date.now());
+
+	const remainingMs = $derived(
+		cooldownEndsAt == null ? 0 : Math.max(0, cooldownEndsAt - nowMs)
+	);
+	const showResendCountdown = $derived(shouldShowResendCountdown({ remainingMs }));
+	const resendDisabled = $derived(
+		isResendButtonDisabled({
+			pending: resendPending,
+			remainingMs,
+			email: form?.values.email
+		})
+	);
+	const resendLabel = $derived(
+		resendButtonLabel({ pending: resendPending, resendSuccess: form?.resendSuccess })
+	);
+
+	function startResendCooldown(durationMs = RESEND_COOLDOWN_MS) {
+		cooldownEndsAt = Date.now() + durationMs;
+		nowMs = Date.now();
+	}
+
+	// Register issues verification immediately — start client cooldown with the success card.
+	// Also covers full-page POST hydration when resend already succeeded.
+	$effect(() => {
+		if (
+			shouldStartResendCooldown({
+				surface: 'register',
+				success: form?.success,
+				resendSuccess: form?.resendSuccess,
+				cooldownAlreadyStarted: cooldownEndsAt != null
+			})
+		) {
+			startResendCooldown();
+		}
+	});
+
+	$effect(() => {
+		if (!showResendCountdown) return;
+		const id = setInterval(() => {
+			nowMs = Date.now();
+		}, 1000);
+		return () => clearInterval(id);
+	});
 </script>
 
 <svelte:head>
@@ -24,8 +78,54 @@
 			</p>
 			<h1 class="text-2xl font-semibold tracking-tight text-fe-heading">Check your email</h1>
 			<p class="mt-4 text-base leading-7 text-fe-text-muted">
-				{form.message ?? 'Signup successful. Please check your email for a verification link.'}
+				{form.resendSuccess
+					? (form.message ?? 'If an account needs verification, we sent a link.')
+					: (form.message ??
+						'Signup successful. Please check your email for a verification link.')}
 			</p>
+			<p class="mt-3 text-sm leading-6 text-fe-text-muted">
+				Didn’t get it? Check spam, then resend the verification email.
+			</p>
+
+			{#if form.errors.resend?.[0]}
+				<div
+					class="mt-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+					role="alert"
+				>
+					{form.errors.resend[0]}
+				</div>
+			{/if}
+
+			<form
+				method="POST"
+				action="?/resend"
+				class="mt-6"
+				use:enhance={() => {
+					resendPending = true;
+					return async ({ result, update }) => {
+						await update({ reset: false });
+						resendPending = false;
+						if (result.type === 'success' && result.data?.resendSuccess) {
+							startResendCooldown();
+						}
+					};
+				}}
+			>
+				<input type="hidden" name="email" value={form.values.email} />
+				{#if showResendCountdown}
+					<p class="mb-3 text-sm leading-6 text-fe-text-muted" aria-live="polite">
+						You can send again in {formatResendCountdown(remainingMs)}.
+					</p>
+				{/if}
+				<button
+					type="submit"
+					disabled={resendDisabled}
+					class="inline-flex w-full items-center justify-center rounded-md border border-fe-border bg-fe-dark-800 px-4 py-3 text-sm font-semibold tracking-wide text-fe-heading uppercase transition-colors hover:border-fe-light-500/40 hover:text-white focus-visible:outline-fe-focus disabled:cursor-not-allowed disabled:opacity-60"
+				>
+					{resendLabel}
+				</button>
+			</form>
+
 			<a
 				href={resolve('/')}
 				class="mt-8 inline-flex text-sm font-medium text-fe-light-500 transition-colors hover:text-white"
@@ -47,6 +147,7 @@
 
 			<form
 				method="POST"
+				action="?/register"
 				class="mt-8 space-y-5"
 				use:enhance={() => {
 					pending = true;

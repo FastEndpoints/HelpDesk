@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using Common.Tools;
+using Identities;
 using UserIdentity.Tests;
 
 namespace Endpoints.Identities.Login.Tests;
@@ -55,9 +56,56 @@ public class Cases(Sut App) : TestBase<Sut>
         var req = NewRequest();
         await App.CreateIdentityAsync(req.Email, status: UserIdentityStatus.Locked, ct: Cancellation);
 
+        var (rsp, res) = await App.Client.POSTAsync<Endpoint, Request, ProblemDetails>(req);
+
+        rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        res.Detail.ShouldBe("Account not verified.");
+        rsp.Headers.TryGetValues(VerificationResend.AvailableInHeaderName, out var values).ShouldBeTrue();
+        int.Parse(values!.Single()).ShouldBeInRange(0, (int)VerificationResend.Cooldown.TotalSeconds);
+    }
+
+    [Fact]
+    public async Task Deactivated_Account_Returns_Remaining_Resend_Cooldown_Header()
+    {
+        var req = NewRequest();
+        var issuedAt = DateTime.UtcNow.AddMinutes(-10);
+        await App.CreateIdentityAsync(
+            req.Email,
+            status: UserIdentityStatus.Deactivated,
+            verificationIssuedAt: issuedAt,
+            ct: Cancellation);
+
+        var before = DateTime.UtcNow;
+        var (rsp, res) = await App.Client.POSTAsync<Endpoint, Request, ProblemDetails>(req);
+        var after = DateTime.UtcNow;
+
+        rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        res.Detail.ShouldBe("Account not verified.");
+        rsp.Headers.TryGetValues(VerificationResend.AvailableInHeaderName, out var values).ShouldBeTrue();
+
+        var seconds = int.Parse(values!.Single());
+        var minExpected = VerificationResend.AvailableInSeconds(issuedAt, after);
+        var maxExpected = VerificationResend.AvailableInSeconds(issuedAt, before);
+        seconds.ShouldBeInRange(minExpected, maxExpected);
+        seconds.ShouldBeGreaterThan(0);
+        seconds.ShouldBeLessThan((int)VerificationResend.Cooldown.TotalSeconds);
+    }
+
+    [Fact]
+    public async Task Deactivated_Account_Past_Cooldown_Returns_Zero_Resend_Header()
+    {
+        var req = NewRequest();
+        await App.CreateIdentityAsync(
+            req.Email,
+            status: UserIdentityStatus.Deactivated,
+            verificationIssuedAt: DateTime.UtcNow - VerificationResend.Cooldown - TimeSpan.FromMinutes(1),
+            ct: Cancellation);
+
         var (rsp, _) = await App.Client.POSTAsync<Endpoint, Request, ProblemDetails>(req);
 
         rsp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        rsp.Headers.TryGetValues(VerificationResend.AvailableInHeaderName, out var values).ShouldBeTrue();
+        int.Parse(values!.Single()).ShouldBe(0);
     }
 
     [Fact]

@@ -133,6 +133,21 @@
           "password"
         ],
         "type": "object"
+      },
+      "IdentitiesResendVerificationRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 320,
+            "minLength": 0,
+            "pattern": "^[^@]+@[^@]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -198,6 +213,46 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/IdentitiesRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "tags": [
+          "Identities"
+        ]
+      }
+    },
+    "/identities/resend-verification": {
+      "post": {
+        "operationId": "IdentitiesResendVerificationEndpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentitiesResendVerificationRequest"
               }
             }
           },

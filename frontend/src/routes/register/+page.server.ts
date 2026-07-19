@@ -3,17 +3,24 @@ import type { Actions, PageServerLoad } from './$types';
 import { createIdentityApi } from '$lib/server/api/identity';
 import { ApiError } from '$lib/server/api/errors';
 import { mapProblemFieldErrors } from '$lib/server/api/problem';
+import {
+	postResendVerification,
+	RESEND_VERIFICATION_SUCCESS_FALLBACK,
+	validateResendEmail
+} from '$lib/server/api/resend-verification';
 
 export type RegisterFieldErrors = {
 	email?: string[];
 	password?: string[];
 	confirmPassword?: string[];
 	form?: string[];
+	resend?: string[];
 };
 
 export type RegisterFormState = {
 	success: boolean;
 	message?: string;
+	resendSuccess?: boolean;
 	values: {
 		email: string;
 	};
@@ -22,11 +29,14 @@ export type RegisterFormState = {
 
 function formState(
 	partial: Omit<RegisterFormState, 'values' | 'errors'> &
-		Partial<Pick<RegisterFormState, 'values' | 'errors'>> & { values?: { email?: string } }
+		Partial<Pick<RegisterFormState, 'values' | 'errors' | 'resendSuccess'>> & {
+			values?: { email?: string };
+		}
 ): RegisterFormState {
 	return {
 		success: partial.success,
 		message: partial.message,
+		resendSuccess: partial.resendSuccess,
 		values: { email: partial.values?.email ?? '' },
 		errors: partial.errors ?? {}
 	};
@@ -37,7 +47,7 @@ export const load: PageServerLoad = async () => {
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	register: async ({ request }) => {
 		const formData = await request.formData();
 		const email = String(formData.get('email') ?? '').trim();
 		const password = String(formData.get('password') ?? '');
@@ -81,7 +91,8 @@ export const actions: Actions = {
 				message:
 					typeof data === 'string' && data.length > 0
 						? data
-						: 'Signup successful. Please check your email for a verification link.'
+						: 'Signup successful. Please check your email for a verification link.',
+				values: { email }
 			});
 		} catch (error) {
 			if (error instanceof ApiError) {
@@ -115,6 +126,64 @@ export const actions: Actions = {
 					values: { email },
 					errors: {
 						form: ['Unable to reach the identity service. Please try again later.']
+					}
+				})
+			);
+		}
+	},
+
+	resend: async ({ request }) => {
+		const formData = await request.formData();
+		const email = String(formData.get('email') ?? '').trim();
+		const emailError = validateResendEmail(email);
+
+		if (emailError) {
+			return fail(
+				400,
+				formState({
+					success: true,
+					values: { email },
+					errors: { resend: [emailError] }
+				})
+			);
+		}
+
+		try {
+			const message = await postResendVerification(email);
+
+			return formState({
+				success: true,
+				resendSuccess: true,
+				message,
+				values: { email }
+			});
+		} catch (error) {
+			if (error instanceof ApiError) {
+				const fieldErrors = mapProblemFieldErrors(error.problem);
+				const resendError =
+					fieldErrors.email?.[0] ??
+					error.problem.detail ??
+					error.problem.title ??
+					'Unable to resend verification email. Please try again.';
+
+				return fail(
+					error.status >= 400 && error.status < 600 ? error.status : 400,
+					formState({
+						success: true,
+						values: { email },
+						errors: { resend: [resendError] },
+						message: RESEND_VERIFICATION_SUCCESS_FALLBACK
+					})
+				);
+			}
+
+			return fail(
+				500,
+				formState({
+					success: true,
+					values: { email },
+					errors: {
+						resend: ['Unable to reach the identity service. Please try again later.']
 					}
 				})
 			);

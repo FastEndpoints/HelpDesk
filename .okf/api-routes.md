@@ -12,21 +12,24 @@ tags: [api]
 | Method | Route | Auth | Behavior |
 | --- | --- | --- | --- |
 | POST | `/identities/register` | Anonymous | Create deactivated identity; hash password; broadcast registered + verification-issued events |
-| POST | `/identities/login` | Anonymous | Validate credentials + Active status; return RSA JWT (`sub` = identity id) |
+| POST | `/identities/login` | Anonymous | Validate credentials + Active status; return RSA JWT (`sub` = identity id). Non-Active after valid password → `Account not verified.` + `Resend-Available-In` header (seconds remaining in 30m resend cooldown) |
+| POST | `/identities/resend-verification` | Anonymous | If email matches a Deactivated identity whose verification was last issued ≥30 minutes ago, rotate code + `VerificationIssuedAt` and broadcast verification-issued; always return the same generic success string (no account enumeration / no cooldown leak) |
 | GET | `/identities/verify/{VerificationCode}` | Anonymous | Activate identity; broadcast verified (idempotent if already Active) |
 
-Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Register,Login,Verify}/`.
+Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Register,Login,ResendVerification,Verify}/`.
 
 ### Request notes
 
 - Register/Login: email + password; FluentValidation (email format; register password min 12 / max 128)
 - Register response body is a plain success string (not a token DTO); account remains deactivated until verify
 - Duplicate email (normalized) → problem details / validation error on register
-- Frontend BFF: `POST /register` form action → Identity `POST /identities/register` (confirm password is client-only)
-- Frontend BFF: `POST /login` form action → Identity `POST /identities/login`; JWT stored in HttpOnly `helpdesk_session` cookie (maxAge from `expiresAt`, capped at 7 days); browser never sees the bearer token; optional safe relative `redirectTo` (default `/`)
+- Frontend BFF: `POST /register` form action → Identity `POST /identities/register` (confirm password is client-only); success keeps email for resend
+- Frontend BFF: `POST /register?/resend` and `POST /login?/resend` → Identity `POST /identities/resend-verification` (email only; generic success copy)
+- Frontend BFF: `POST /login` form action → Identity `POST /identities/login`; JWT stored in HttpOnly `helpdesk_session` cookie (maxAge from `expiresAt`, capped at 7 days); browser never sees the bearer token; optional safe relative `redirectTo` (default `/`); non-Active → `Account not verified.` + resend recovery UI; BFF reads `Resend-Available-In` into `resendAvailableInSeconds` so the login cooldown timer seeds from server remaining time (not always a fresh 30m). Successful login-page resend sets client cooldown to full 30m.
 - Frontend BFF: `POST /logout` → `clearSessionToken` + redirect `/` (no Identity call). `GET /logout` redirects `/` without clearing
 - Frontend BFF: `POST /verify/{code}` form action → Identity `GET /identities/verify/{VerificationCode}` (email links open the page; activation runs only on button click)
 - Email verification links use configured `UserIdentity:FrontendBaseUrl` + `/verify/{code}` (frontend), not Identity HTTP
+- Resend-verification request: email only (FluentValidation email format/max 320); Active/unknown/Locked → 200 generic message without reissue; Deactivated within 30m of `VerificationIssuedAt` → same generic 200 without reissue; Deactivated after cooldown → new code, updated `VerificationIssuedAt`, + `UserIdentityVerificationIssuedEvent`; empty `FrontendBaseUrl` → error (same as register)
 
 ## UserProfile
 

@@ -18,7 +18,7 @@ All business events implement `IEvent` and live in Contracts of the **owning** s
 | `UserIdentityVerificationIssuedEvent` | `UserIdentityId`, `Email`, `VerificationCode`, `BaseUrl` (frontend origin from `UserIdentity:FrontendBaseUrl`), `IssuedAt` | `NOTIFICATIONS_SERVICE` |
 | `UserIdentityVerifiedEvent` | `UserIdentityId`, `Email`, `VerifiedAt` | `USER_PROFILE_SERVICE` |
 
-Published from register/verify endpoints after persistence (register also issues verification event).
+Published from register and resend-verification after persistence (register always; deactivated resend only after 30m since `VerificationIssuedAt`).
 
 ## UserProfile (`Contracts.UserProfile`)
 
@@ -38,7 +38,7 @@ No owned events currently (`Contracts.Notifications` has `Service.Name` only).
 | --- | --- | --- |
 | `UserIdentityRegisteredEventHandler` | Registered | Create deactivated profile; broadcast profile registered |
 | `UserIdentityVerifiedEventHandler` | Verified | Activate profile by `UserIdentityId`; set EmailVerified |
-| `UserIdentityVerificationIssuedEventHandler` | VerificationIssued | Queue welcome email with verify link; job key via `JobIdempotencyKey` → `user-identity-verification:{UserIdentityId}` |
+| `UserIdentityVerificationIssuedEventHandler` | VerificationIssued | Queue welcome email with verify link; job key via `JobIdempotencyKey` → `user-identity-verification:{UserIdentityId}:{VerificationCode}` (same code dedupes; resend with new code queues again) |
 
 ## Adding an event
 

@@ -9,9 +9,10 @@ sealed class UserIdentityEntity : Entity
     public string NormalizedEmail { get; init; } = null!;
     public string PasswordHash { get; init; } = null!;
     public string VerificationCode { get; init; } = null!;
-    public string[] Groups { get; init; } = [];
+    public DateTime VerificationIssuedAt { get; init; }
     public UserIdentityStatus Status { get; init; } = UserIdentityStatus.Deactivated;
     public DateTime CreatedAt { get; init; }
+    public string[] Groups { get; init; } = [];
 
     public static UserIdentityEntity Create(string email, string passwordHash, DateTime now)
         => new()
@@ -21,10 +22,11 @@ sealed class UserIdentityEntity : Entity
             PasswordHash = passwordHash,
             VerificationCode = CreateVerificationCode(),
             Groups = [.. PermissionGroups.Defaults],
-            CreatedAt = now
+            CreatedAt = now,
+            VerificationIssuedAt = now
         };
 
-    static string CreateVerificationCode()
+    internal static string CreateVerificationCode()
         => Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
 }
 

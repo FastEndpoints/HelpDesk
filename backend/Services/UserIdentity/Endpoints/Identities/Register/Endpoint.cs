@@ -40,7 +40,7 @@ sealed class Endpoint(
         new UserIdentityRegisteredEvent(identity.ID, identity.Email, identity.CreatedAt)
             .Broadcast();
 
-        new UserIdentityVerificationIssuedEvent(identity.ID, identity.Email, identity.VerificationCode, baseUrl, identity.CreatedAt)
+        new UserIdentityVerificationIssuedEvent(identity.ID, identity.Email, identity.VerificationCode, baseUrl, identity.VerificationIssuedAt)
             .Broadcast();
 
         await Send.OkAsync("Signup successful. Please check your email for a verification link.", ct);

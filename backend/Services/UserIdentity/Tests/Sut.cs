@@ -24,12 +24,14 @@ public class Sut : AppFixture<Program>
         string email,
         string password = ValidPassword,
         UserIdentityStatus status = UserIdentityStatus.Active,
+        DateTime? verificationIssuedAt = null,
         CancellationToken ct = default)
     {
         var passwordHash = Services
             .GetRequiredService<IPasswordHasher<UserIdentityEntity>>()
             .HashPassword(null!, password);
 
+        var now = DateTime.UtcNow;
         var identity = new UserIdentityEntity
         {
             Email = email.Trim(),
@@ -38,7 +40,8 @@ public class Sut : AppFixture<Program>
             VerificationCode = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)),
             Groups = [.. PermissionGroups.Defaults],
             Status = status,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            VerificationIssuedAt = verificationIssuedAt ?? now
         };
 
         await DB.Default.InsertAsync(identity, ct);

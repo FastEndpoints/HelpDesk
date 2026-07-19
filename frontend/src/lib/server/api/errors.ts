@@ -19,7 +19,8 @@ export interface ProblemDetails {
 export class ApiError extends Error {
 	constructor(
 		public readonly status: number,
-		public readonly problem: ProblemDetails
+		public readonly problem: ProblemDetails,
+		public readonly headers: Headers = new Headers()
 	) {
 		super(problem.detail ?? problem.title ?? `Backend request failed (${status})`);
 		this.name = 'ApiError';
@@ -37,7 +38,7 @@ export async function toApiError(response: Response): Promise<ApiError> {
 	const problem = isObject(body)
 		? ({ ...body, status: response.status } as ProblemDetails)
 		: { status: response.status, title: response.statusText || 'Backend request failed' };
-	return new ApiError(response.status, problem);
+	return new ApiError(response.status, problem, response.headers);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
