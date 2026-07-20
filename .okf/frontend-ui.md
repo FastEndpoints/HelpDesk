@@ -30,7 +30,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 
 - **Dark-first.** Default to dark; light mode is not required unless product work explicitly adds it.
 - **Body:** near-black navy `rgba(9, 14, 24, 1)` / `#090e18` (`feDarkBlue-800`).
-- **Primary text:** cool gray `#d1d5db`–`#d5d5d5`; muted/secondary around `#9ca3af` / soft gray `#aaa`.
+- **Primary text:** cool gray `#d1d5db`-`#d5d5d5`; muted/secondary around `#9ca3af` / soft gray `#aaa`.
 - **Headings:** light gray (`#d5d5d5`), medium-light weight, not pure white walls of text.
 - **Accent / brand:** cyan `feLightBlue-500` `#00DFFF` (`rgb(0, 223, 255)`).
 - **Secondary brand blue:** `feBlue-500` `#096EEB` and darker `feBlue-600`/`700` for gradients and shadows.
@@ -52,7 +52,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 
 ## Content patterns
 
-- Prefer calm navy canvases and sparse accent—cyan for brand labels, active states, focus, and primary actions only.
+- Prefer calm navy canvases and sparse accent (cyan for brand labels, active states, focus, and primary actions only).
 - Cards/feature tiles: dark surface + transparent border; cyan border/background on hover when interactive.
 - Inline code / technical emphasis: cool blue-lilac tone (docs use ~`#8ba3d9` on faint tinted background) rather than pure white or yellow.
 - Code blocks (if present): deep navy fence (`#131a24` / `#17171e`), subtle border, rounded corners; not light themes.
@@ -80,12 +80,12 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 ## Registration UI notes
 
 - Route: `/register` → `frontend/src/routes/register/+page.svelte` + `+page.server.ts`
-- Browser never calls Identity directly; named actions only (no `default` — Kit forbids mixing with named): `?/register` → `createIdentityApi().POST('/identities/register')`; success card `?/resend` → Identity `POST /identities/resend-verification`
+- Browser never calls Identity directly; named actions only (no `default`, Kit forbids mixing with named): `?/register` → `createIdentityApi().POST('/identities/register')`; success card `?/resend` → Identity `POST /identities/resend-verification`
 - Client-only confirm password; only email + password reach the backend
 - Success: hide form, show centered check-email notice with backend message; keeps email in form state
 - Resend: secondary button; generic success copy; stays on check-email state
 - Client-only 30-minute cooldown starts with the success card (register just issued verification; aligns with Identity `ResendCooldown`, no remaining-time from API); live `m:ss` countdown disables the button; after a successful resend the label is **Send again** (CSS uppercase → SEND AGAIN) and the cooldown restarts
-- Validation: local field rules mirror Identity (email format, password 12–128); backend problem details mapped via `mapProblemFieldErrors`
+- Validation: local field rules mirror Identity (email format, password 12-128); backend problem details mapped via `mapProblemFieldErrors`
 - Shell: sticky translucent navy header with brand + Create account nav link
 
 ## Email verification UI notes
@@ -99,7 +99,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 ## Login UI notes
 
 - Route: `/login` → `frontend/src/routes/login/+page.svelte` + `+page.server.ts`
-- Browser never calls Identity directly; named actions only (no `default` — Kit forbids mixing with named): `?/login` → `createIdentityApi().POST('/identities/login')`; recovery `?/resend` → Identity resend-verification
+- Browser never calls Identity directly; named actions only (no `default`, Kit forbids mixing with named): `?/login` → `createIdentityApi().POST('/identities/login')`; recovery `?/resend` → Identity resend-verification
 - On success: BFF writes JWT to HttpOnly `helpdesk_session` cookie via `writeSessionToken` (maxAge from Identity `expiresAt`, capped at 7 days; `Secure` in production) then redirects to a safe relative `redirectTo` (default `/`; rejects protocol-relative/absolute URLs)
 - Optional `?redirectTo=` query (e.g. from protected profile page) is echoed as a hidden form field
 - Not verified: Identity `Account not verified.` sets `needsVerification`; recovery block offers `?/resend` (prefilled email); generic success banner; keeps sign-in form
@@ -121,7 +121,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 
 - Root layout load: `frontend/src/routes/+layout.server.ts`
 - Reads `helpdesk_session` via `readSessionToken`; if present, BFF calls Profile `GET /profiles/me` with bearer token via `createProfileApi(token)`
-- On success: layout data `{ user: { displayName, pictureUrl } }` — header shows avatar (or initials) + name as a menu button (`data-testid="shell-profile"`, cyan wash when open or on profile page); Sign in / Create account hidden
+- On success: layout data `{ user: { displayName, pictureUrl } }`. Header shows avatar (or initials) + name as a menu button (`data-testid="shell-profile"`, cyan wash when open or on profile page); Sign in / Create account hidden
 - Menu (`data-testid="shell-profile-menu"`): **Edit Profile** → `/settings/profile`; **Log Out** → `POST /logout` (clears session, redirects `/`). Closes on outside pointer, Escape, or Edit Profile click
 - On 401/403/404: clear invalid session cookie and treat as anonymous; other failures keep cookie and fall back to anonymous chrome (no throw)
 - JWT never sent to the browser; only display fields reach the client

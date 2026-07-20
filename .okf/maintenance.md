@@ -13,7 +13,7 @@ tags: [maintain]
 - Allowed types: `Reference`, `Architecture`, `Playbook`, `API Endpoint`, `Database`, `Service`, `Event`, `Security`, `Deployment`, `Generated`, `ADR`
 - Root `index.md` only: optional `okf_version: "0.1"` frontmatter; it is a router, not a concept dump
 - Do not create `log.md` unless requested; no empty placeholders
-- Soft target ~50–150 lines per file; split by topic when scanability suffers
+- Soft target ~50-150 lines per file; split by topic when scanability suffers
 
 ## Update triggers
 

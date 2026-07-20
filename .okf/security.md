@@ -18,7 +18,7 @@ SvelteKit is the external-client boundary. `frontend/src/lib/server/api/` reads 
 - Issuer/audience and expiry come from config (`AccessTokenDays` defaults to 7).
 - Empty/null groups on old documents fall back to `PermissionGroups.Defaults` (`User`).
 - UserProfile validates asymmetrically with the matching public value, issuer, and audience.
-- Login requires `UserIdentityStatus.Active`. After a valid password, non-Active identities are rejected with `Account not verified.` and a `Resend-Available-In` response header (integer seconds until resend is allowed, from `VerificationIssuedAt` + 30m cooldown; `0` when elapsed). Header is password-gated only—not on unknown email / bad password—so it does not expand anonymous enumeration. Resend endpoint stays opaque (no remaining-time leak).
+- Login requires `UserIdentityStatus.Active`. After a valid password, non-Active identities are rejected with `Account not verified.` and a `Resend-Available-In` response header (integer seconds until resend is allowed, from `VerificationIssuedAt` + 30m cooldown; `0` when elapsed). Header is password-gated only (not on unknown email / bad password), so it does not expand anonymous enumeration. Resend endpoint stays opaque (no remaining-time leak).
 - Resend verification is anonymous, email-only, and always returns the same success copy whether or not a Deactivated identity was found (no account enumeration, no cooldown leak). Only Deactivated identities whose `VerificationIssuedAt` is at least 30 minutes old rotate codes, update that timestamp, and publish `UserIdentityVerificationIssuedEvent`; Active/Locked/unknown/within-cooldown are no-ops.
 - BFF login (`POST /login` action → Identity `POST /identities/login`) persists `accessToken` only in the HttpOnly `helpdesk_session` cookie via `writeSessionToken`; cookie `maxAge` is derived from response `expiresAt` and capped at seven days. Token never goes to `localStorage` / JS.
 - BFF logout (`POST /logout`) clears `helpdesk_session` via `clearSessionToken` and redirects `/`. No backend revoke endpoint; JWT remains valid until expiry if stolen. GET `/logout` does not clear the cookie.
@@ -73,7 +73,7 @@ Identity builds verification-link bases from configured `UserIdentity:FrontendBa
 
 - SMTP is real only when Production and `Smtp:Enabled`; development/testing uses null/test senders.
 - IPC/remote messaging is a process topology trust boundary; HTTP business auth uses JWT.
-- Event payloads may include verification codes—treat event storage and MongoDB access as sensitive.
+- Event payloads may include verification codes. Treat event storage and MongoDB access as sensitive.
 
 ## Sources
 

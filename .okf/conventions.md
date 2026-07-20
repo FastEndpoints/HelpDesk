@@ -24,7 +24,7 @@ resource: README.md
 - Global usings in service `Meta.cs` / test `Tests/Meta.cs`
 - Nullable enabled; `ImplicitUsings` on
 - KISS / no speculative shared domain in Common
-- Frontend look-and-feel: dark navy + cyan theme aligned with FastEndpoints docs — see [Frontend UI](frontend-ui.md)
+- Frontend look-and-feel: dark navy + cyan theme aligned with FastEndpoints docs (see [Frontend UI](frontend-ui.md))
 
 ## Errors and validation
 
@@ -40,7 +40,7 @@ resource: README.md
 - `AccessControl` group args: always `PermissionGroups.*` constants (never raw string literals like `"User"`)
 - Email lookup normalization: `NormalizeForLookup()` → trim + upper invariant; store both raw and normalized
 - Events after successful local write; broadcast via `.Broadcast()`
-- Contracts: only service name, events, subscriber ID arrays—no entities/endpoints/stores
+- Contracts: only service name, events, subscriber ID arrays (no entities/endpoints/stores)
 
 ## Config and DI
 

@@ -11,7 +11,7 @@ Working backlog for agents and humans. Prefer small, verifiable items. Remove or
 
 ## Open
 
-- [ ] **Redirect to public issues list** — After the public issues list exists, send users there instead of `/` (login default `redirectTo`, logout destination, and any other post-auth home). List route/UI not built yet.
+- [ ] **Redirect to public issues list.** After the public issues list exists, send users there instead of `/` (login default `redirectTo`, logout destination, and any other post-auth home). List route/UI not built yet.
 
 ## Sources
 

@@ -10,7 +10,7 @@ resource: README.md
 
 ## Purpose
 
-HelpDesk implements a brokerless, event-driven microservice mesh with .NET and FastEndpoints. Independently deployable service nodes communicate through public contract events—no central message broker and no cross-service RPC for business workflows. A SvelteKit BFF is the external-client boundary.
+HelpDesk implements a brokerless, event-driven microservice mesh with .NET and FastEndpoints. Independently deployable service nodes communicate through public contract events (no central message broker and no cross-service RPC for business workflows). A SvelteKit BFF is the external-client boundary.
 
 ## Scope
 
@@ -47,7 +47,7 @@ Production Compose uses Caddy for automatic HTTPS, sets verification links to th
 - Shared domain models across services
 - Cross-service project references between `backend/Services/*`
 - Compose-based local orchestration
-- Exhaustive multi-domain helpdesk product surface yet—onboarding mesh only
+- Exhaustive multi-domain helpdesk product surface yet (onboarding mesh only)
 
 ## Glossary
 
