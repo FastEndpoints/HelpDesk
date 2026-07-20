@@ -12,6 +12,14 @@ public sealed class NullEmailSender(ILogger<NullEmailSender> logger) : IEmailSen
                 msg.Subject,
                 verificationLink);
         }
+        else if (msg.MergeFields.TryGetValue("ResetLink", out var resetLink))
+        {
+            logger.LogInformation(
+                "Email suppressed. To={ToEmail}, Subject={Subject}, ResetLink={ResetLink}",
+                msg.ToEmail,
+                msg.Subject,
+                resetLink);
+        }
         else
         {
             logger.LogInformation("Email suppressed. To={ToEmail}, Subject={Subject}", msg.ToEmail, msg.Subject);

@@ -113,6 +113,21 @@
         },
         "type": "object"
       },
+      "IdentitiesForgotPasswordRequest": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "maxLength": 320,
+            "minLength": 0,
+            "pattern": "^[^@]+@[^@]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "type": "object"
+      },
       "IdentitiesRegisterRequest": {
         "properties": {
           "email": {
@@ -148,6 +163,19 @@
           "email"
         ],
         "type": "object"
+      },
+      "IdentitiesResetPasswordRequest": {
+        "properties": {
+          "password": {
+            "maxLength": 128,
+            "minLength": 12,
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -165,6 +193,46 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/identities/forgot-password": {
+      "post": {
+        "operationId": "IdentitiesForgotPasswordEndpoint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentitiesForgotPasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "tags": [
+          "Identities"
+        ]
+      }
+    },
     "/identities/login": {
       "post": {
         "operationId": "EndpointsIdentitiesLoginEndpoint",
@@ -253,6 +321,56 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/IdentitiesResendVerificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "tags": [
+          "Identities"
+        ]
+      }
+    },
+    "/identities/reset-password/{resetCode}": {
+      "post": {
+        "operationId": "IdentitiesResetPasswordEndpoint",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "resetCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentitiesResetPasswordRequest"
               }
             }
           },

@@ -18,3 +18,10 @@ public sealed record UserIdentityVerifiedEvent(
     string UserIdentityId,
     string Email,
     DateTime VerifiedAt) : IEvent;
+
+public sealed record UserIdentityPasswordResetIssuedEvent(
+    string UserIdentityId,
+    string Email,
+    string ResetCode,
+    string BaseUrl,
+    DateTime IssuedAt) : IEvent;

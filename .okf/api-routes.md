@@ -15,8 +15,10 @@ tags: [api]
 | POST | `/identities/login` | Anonymous | Validate credentials + Active status; return RSA JWT (`sub` = identity id). Non-Active after valid password → `Account not verified.` + `Resend-Available-In` header (seconds remaining in 30m resend cooldown) |
 | POST | `/identities/resend-verification` | Anonymous | If email matches a Deactivated identity whose verification was last issued ≥30 minutes ago, rotate code + `VerificationIssuedAt` and broadcast verification-issued; always return the same generic success string (no account enumeration / no cooldown leak) |
 | GET | `/identities/verify/{VerificationCode}` | Anonymous | Activate identity; broadcast verified (idempotent if already Active) |
+| POST | `/identities/forgot-password` | Anonymous | If email matches an Active identity outside the 30m reset cooldown, create hashed reset token (30m life), invalidate prior tokens, broadcast password-reset-issued; always return the same generic success string + `Reset-Available-In` header (seconds until next request is allowed: real remaining for Active from latest token `CreatedAt`, full 30m for non-Active/unknown) |
+| POST | `/identities/reset-password/{ResetCode}` | Anonymous | Lookup token by hash; reject missing/expired/non-Active; update password hash; delete tokens for user; return success string (no JWT) |
 
-Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Register,Login,ResendVerification,Verify}/`.
+Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Register,Login,ResendVerification,Verify,ForgotPassword,ResetPassword}/`.
 
 ### Request notes
 
@@ -30,6 +32,10 @@ Implementation roots: `backend/Services/UserIdentity/Endpoints/Identities/{Regis
 - Frontend BFF: `POST /verify/{code}` form action → Identity `GET /identities/verify/{VerificationCode}` (email links open the page; activation runs only on button click)
 - Email verification links use configured `UserIdentity:FrontendBaseUrl` + `/verify/{code}` (frontend), not Identity HTTP
 - Resend-verification request: email only (FluentValidation email format/max 320); Active/unknown/Locked → 200 generic message without reissue; Deactivated within 30m of `VerificationIssuedAt` → same generic 200 without reissue; Deactivated after cooldown → new code, updated `VerificationIssuedAt`, + `UserIdentityVerificationIssuedEvent`; empty `FrontendBaseUrl` → error (same as register)
+- Frontend BFF: `POST /forgot-password?/request` → Identity `POST /identities/forgot-password` (email only; generic success copy; login page links here via **Forgot password?**); BFF reads `Reset-Available-In` into `resetAvailableInSeconds` so the success-card cooldown timer seeds from server remaining time (falls back to full 30m if header missing)
+- Frontend BFF: `POST /reset-password/{code}?/reset` → Identity `POST /identities/reset-password/{ResetCode}` (password + client-only confirm; email links open the page; password changes only on submit; success CTA `/login`)
+- Forgot-password: email only (FluentValidation email format/max 320); Active outside 30m since latest token `CreatedAt` → hashed token + `UserIdentityPasswordResetIssuedEvent` + full-window `Reset-Available-In`; Active within cooldown → same generic 200 without reissue + remaining `Reset-Available-In`; Deactivated / Locked / unknown → same generic 200 without reissue + full-window header; empty `FrontendBaseUrl` → error
+- Reset-password: path code + body password (min 12 / max 128); invalid/expired/non-Active → problem details; success does not mint a JWT or clear existing sessions
 
 ## UserProfile
 

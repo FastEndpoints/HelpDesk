@@ -32,6 +32,7 @@ bld.Services
    .AddFastEndpoints()
    .AddEventSubscriberStorageProvider<EventRecord, EventStorageProvider>()
    .AddSingleton<IUserIdentityStore, MongoUserIdentityStore>()
+   .AddSingleton<IPasswordResetTokenStore, MongoPasswordResetTokenStore>()
    .AddSingleton<IPasswordHasher<UserIdentityEntity>, PasswordHasher<UserIdentityEntity>>()
    .AddHandlerServer();
 
@@ -63,6 +64,7 @@ app.MapHandlers<EventRecord, EventStorageProvider>(
         h.RegisterEventHub<UserIdentityRegisteredEvent>(EventSubscribers.UserIdentityRegistered);
         h.RegisterEventHub<UserIdentityVerificationIssuedEvent>(EventSubscribers.UserIdentityVerificationIssued);
         h.RegisterEventHub<UserIdentityVerifiedEvent>(EventSubscribers.UserIdentityVerified);
+        h.RegisterEventHub<UserIdentityPasswordResetIssuedEvent>(EventSubscribers.UserIdentityPasswordResetIssued);
     });
 
 if (!app.Environment.IsProduction())

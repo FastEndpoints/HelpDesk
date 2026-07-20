@@ -10,7 +10,10 @@
 
 <svelte:head>
 	<title>Verify email · HelpDesk</title>
-	<meta name="description" content="Confirm your HelpDesk email address to activate your account." />
+	<meta
+		name="description"
+		content="Confirm your HelpDesk email address to activate your account."
+	/>
 </svelte:head>
 
 <main class="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6 py-16">
@@ -47,7 +50,9 @@
 			<p class="mb-3 text-sm font-semibold tracking-[0.25em] text-fe-light-500 uppercase">
 				Invalid link
 			</p>
-			<h1 class="text-2xl font-semibold tracking-tight text-fe-heading">Missing verification code</h1>
+			<h1 class="text-2xl font-semibold tracking-tight text-fe-heading">
+				Missing verification code
+			</h1>
 			<p class="mt-4 text-base leading-7 text-fe-text-muted">
 				This verification link is incomplete. Open the link from your welcome email, or register
 				again.

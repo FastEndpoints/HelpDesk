@@ -146,9 +146,7 @@ export const actions: Actions = {
 					: undefined;
 
 				if (!mapped.email && !mapped.password) {
-					mapped.form = [
-						detail ?? title ?? 'Sign-in failed. Please try again.'
-					];
+					mapped.form = [detail ?? title ?? 'Sign-in failed. Please try again.'];
 				}
 
 				return fail(

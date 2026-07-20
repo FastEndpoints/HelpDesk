@@ -1,0 +1,213 @@
+<script lang="ts">
+	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
+	import {
+		formatResendCountdown,
+		isResendButtonDisabled,
+		resendButtonLabel,
+		resendCooldownDurationMs,
+		shouldShowResendCountdown,
+		shouldStartResendCooldown
+	} from '$lib/resend-cooldown';
+	import type { ActionData } from './$types';
+
+	let { form }: { form: ActionData } = $props();
+
+	let pending = $state(false);
+	let resendPending = $state(false);
+	let cooldownEndsAt = $state<number | null>(null);
+	let nowMs = $state(Date.now());
+
+	const remainingMs = $derived(cooldownEndsAt == null ? 0 : Math.max(0, cooldownEndsAt - nowMs));
+	const showResendCountdown = $derived(shouldShowResendCountdown({ remainingMs }));
+	const resendDisabled = $derived(
+		isResendButtonDisabled({
+			pending: resendPending,
+			remainingMs,
+			email: form?.values.email
+		})
+	);
+	const resendLabel = $derived(
+		resendButtonLabel({ pending: resendPending, surface: 'forgot-password' })
+	);
+
+	function startResendCooldown(durationMs: number) {
+		cooldownEndsAt = Date.now() + durationMs;
+		nowMs = Date.now();
+	}
+
+	// Seed from Identity `Reset-Available-In` when the success card first appears
+	// (or after full-page POST hydration). Subsequent sends restart via enhance.
+	$effect(() => {
+		if (
+			shouldStartResendCooldown({
+				surface: 'forgot-password',
+				success: form?.success,
+				cooldownAlreadyStarted: cooldownEndsAt != null
+			})
+		) {
+			startResendCooldown(
+				resendCooldownDurationMs({
+					resendAvailableInSeconds: form?.resetAvailableInSeconds
+				})
+			);
+		}
+	});
+
+	$effect(() => {
+		if (!showResendCountdown) return;
+		const id = setInterval(() => {
+			nowMs = Date.now();
+		}, 1000);
+		return () => clearInterval(id);
+	});
+</script>
+
+<svelte:head>
+	<title>Forgot password · HelpDesk</title>
+	<meta name="description" content="Request a HelpDesk password reset link." />
+</svelte:head>
+
+<main class="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6 py-16">
+	{#if form?.success}
+		<section
+			class="w-full max-w-md rounded-xl border border-fe-border bg-fe-dark-600 px-8 py-10 text-center shadow-[0_20px_60px_rgb(0_0_0_/_0.35)]"
+			aria-live="polite"
+		>
+			<p class="mb-3 text-sm font-semibold tracking-[0.25em] text-fe-light-500 uppercase">
+				Check your email
+			</p>
+			<h1 class="text-2xl font-semibold tracking-tight text-fe-heading">Reset link sent</h1>
+			<p class="mt-4 text-base leading-7 text-fe-text-muted">
+				{form.message ?? 'If an account exists for that email, we sent a reset link.'}
+			</p>
+			<p class="mt-3 text-sm leading-6 text-fe-text-muted">
+				Didn’t get it? Check spam, then send again after the previous link expires.
+			</p>
+
+			{#if form.errors.resend?.[0]}
+				<div
+					class="mt-4 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+					role="alert"
+				>
+					{form.errors.resend[0]}
+				</div>
+			{/if}
+
+			<form
+				method="POST"
+				action="?/request"
+				class="mt-6"
+				use:enhance={() => {
+					resendPending = true;
+					return async ({ result, update }) => {
+						await update({ reset: false });
+						resendPending = false;
+						if (result.type === 'success' && result.data?.success) {
+							const seconds = result.data.resetAvailableInSeconds;
+							startResendCooldown(
+								resendCooldownDurationMs({
+									resendAvailableInSeconds: typeof seconds === 'number' ? seconds : undefined
+								})
+							);
+						}
+					};
+				}}
+			>
+				<input type="hidden" name="email" value={form.values.email} />
+				{#if showResendCountdown}
+					<p class="mb-3 text-sm leading-6 text-fe-text-muted" aria-live="polite">
+						You can send again in {formatResendCountdown(remainingMs)}.
+					</p>
+				{/if}
+				<button
+					type="submit"
+					disabled={resendDisabled}
+					class="inline-flex w-full items-center justify-center rounded-md border border-fe-border bg-fe-dark-800 px-4 py-3 text-sm font-semibold tracking-wide text-fe-heading uppercase transition-colors hover:border-fe-light-500/40 hover:text-white focus-visible:outline-fe-focus disabled:cursor-not-allowed disabled:opacity-60"
+				>
+					{resendLabel}
+				</button>
+			</form>
+
+			<a
+				href={resolve('/login')}
+				class="mt-8 inline-flex w-full items-center justify-center rounded-md bg-linear-to-br from-fe-light-600 to-fe-blue-600 px-4 py-3 text-sm font-semibold tracking-wide text-white uppercase shadow-[0_8px_24px_rgb(9_110_235_/_0.35)] transition-all hover:from-fe-blue-600 hover:to-fe-light-600 focus-visible:outline-fe-focus"
+			>
+				Back to sign in
+			</a>
+		</section>
+	{:else}
+		<section
+			class="w-full max-w-md rounded-xl border border-fe-border bg-fe-dark-600 px-8 py-10 shadow-[0_20px_60px_rgb(0_0_0_/_0.35)]"
+		>
+			<p class="mb-3 text-sm font-semibold tracking-[0.25em] text-fe-light-500 uppercase">
+				HelpDesk
+			</p>
+			<h1 class="text-2xl font-semibold tracking-tight text-fe-heading">Forgot password</h1>
+			<p class="mt-2 text-sm leading-6 text-fe-text-muted">
+				Enter the email for your account. If it matches an active account, we will send a reset
+				link.
+			</p>
+
+			<form
+				method="POST"
+				action="?/request"
+				class="mt-8 space-y-5"
+				use:enhance={() => {
+					pending = true;
+					return async ({ update }) => {
+						await update({ reset: false });
+						pending = false;
+					};
+				}}
+			>
+				{#if form?.errors.form?.[0]}
+					<div
+						class="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200"
+						role="alert"
+					>
+						{form.errors.form[0]}
+					</div>
+				{/if}
+
+				<div class="space-y-2">
+					<label for="email" class="block text-sm font-medium text-fe-heading">Email</label>
+					<input
+						id="email"
+						name="email"
+						type="email"
+						autocomplete="email"
+						required
+						maxlength={320}
+						value={form?.values.email ?? ''}
+						class="w-full rounded-md border border-fe-border bg-fe-dark-800 px-3 py-2.5 text-sm text-fe-text placeholder:text-fe-text-muted/60 focus:border-fe-light-500 focus:ring-1 focus:ring-fe-light-500 focus:outline-none"
+						placeholder="you@example.com"
+						aria-invalid={form?.errors.email ? 'true' : undefined}
+						aria-describedby={form?.errors.email ? 'email-error' : undefined}
+					/>
+					{#if form?.errors.email?.[0]}
+						<p id="email-error" class="text-sm text-red-300" role="alert">{form.errors.email[0]}</p>
+					{/if}
+				</div>
+
+				<button
+					type="submit"
+					disabled={pending}
+					class="inline-flex w-full items-center justify-center rounded-md bg-linear-to-br from-fe-light-600 to-fe-blue-600 px-4 py-3 text-sm font-semibold tracking-wide text-white uppercase shadow-[0_8px_24px_rgb(9_110_235_/_0.35)] transition-all hover:from-fe-blue-600 hover:to-fe-light-600 focus-visible:outline-fe-focus disabled:cursor-not-allowed disabled:opacity-60"
+				>
+					{pending ? 'Sending…' : 'Send reset link'}
+				</button>
+			</form>
+
+			<p class="mt-6 text-center text-sm text-fe-text-muted">
+				Remembered it?
+				<a
+					href={resolve('/login')}
+					class="font-medium text-fe-light-500 transition-colors hover:text-white"
+				>
+					Sign in
+				</a>
+			</p>
+		</section>
+	{/if}
+</main>

@@ -68,7 +68,7 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 | Utilities | Map Tailwind theme colors to the `feBlue` / `feDarkBlue` / `feLightBlue` scales (or equivalent CSS-var-backed tokens) |
 | Components | Build app-local UI; do not copy FE-Docs docs chrome (search modal, docs sidebar, kit-docs prose) unless a page truly needs it |
 | Current state | Dark-first FE-Docs navy/cyan tokens live in `frontend/src/app.css` (`fe-*` Tailwind theme); shared sticky shell in `+layout.svelte` + `+layout.server.ts` |
-| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), login (`/login`), logout (`POST /logout`), and profile (`/settings/profile`) use this theme; shell shows signed-in name/avatar menu (Edit Profile, Log Out) from Profile `GET /profiles/me` |
+| Auth/profile UI | Registration (`/register`), email verify (`/verify/[code]`), login (`/login`), forgot password (`/forgot-password`), reset password (`/reset-password/[code]`), logout (`POST /logout`), and profile (`/settings/profile`) use this theme; shell shows signed-in name/avatar menu (Edit Profile, Log Out) from Profile `GET /profiles/me` |
 
 ## Non-goals
 
@@ -104,8 +104,26 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - Optional `?redirectTo=` query (e.g. from protected profile page) is echoed as a hidden form field
 - Not verified: Identity `Account not verified.` sets `needsVerification`; recovery block offers `?/resend` (prefilled email); generic success banner; keeps sign-in form
 - After successful resend: button label **Send again** (CSS uppercase → SEND AGAIN); client-only 30-minute cooldown (aligned with Identity `ResendCooldown`, no remaining-time from API) disables the button and shows a live `m:ss` countdown; first resend from the not-verified state stays immediately available
+- Password label row: right-aligned **Forgot password?** → `/forgot-password` (not in shell nav or register)
 - Validation: local field rules mirror Identity login (email format/max 320; password required/max 128); backend problem details mapped via `mapProblemFieldErrors`
 - Shell nav includes Sign in + Create account when anonymous; post-verify CTA targets this page
+
+## Forgot password UI notes
+
+- Route: `/forgot-password` → `frontend/src/routes/forgot-password/`
+- Named action `?/request` → Identity `POST /identities/forgot-password` via `postForgotPassword` helper (returns message + `resetAvailableInSeconds` from `Reset-Available-In`)
+- Success: hide form, show opaque check-email card (same generic copy whether or not mail was sent) with secondary **Send again** (CSS uppercase → SEND AGAIN) reusing `?/request` + hidden email, and primary CTA back to `/login`
+- 30-minute request cooldown: BFF seeds the client timer from Identity `Reset-Available-In` (falls back to full 30m if header missing); live `m:ss` countdown disables **Send again**; after a successful re-request the timer restarts from the new header value
+- Validation: email format/max 320; backend problem details mapped via `mapProblemFieldErrors`
+
+## Reset password UI notes
+
+- Route: `/reset-password/[code]` → `frontend/src/routes/reset-password/[code]/`
+- Email links open the page only; password change is a deliberate **Update password** submit → `?/reset` → Identity `POST /identities/reset-password/{resetCode}`
+- Missing code → invalid-link UI + link to `/forgot-password`; invalid/backend errors surface after submit
+- Client-only confirm password; password rules match register (12-128)
+- Success → message + CTA to `/login` (no auto session)
+- Backend email link path is `/reset-password/{code}` on `UserIdentity:FrontendBaseUrl`
 
 ## Profile UI notes
 
@@ -148,7 +166,10 @@ Do not import FE-Docs as a dependency. Re-express the same visual language insid
 - `frontend/src/routes/register/`
 - `frontend/src/routes/verify/[code]/`
 - `frontend/src/routes/login/`
+- `frontend/src/routes/forgot-password/`
+- `frontend/src/routes/reset-password/[code]/`
 - `frontend/src/routes/logout/`
 - `frontend/src/routes/settings/profile/`
 - `frontend/src/lib/server/api/session.ts`
+- `frontend/src/lib/server/api/password-reset.ts`
 - `frontend/package.json`

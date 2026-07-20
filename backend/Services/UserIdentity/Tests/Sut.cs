@@ -49,6 +49,52 @@ public class Sut : AppFixture<Program>
         return identity;
     }
 
+    internal async Task<(PasswordResetTokenEntity Token, string RawCode)> CreatePasswordResetTokenAsync(
+        UserIdentityEntity identity,
+        DateTime? createdAt = null,
+        DateTime? expireAt = null,
+        CancellationToken ct = default)
+    {
+        var now = createdAt ?? DateTime.UtcNow;
+        var rawCode = PasswordResetTokenEntity.CreateRawCode();
+        var token = new PasswordResetTokenEntity
+        {
+            UserIdentityId = identity.ID,
+            NormalizedEmail = identity.NormalizedEmail,
+            TokenHash = PasswordResetTokenEntity.HashCode(rawCode),
+            CreatedAt = now,
+            ExpireAt = expireAt ?? now.Add(Identities.PasswordReset.TokenLifetime)
+        };
+
+        await DB.Default.InsertAsync(token, ct);
+
+        return (token, rawCode);
+    }
+
+    internal async Task<PasswordResetTokenEntity?> FindPasswordResetTokenByUserAsync(
+        string userIdentityId,
+        CancellationToken ct)
+    {
+        var tokens = await DB.Default
+                             .Find<PasswordResetTokenEntity>()
+                             .Match(t => t.UserIdentityId == userIdentityId)
+                             .Sort(t => t.CreatedAt, MongoDB.Entities.Order.Descending)
+                             .Limit(1)
+                             .ExecuteAsync(ct);
+
+        return tokens.SingleOrDefault();
+    }
+
+    internal async Task<int> CountPasswordResetTokensAsync(string userIdentityId, CancellationToken ct)
+    {
+        var tokens = await DB.Default
+                             .Find<PasswordResetTokenEntity>()
+                             .Match(t => t.UserIdentityId == userIdentityId)
+                             .ExecuteAsync(ct);
+
+        return tokens.Count;
+    }
+
     protected override void ConfigureApp(IWebHostBuilder app)
     {
         app.UseContentRoot(Directory.GetCurrentDirectory());
@@ -63,5 +109,6 @@ public class Sut : AppFixture<Program>
     protected override async ValueTask OnCachedWafDisposedAsync()
     {
         await DB.Default.DropCollectionAsync<UserIdentityEntity>();
+        await DB.Default.DropCollectionAsync<PasswordResetTokenEntity>();
     }
 }

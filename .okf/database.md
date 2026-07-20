@@ -45,9 +45,11 @@ Local Aspire and production Compose both pin `mongo:8.2`. Production uses authen
 | Service | Entity | Collection | Notable fields / indexes |
 | --- | --- | --- | --- |
 | UserIdentity | `UserIdentityEntity` | `UserIdentities` | Unique `NormalizedEmail`; unique sparse `VerificationCode`; password hash; status; `CreatedAt`; `VerificationIssuedAt` (last verification email/code issue; resend cooldown) |
+| UserIdentity | `PasswordResetTokenEntity` | `PasswordResetTokens` | `UserIdentityId`; `TokenHash` (SHA-256 of raw code, unique); `NormalizedEmail`; `CreatedAt`; `ExpireAt` with Mongo TTL (`ExpireAfter = 0`); index on `UserIdentityId` for invalidating prior tokens. App still rejects when `ExpireAt <= utcNow` (TTL lag ~60s). Not stored on identity documents. |
 | UserProfile | `UserProfileEntity` | `UserProfiles` | Unique `NormalizedEmail`; unique `UserIdentityId`; display name; optional picture object key; status; EmailVerified |
 | Shared pattern | `EventRecord` | type default | Compound index EventType, SubscriberID, IsComplete, ExpireOn |
 | Notifications | `JobRecord` | type default | Queue/complete/execute/expire indexes; TrackingID index; unique partial `(QueueID, IdempotencyKey)` for non-empty keys |
+| Notifications | `DisplayNameEntity` | `DisplayNames` | Unique `UserIdentityId`; projected `DisplayName` + `UpdatedAt` from Profile events (email personalization only) |
 
 ## Init
 

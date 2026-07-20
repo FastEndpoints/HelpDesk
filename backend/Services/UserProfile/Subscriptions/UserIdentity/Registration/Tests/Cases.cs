@@ -66,6 +66,7 @@ public class Cases(Sut App) : TestBase<Sut>
             .Single();
 
         published.UserProfileId.ShouldBe(profile.ID);
+        published.UserIdentityId.ShouldBe(profile.UserIdentityId);
         published.Email.ShouldBe(profile.Email);
         published.DisplayName.ShouldBe(profile.DisplayName);
         published.RegisteredAt.ShouldBe(profile.CreatedAt);

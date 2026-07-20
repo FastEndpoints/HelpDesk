@@ -63,23 +63,25 @@ HelpDesk/
 
 | Path | Contents |
 | --- | --- |
-| `frontend/src/routes/` | SvelteKit routes: landing (`/`), registration (`/register`), verify (`/verify/[code]`), login (`/login`), logout (`/logout`), profile (`/settings/profile`), picture proxy (`/profile-pictures/**`), shared shell layout |
+| `frontend/src/routes/` | SvelteKit routes: landing (`/`), registration (`/register`), verify (`/verify/[code]`), login (`/login`), forgot password (`/forgot-password`), reset password (`/reset-password/[code]`), logout (`/logout`), profile (`/settings/profile`), picture proxy (`/profile-pictures/**`), shared shell layout |
 | `frontend/src/routes/+layout.server.ts` | Root layout load: session cookie → Profile `GET /profiles/me` for shell user chrome |
 | `frontend/src/routes/+layout.svelte` | Shared shell; signed-in account menu (Edit Profile, Log Out) |
 | `frontend/src/routes/register/` | Registration form + server actions BFF to Identity register + resend-verification |
 | `frontend/src/routes/verify/[code]/` | Email verification page; button posts to BFF action → Identity `GET /identities/verify/{code}` |
-| `frontend/src/routes/login/` | Sign-in form + server actions BFF to Identity login + resend-verification; sets `helpdesk_session` cookie; optional safe `redirectTo`; not-verified recovery UI |
+| `frontend/src/routes/login/` | Sign-in form + server actions BFF to Identity login + resend-verification; sets `helpdesk_session` cookie; optional safe `redirectTo`; not-verified recovery UI; **Forgot password?** → `/forgot-password` |
+| `frontend/src/routes/forgot-password/` | Email-only request form; BFF `?/request` → Identity forgot-password; opaque success card |
+| `frontend/src/routes/reset-password/[code]/` | New password + confirm; BFF `?/reset` → Identity reset-password; success CTA `/login` |
 | `frontend/src/routes/logout/` | POST clears `helpdesk_session` and redirects `/`; GET redirects `/` without clear |
 | `frontend/src/routes/settings/profile/` | Auth-gated profile view/edit BFF: load + update/upload/delete picture actions against Profile |
 | `frontend/src/routes/profile-pictures/[...path]/` | Public BFF proxy to private Profile `GET /profile-pictures/**`; forwards range/cache headers and image metadata |
 | `frontend/src/app.css` | Global styles / Tailwind v4 entry; FE-Docs navy/cyan theme tokens (`fe-*`) |
-| `frontend/src/lib/server/api/` | BFF-only config, clients, `ApiError`/problem mapping, session cookie, shared resend-verification helper |
-| `frontend/src/lib/resend-cooldown.ts` | Client-only 30m resend cooldown: constant, `m:ss` formatter, register/login start + countdown visibility, button label/disable helpers |
+| `frontend/src/lib/server/api/` | BFF-only config, clients, `ApiError`/problem mapping, session cookie, shared resend-verification and password-reset helpers |
+| `frontend/src/lib/resend-cooldown.ts` | Client-only 30m resend/reset cooldown: constant, `m:ss` formatter, register/login/forgot-password start + countdown visibility, button label/disable helpers |
 | `frontend/openapi/*.json` | Normalized Identity/Profile OpenAPI snapshots |
 | `frontend/src/lib/api/generated/*.d.ts` | Generated API path/schema types |
 | `frontend/scripts/openapi.mjs` | Snapshot/type workflow; live commands require explicit Aspire-derived URLs |
 
-Registration, email-verification, login, logout (shell menu → `POST /logout`), profile view/edit (including picture upload/delete), and signed-in shell chrome (name/avatar account menu) exist.
+Registration, email-verification, login, forgot/reset password, logout (shell menu → `POST /logout`), profile view/edit (including picture upload/delete), and signed-in shell chrome (name/avatar account menu) exist.
 
 ## Entry points and endpoints
 

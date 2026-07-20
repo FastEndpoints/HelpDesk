@@ -27,9 +27,7 @@ export async function postResendVerification(email: string): Promise<string> {
 		body: { email }
 	});
 
-	return typeof data === 'string' && data.length > 0
-		? data
-		: RESEND_VERIFICATION_SUCCESS_FALLBACK;
+	return typeof data === 'string' && data.length > 0 ? data : RESEND_VERIFICATION_SUCCESS_FALLBACK;
 }
 
 export function validateResendEmail(email: string): string | undefined {

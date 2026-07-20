@@ -48,5 +48,10 @@ static class NotificationsDatabase
                         });
                 })
                 .CreateAsync();
+
+        await db.Index<DisplayNameEntity>()
+                .Key(e => e.UserIdentityId, KeyType.Ascending)
+                .Option(o => o.Unique = true)
+                .CreateAsync();
     }
 }

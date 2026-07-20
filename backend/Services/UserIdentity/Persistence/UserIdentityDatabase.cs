@@ -29,6 +29,20 @@ static class UserIdentityDatabase
                 })
                 .CreateAsync();
 
+        await db.Index<PasswordResetTokenEntity>()
+                .Key(t => t.ExpireAt, KeyType.Ascending)
+                .Option(o => o.ExpireAfter = TimeSpan.Zero)
+                .CreateAsync();
+
+        await db.Index<PasswordResetTokenEntity>()
+                .Key(t => t.TokenHash, KeyType.Ascending)
+                .Option(o => o.Unique = true)
+                .CreateAsync();
+
+        await db.Index<PasswordResetTokenEntity>()
+                .Key(t => t.UserIdentityId, KeyType.Ascending)
+                .CreateAsync();
+
         await db.Index<EventRecord>()
                 .Key(r => r.EventType, KeyType.Ascending)
                 .Key(r => r.SubscriberID, KeyType.Ascending)

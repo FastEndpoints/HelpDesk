@@ -3,12 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/server/api/errors';
 import { createProfileApi } from '$lib/server/api/profile';
 import { clearSessionToken, readSessionToken } from '$lib/server/api/session';
-import {
-	actions,
-	load,
-	type ProfileActionState,
-	type ProfileView
-} from './+page.server';
+import { actions, load, type ProfileActionState, type ProfileView } from './+page.server';
 
 vi.mock('$lib/server/api/profile', () => ({
 	createProfileApi: vi.fn()
@@ -201,9 +196,7 @@ describe('profile update action', () => {
 	});
 
 	it('rejects oversized display name before calling Profile', async () => {
-		const result = expectFailure(
-			await runAction('update', { displayName: 'x'.repeat(101) })
-		);
+		const result = expectFailure(await runAction('update', { displayName: 'x'.repeat(101) }));
 
 		expect(result.status).toBe(400);
 		expect(result.data.errors).toEqual({

@@ -48,6 +48,30 @@ describe('resend cooldown helpers', () => {
 			).toBe(false);
 		});
 
+		it('forgot-password starts on success card and skips when already started', () => {
+			expect(
+				shouldStartResendCooldown({
+					surface: 'forgot-password',
+					success: true,
+					cooldownAlreadyStarted: false
+				})
+			).toBe(true);
+			expect(
+				shouldStartResendCooldown({
+					surface: 'forgot-password',
+					success: true,
+					cooldownAlreadyStarted: true
+				})
+			).toBe(false);
+			expect(
+				shouldStartResendCooldown({
+					surface: 'forgot-password',
+					success: false,
+					cooldownAlreadyStarted: false
+				})
+			).toBe(false);
+		});
+
 		it('login starts from server remaining seconds or after resendSuccess', () => {
 			expect(
 				shouldStartResendCooldown({
@@ -96,12 +120,13 @@ describe('resend cooldown helpers', () => {
 	});
 
 	describe('resendCooldownDurationMs', () => {
-		it('uses full window after resendSuccess, else server seconds, else full window', () => {
+		it('prefers server remaining seconds, else full window', () => {
 			expect(resendCooldownDurationMs({ resendSuccess: true, resendAvailableInSeconds: 10 })).toBe(
-				RESEND_COOLDOWN_MS
+				10_000
 			);
 			expect(resendCooldownDurationMs({ resendAvailableInSeconds: 1200 })).toBe(1_200_000);
 			expect(resendCooldownDurationMs({ resendAvailableInSeconds: 0 })).toBe(0);
+			expect(resendCooldownDurationMs({ resendSuccess: true })).toBe(RESEND_COOLDOWN_MS);
 			expect(resendCooldownDurationMs({})).toBe(RESEND_COOLDOWN_MS);
 		});
 	});
@@ -122,26 +147,20 @@ describe('resend cooldown helpers', () => {
 			);
 			expect(resendButtonLabel({ pending: false, resendSuccess: true })).toBe('Send again');
 			expect(resendButtonLabel({ pending: true, resendSuccess: true })).toBe('Sending…');
+			expect(resendButtonLabel({ pending: false, surface: 'forgot-password' })).toBe('Send again');
+			expect(resendButtonLabel({ pending: true, surface: 'forgot-password' })).toBe('Sending…');
 		});
 	});
 
 	describe('isResendButtonDisabled', () => {
 		it('disables while pending, cooling down, or missing email', () => {
-			expect(
-				isResendButtonDisabled({ pending: false, remainingMs: 0, email: 'a@b.c' })
-			).toBe(false);
-			expect(
-				isResendButtonDisabled({ pending: true, remainingMs: 0, email: 'a@b.c' })
-			).toBe(true);
-			expect(
-				isResendButtonDisabled({ pending: false, remainingMs: 1, email: 'a@b.c' })
-			).toBe(true);
-			expect(isResendButtonDisabled({ pending: false, remainingMs: 0, email: '' })).toBe(
-				true
+			expect(isResendButtonDisabled({ pending: false, remainingMs: 0, email: 'a@b.c' })).toBe(
+				false
 			);
-			expect(
-				isResendButtonDisabled({ pending: false, remainingMs: 0, email: null })
-			).toBe(true);
+			expect(isResendButtonDisabled({ pending: true, remainingMs: 0, email: 'a@b.c' })).toBe(true);
+			expect(isResendButtonDisabled({ pending: false, remainingMs: 1, email: 'a@b.c' })).toBe(true);
+			expect(isResendButtonDisabled({ pending: false, remainingMs: 0, email: '' })).toBe(true);
+			expect(isResendButtonDisabled({ pending: false, remainingMs: 0, email: null })).toBe(true);
 		});
 	});
 });

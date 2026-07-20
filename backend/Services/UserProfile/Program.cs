@@ -108,6 +108,7 @@ app.MapHandlers<EventRecord, EventStorageProvider>(
     h =>
     {
         h.RegisterEventHub<UserProfileRegisteredEvent>(EventSubscribers.UserProfileRegistered);
+        h.RegisterEventHub<UserProfileDisplayNameUpdatedEvent>(EventSubscribers.UserProfileDisplayNameUpdated);
     });
 
 app.MapRemote(

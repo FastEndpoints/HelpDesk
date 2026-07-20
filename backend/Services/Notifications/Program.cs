@@ -1,9 +1,14 @@
 using Contracts.UserIdentity;
+using Contracts.UserProfile;
 using MongoDB.Driver;
 using Services.Notifications;
+using Subscriptions.UserIdentity.PasswordResetIssued;
 using Subscriptions.UserIdentity.VerificationIssued;
+using Subscriptions.UserProfile.DisplayNameUpdated;
+using Subscriptions.UserProfile.Registration;
 using NotificationService = Contracts.Notifications.Service;
 using UserIdentityService = Contracts.UserIdentity.Service;
+using UserProfileService = Contracts.UserProfile.Service;
 
 #if DEBUG
 using Xunit.Runner.InProc.SystemConsole;
@@ -28,6 +33,7 @@ bld.Services
    .AddFastEndpoints()
    .AddEventSubscriberStorageProvider<EventRecord, EventStorageProvider>()
    .AddJobQueues<JobRecord, JobStorageProvider>()
+   .AddSingleton<IDisplayNameStore, MongoDisplayNameStore>()
    .AddHandlerServer();
 
 var app = bld.Build();
@@ -55,6 +61,16 @@ app.MapRemote(
     {
         c.SubscriberID = NotificationService.Name;
         c.Subscribe<UserIdentityVerificationIssuedEvent, UserIdentityVerificationIssuedEventHandler>();
+        c.Subscribe<UserIdentityPasswordResetIssuedEvent, UserIdentityPasswordResetIssuedEventHandler>();
+    });
+
+app.MapRemote(
+    UserProfileService.Name,
+    c =>
+    {
+        c.SubscriberID = NotificationService.Name;
+        c.Subscribe<UserProfileRegisteredEvent, UserProfileRegisteredEventHandler>();
+        c.Subscribe<UserProfileDisplayNameUpdatedEvent, UserProfileDisplayNameUpdatedEventHandler>();
     });
 
 await app.RunAsync();

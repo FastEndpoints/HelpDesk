@@ -4,6 +4,12 @@ namespace Persistence;
 
 sealed class MongoUserIdentityStore : IUserIdentityStore
 {
+    public async Task<UserIdentityEntity?> FindByIdAsync(string id, CancellationToken ct)
+        => await DB.Default
+                   .Find<UserIdentityEntity>()
+                   .MatchID(id)
+                   .ExecuteSingleAsync(ct);
+
     public async Task<UserIdentityEntity?> FindByEmailAsync(string normalizedEmail, CancellationToken ct)
         => await DB.Default
                    .Find<UserIdentityEntity>()
@@ -45,5 +51,12 @@ sealed class MongoUserIdentityStore : IUserIdentityStore
                    .MatchID(id)
                    .Modify(i => i.VerificationCode, verificationCode)
                    .Modify(i => i.VerificationIssuedAt, issuedAt)
+                   .ExecuteAsync(ct);
+
+    public async Task UpdatePasswordHashAsync(string id, string passwordHash, CancellationToken ct)
+        => await DB.Default
+                   .Update<UserIdentityEntity>()
+                   .MatchID(id)
+                   .Modify(i => i.PasswordHash, passwordHash)
                    .ExecuteAsync(ct);
 }

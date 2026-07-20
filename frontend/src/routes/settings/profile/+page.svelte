@@ -99,7 +99,10 @@
 						</span>
 					{/if}
 					<div class="min-w-0">
-						<p class="truncate text-lg font-medium text-fe-heading" data-testid="profile-display-name">
+						<p
+							class="truncate text-lg font-medium text-fe-heading"
+							data-testid="profile-display-name"
+						>
 							{profile.displayName}
 						</p>
 						<p class="mt-1 truncate text-sm text-fe-text-muted" data-testid="profile-email">
@@ -108,10 +111,14 @@
 					</div>
 				</div>
 
-				<dl class="space-y-3 rounded-lg border border-fe-border bg-fe-dark-800/50 px-4 py-4 text-sm">
+				<dl
+					class="space-y-3 rounded-lg border border-fe-border bg-fe-dark-800/50 px-4 py-4 text-sm"
+				>
 					<div class="flex justify-between gap-4">
 						<dt class="text-fe-text-muted">Status</dt>
-						<dd class="font-medium text-fe-heading" data-testid="profile-status">{profile.status}</dd>
+						<dd class="font-medium text-fe-heading" data-testid="profile-status">
+							{profile.status}
+						</dd>
 					</div>
 				</dl>
 
@@ -168,7 +175,9 @@
 					</div>
 
 					<div class="space-y-2">
-						<label for="email-readonly" class="block text-sm font-medium text-fe-heading">Email</label>
+						<label for="email-readonly" class="block text-sm font-medium text-fe-heading"
+							>Email</label
+						>
 						<input
 							id="email-readonly"
 							type="email"
@@ -203,7 +212,9 @@
 
 				<div class="border-t border-fe-border pt-8">
 					<h2 class="text-sm font-medium text-fe-heading">Profile picture</h2>
-					<p class="mt-1 text-sm text-fe-text-muted">PNG or JPG, up to 5 MB. Saved as a 300×300 crop.</p>
+					<p class="mt-1 text-sm text-fe-text-muted">
+						PNG or JPG, up to 5 MB. Saved as a 300×300 crop.
+					</p>
 
 					<div class="mt-4 flex items-center gap-4">
 						{#if profile.pictureUrl}
@@ -243,7 +254,9 @@
 					>
 						<input type="hidden" name="displayName" value={profile.displayName} />
 						<div class="space-y-2">
-							<label for="file" class="block text-sm font-medium text-fe-heading">Choose image</label>
+							<label for="file" class="block text-sm font-medium text-fe-heading"
+								>Choose image</label
+							>
 							<input
 								id="file"
 								name="file"
@@ -257,7 +270,9 @@
 								data-testid="profile-picture-input"
 							/>
 							{#if form?.errors.file?.[0]}
-								<p id="file-error" class="text-sm text-red-300" role="alert">{form.errors.file[0]}</p>
+								<p id="file-error" class="text-sm text-red-300" role="alert">
+									{form.errors.file[0]}
+								</p>
 							{/if}
 						</div>
 						<button

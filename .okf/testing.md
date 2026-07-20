@@ -19,12 +19,15 @@ Frontend unit coverage:
 - problem-details field mapping (`mapProblemFieldErrors`)
 - register BFF action (`routes/register/page.server.spec.ts`): local validation, email trim, Identity POST body shape, success keeps email + message fallback, field/form `ApiError` mapping, unreachable-service 500; `?/resend` empty/invalid/overlong validation, Identity resend body, success/`resendSuccess`, field + non-field `ApiError` (detail/title) + status clamp, unreachable errors while staying on check-email state
 - shared resend helper (`lib/server/api/resend-verification.spec.ts`): `validateResendEmail` empty/invalid/320; `postResendVerification` body + empty-body fallback
-- resend cooldown helpers (`lib/resend-cooldown.spec.ts`): 30-minute constant + `m:ss`; register vs login start rules; countdown visibility; button label (pending / first send / send again); disable when pending, cooling down, or missing email (used by register success + login recovery UI)
+- resend cooldown helpers (`lib/resend-cooldown.spec.ts`): 30-minute constant + `m:ss`; register / login / forgot-password start rules; server remaining seconds preferred for duration; countdown visibility; button label (pending / first send / send again / forgot-password send again); disable when pending, cooling down, or missing email (used by register success, login recovery, forgot-password success)
 - login BFF action (`routes/login/page.server.spec.ts`): local validation, email trim, Identity POST body shape, session cookie maxAge from string/Date `expiresAt` (unparseable → default; past → 0), missing-token 502, redirect home or safe `redirectTo`, open-redirect rejection, field/form `ApiError` mapping (email/password), `Account not verified.` → `needsVerification`, title/generic fallbacks, out-of-range status clamp, unreachable-service 500; `?/resend` empty/invalid/overlong validation, Identity resend body, keeps not-verified recovery state, field + non-field `ApiError` + status clamp, unreachable resend error
 - logout BFF action (`routes/logout/page.server.spec.ts`): POST clears `helpdesk_session` and 303 `/`; GET/load 303 `/` without clear
 - profile BFF load/actions (`routes/settings/profile/page.server.spec.ts`): no session → login redirect with return URL; load maps profile + null picture; incomplete payload 502; 401/403/404 clear session + redirect; unreachable 503; update validation/trim/PUT body; upload local type/size gates + multipart FormData body; delete success; field/form `ApiError` mapping; unreachable action 500
 - root layout load (`routes/layout.server.spec.ts`): no cookie → anonymous; session → Profile `GET /profiles/me` maps `displayName`/`pictureUrl` (null/undefined → null); empty/missing displayName or empty body → anonymous without clear; 401/403/404 clears session; other errors keep cookie and stay anonymous
 - verify BFF load/action (`routes/verify/[code]/page.server.spec.ts`): code trim/`hasCode`, missing/whitespace submit, path param to Identity GET, success message fallback, `ApiError` detail/title/status clamp, unreachable-service 500
+- password-reset helpers (`lib/server/api/password-reset.spec.ts`): email/password validation; forgot/reset POST body shapes + empty-body fallbacks; `Reset-Available-In` parse + return shape; `ApiError` propagation
+- forgot-password BFF action (`routes/forgot-password/page.server.spec.ts`): empty/invalid/overlong email; trim; success message + `resetAvailableInSeconds` (header or full-30m fallback); field + non-field `ApiError` (detail/title/generic) + status clamp; unreachable 500
+- reset-password BFF load/action (`routes/reset-password/[code]/page.server.spec.ts`): code trim/`hasCode`; missing code; short/mismatch password; empty confirm + overlong password; path trim + Identity POST; field/non-field `ApiError` (detail/title/generic) + status clamp; unreachable 500
 - profile-pictures proxy (`routes/profile-pictures/[...path]/server.spec.ts`): encodes path segments to private Profile origin; forwards range/`if-range` request headers; preserves 206 content-range, 304 etag, and 416 content-range response metadata
 
 Playwright (`register.e2e.ts`):
@@ -49,7 +52,19 @@ Playwright (`verify.e2e.ts`):
 - Identity-unavailable after click → form error, stays on prompt
 - `/login` form smoke (post-verify CTA target)
 
-Register/login/verify/profile success against live Identity/Profile services is not covered by Playwright without the Aspire stack (preview has no backend URLs; browser never calls backends). Signed-in shell chrome and `/settings/profile` depend on Profile `GET /profiles/me`; live success paths need Aspire.
+Playwright (`forgot-password.e2e.ts`):
+- form + shell smoke
+- empty/invalid email after `novalidate`
+- Identity-unavailable path shows form-level error
+- login **Forgot password?** navigates here
+
+Playwright (`reset-password.e2e.ts`):
+- code present → password form (no success until submit)
+- whitespace/missing code → invalid-link UI, no submit button
+- short/mismatch password after `novalidate`
+- Identity-unavailable after submit → form error
+
+Register/login/verify/forgot/reset/profile success against live Identity/Profile services is not covered by Playwright without the Aspire stack (preview has no backend URLs; browser never calls backends). Signed-in shell chrome and `/settings/profile` depend on Profile `GET /profiles/me`; live success paths need Aspire.
 
 ## Frameworks and layout
 
@@ -63,8 +78,13 @@ Examples:
 
 ```text
 backend/Services/UserIdentity/Endpoints/Identities/Register/Tests/Cases.cs
+backend/Services/UserIdentity/Endpoints/Identities/ForgotPassword/Tests/Cases.cs
+backend/Services/UserIdentity/Endpoints/Identities/ResetPassword/Tests/Cases.cs
 backend/Services/UserProfile/Subscriptions/UserIdentity/Registration/Tests/
 backend/Services/Notifications/Subscriptions/UserIdentity/VerificationIssued/Tests/
+backend/Services/Notifications/Subscriptions/UserIdentity/PasswordResetIssued/Tests/
+backend/Services/Notifications/Subscriptions/UserProfile/Registration/Tests/
+backend/Services/Notifications/Subscriptions/UserProfile/DisplayNameUpdated/Tests/
 ```
 
 ## Commands
@@ -81,7 +101,7 @@ dotnet test backend/Services/Notifications/Services.Notifications.csproj
 - Environment: `Testing` via fixture `UseEnvironment("Testing")`
 - DB names: `*_TESTING` overrides in `appsettings.Testing.json`
 - Real MongoDB required for tests; start `pnpm stack:dev` and use the committed development connection from base appsettings (environment variables may override it)
-- Fixtures drop owned collections on dispose (`UserIdentities` / `UserProfiles` / jobs+events)
+- Fixtures drop owned collections on dispose (`UserIdentities` / `UserProfiles` / jobs+events+display-names)
 - Event assertions: `RegisterTestEventReceivers()` + `GetTestEventReceiver<TEvent>().WaitForMatchAsync(...)`
 - Notifications: replaces `IEmailSender` with `TestEmailSender` capture queue; use unique `UserIdentityId`+`VerificationCode` pairs when asserting job keys because verification emails share `JobIdempotencyKey(UserIdentityId, VerificationCode)`
 

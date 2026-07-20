@@ -81,14 +81,8 @@ function requireToken(cookies: Parameters<PageServerLoad>[0]['cookies']): string
 	return token;
 }
 
-function handleAuthFailure(
-	err: unknown,
-	cookies: Parameters<PageServerLoad>[0]['cookies']
-): void {
-	if (
-		err instanceof ApiError &&
-		(err.status === 401 || err.status === 403 || err.status === 404)
-	) {
+function handleAuthFailure(err: unknown, cookies: Parameters<PageServerLoad>[0]['cookies']): void {
+	if (err instanceof ApiError && (err.status === 401 || err.status === 403 || err.status === 404)) {
 		clearSessionToken(cookies);
 		redirect(303, LOGIN_REDIRECT);
 	}
@@ -118,9 +112,7 @@ function mapApiFormErrors(error: ApiError, values: { displayName: string }): Pro
 function isAllowedPicture(file: File): boolean {
 	const contentType = file.type.split(';', 2)[0]?.trim().toLowerCase() ?? '';
 	const contentTypeOk = contentType.length > 0 && ALLOWED_CONTENT_TYPES.has(contentType);
-	const extension = file.name.includes('.')
-		? `.${file.name.split('.').pop()!.toLowerCase()}`
-		: '';
+	const extension = file.name.includes('.') ? `.${file.name.split('.').pop()!.toLowerCase()}` : '';
 	const extensionOk = extension.length > 0 && ALLOWED_EXTENSIONS.has(extension);
 	return contentTypeOk || extensionOk;
 }
@@ -162,7 +154,10 @@ export const actions: Actions = {
 		}
 
 		if (Object.keys(errors).length > 0) {
-			return fail(400, actionState({ success: false, action: 'update', values: { displayName }, errors }));
+			return fail(
+				400,
+				actionState({ success: false, action: 'update', values: { displayName }, errors })
+			);
 		}
 
 		try {

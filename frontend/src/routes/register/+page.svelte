@@ -18,9 +18,7 @@
 	let cooldownEndsAt = $state<number | null>(null);
 	let nowMs = $state(Date.now());
 
-	const remainingMs = $derived(
-		cooldownEndsAt == null ? 0 : Math.max(0, cooldownEndsAt - nowMs)
-	);
+	const remainingMs = $derived(cooldownEndsAt == null ? 0 : Math.max(0, cooldownEndsAt - nowMs));
 	const showResendCountdown = $derived(shouldShowResendCountdown({ remainingMs }));
 	const resendDisabled = $derived(
 		isResendButtonDisabled({
@@ -80,8 +78,7 @@
 			<p class="mt-4 text-base leading-7 text-fe-text-muted">
 				{form.resendSuccess
 					? (form.message ?? 'If an account needs verification, we sent a link.')
-					: (form.message ??
-						'Signup successful. Please check your email for a verification link.')}
+					: (form.message ?? 'Signup successful. Please check your email for a verification link.')}
 			</p>
 			<p class="mt-3 text-sm leading-6 text-fe-text-muted">
 				Didn’t get it? Check spam, then resend the verification email.

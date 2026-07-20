@@ -20,6 +20,7 @@ SvelteKit is the external-client boundary. `frontend/src/lib/server/api/` reads 
 - UserProfile validates asymmetrically with the matching public value, issuer, and audience.
 - Login requires `UserIdentityStatus.Active`. After a valid password, non-Active identities are rejected with `Account not verified.` and a `Resend-Available-In` response header (integer seconds until resend is allowed, from `VerificationIssuedAt` + 30m cooldown; `0` when elapsed). Header is password-gated only (not on unknown email / bad password), so it does not expand anonymous enumeration. Resend endpoint stays opaque (no remaining-time leak).
 - Resend verification is anonymous, email-only, and always returns the same success copy whether or not a Deactivated identity was found (no account enumeration, no cooldown leak). Only Deactivated identities whose `VerificationIssuedAt` is at least 30 minutes old rotate codes, update that timestamp, and publish `UserIdentityVerificationIssuedEvent`; Active/Locked/unknown/within-cooldown are no-ops.
+- Forgot password is anonymous, email-only, and always returns the same success copy. Only **Active** identities outside a 30-minute cooldown (from latest reset token `CreatedAt`) receive a new hashed token and `UserIdentityPasswordResetIssuedEvent`. Deactivated/Locked/unknown/within-cooldown are no-ops. Every successful response includes `Reset-Available-In` (integer seconds until the next request may reissue): Active uses remaining time from latest token `CreatedAt` + 30m (`0` when elapsed); non-Active/unknown get the full 30m so the body stays opaque. A remaining value under the full window can imply an Active identity with a recent reset request (accepted trade-off for accurate client timers). Tokens live in `PasswordResetTokens` (not on the identity), expire after 30 minutes (`ExpireAt` + Mongo TTL), and are deleted on successful use or re-request. Reset is one-shot; raw codes appear only in the event payload and email link. Successful reset updates the password hash and does not mint a JWT or revoke existing sessions (same limitation as logout).
 - BFF login (`POST /login` action → Identity `POST /identities/login`) persists `accessToken` only in the HttpOnly `helpdesk_session` cookie via `writeSessionToken`; cookie `maxAge` is derived from response `expiresAt` and capped at seven days. Token never goes to `localStorage` / JS.
 - BFF logout (`POST /logout`) clears `helpdesk_session` via `clearSessionToken` and redirects `/`. No backend revoke endpoint; JWT remains valid until expiry if stolen. GET `/logout` does not clear the cookie.
 
@@ -56,7 +57,7 @@ Handler rules apply after the permission gate: missing `sub` → 401; missing pr
 | `Profiles_Upload_Own_Picture` | `PUT /profiles/me/picture` |
 | `Profiles_Delete_Own_Picture` | `DELETE /profiles/me/picture` |
 
-All four are group `User`. Profile-picture files are served anonymously under `/profile-pictures/**`; only metadata mutation is permission-gated. Uploads honor `MaxUploadBytes`, accept decoder-verified PNG/JPEG, reject multi-frame images, and cap dimensions/pixels. Register/login/resend-verification/verify are anonymous.
+All four are group `User`. Profile-picture files are served anonymously under `/profile-pictures/**`; only metadata mutation is permission-gated. Uploads honor `MaxUploadBytes`, accept decoder-verified PNG/JPEG, reject multi-frame images, and cap dimensions/pixels. Register/login/resend-verification/verify/forgot-password/reset-password are anonymous.
 
 ## Other credentials and secrets
 
@@ -64,16 +65,17 @@ All four are group `User`. Profile-picture files are served anonymously under `/
 - Deployment-managed secrets include production JWT private material, SMTP username/password, and production MongoDB connection strings.
 - Passwords are stored as ASP.NET Core Identity `PasswordHasher` hashes, never plaintext.
 - Verification codes are random 32-byte hex values with a unique sparse index. They currently have no expiry and are not cleared after activation; treat links and stored codes as long-lived credentials. Resend replaces the code for Deactivated accounts after a 30-minute cooldown from `VerificationIssuedAt` (prior link stops matching).
+- Password reset codes are also 32-byte hex, but only the SHA-256 hash is stored. Lifetime is 30 minutes with app-side expiry checks plus a Mongo TTL index on `ExpireAt`. Do not copy the verification-code model for reset.
 
 ## Public URL trust
 
-Identity builds verification-link bases from configured `UserIdentity:FrontendBaseUrl` (frontend origin + `/verify/{code}`). Register rejects when that setting is empty. Profile pictures use configured `PublicBaseUrl` when present, otherwise the request scheme/host. Services do not enable forwarded-header middleware, so proxies need an explicit trusted proxy/public URL strategy for non-configured public hosts.
+Identity builds verification- and password-reset-link bases from configured `UserIdentity:FrontendBaseUrl` (frontend origin + `/verify/{code}` or `/reset-password/{code}`). Register/resend/forgot-password reject when that setting is empty. Profile pictures use configured `PublicBaseUrl` when present, otherwise the request scheme/host. Services do not enable forwarded-header middleware, so proxies need an explicit trusted proxy/public URL strategy for non-configured public hosts.
 
 ## Email and mesh
 
 - SMTP is real only when Production and `Smtp:Enabled`; development/testing uses null/test senders.
 - IPC/remote messaging is a process topology trust boundary; HTTP business auth uses JWT.
-- Event payloads may include verification codes. Treat event storage and MongoDB access as sensitive.
+- Event payloads may include verification codes and password-reset codes. Treat event storage and MongoDB access as sensitive.
 
 ## Sources
 

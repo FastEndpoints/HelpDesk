@@ -21,6 +21,7 @@ public sealed class Sut : AppFixture<Program>
     {
         await DB.Default.DropCollectionAsync<JobRecord>();
         await DB.Default.DropCollectionAsync<EventRecord>();
+        await DB.Default.DropCollectionAsync<DisplayNameEntity>();
     }
 }
 

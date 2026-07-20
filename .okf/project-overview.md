@@ -29,14 +29,14 @@ Current system covers the **user onboarding path**:
 | AppHost | Aspire 13.4.6 local orchestration of MongoDB, three backend services, and Vite |
 | UserIdentity | Public identity REST API, credentials, JWT issuance, identity lifecycle events |
 | UserProfile | Authenticated profile API; reacts to identity events |
-| Notifications | Email jobs from verification-issued events; no public business API |
+| Notifications | Email jobs from verification-issued and password-reset-issued events; local display-name projection from Profile events; no public business API |
 | Frontend | SvelteKit BFF, generated API types, and server-only client/session helpers |
 | Common | MongoDB-backed remote event storage; lookup string helpers |
 | Contracts | Stable service names, events, subscriber ID arrays |
 
 ## Status
 
-Active monorepo development. `backend/` targets .NET 10; `frontend/` requires Node 26 or newer and pnpm 11 or newer. `backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator and is run by `pnpm stack:dev`. The frontend provides a shared shell (account menu with Edit Profile / Log Out), landing page, registration/login/verify/logout (including resend verification from register success and login not-verified recovery), and profile view/edit (BFF to Identity/Profile). UI theming targets the FastEndpoints docs dark navy/cyan look (see [Frontend UI](frontend-ui.md)).
+Active monorepo development. `backend/` targets .NET 10; `frontend/` requires Node 26 or newer and pnpm 11 or newer. `backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator and is run by `pnpm stack:dev`. The frontend provides a shared shell (account menu with Edit Profile / Log Out), landing page, registration/login/verify/forgot-password/reset-password/logout (including resend verification from register success and login not-verified recovery), and profile view/edit (BFF to Identity/Profile). UI theming targets the FastEndpoints docs dark navy/cyan look (see [Frontend UI](frontend-ui.md)).
 
 Production Compose uses Caddy for automatic HTTPS, sets verification links to the public BFF origin, and serves persistent profile pictures through the BFF's public proxy to the private Profile service. Root `DEPLOYMENT.md` is the VPS deployment playbook.
 

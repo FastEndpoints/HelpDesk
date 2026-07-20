@@ -1,4 +1,5 @@
 using System.Net;
+using Contracts.UserProfile;
 using UserProfile.Tests;
 
 namespace Endpoints.Profiles.UpdateCurrent.Tests;
@@ -64,6 +65,27 @@ public class Cases(Sut App) : TestBase<Sut>
         var stored = await DB.Default.Find<UserProfileEntity>().OneAsync(profile.ID, Cancellation);
         stored.ShouldNotBeNull();
         stored.DisplayName.ShouldBe("Jane Updated");
+    }
+
+    [Fact]
+    public async Task Active_Profile_DisplayName_Update_Broadcasts_Event()
+    {
+        var profile = await App.CreateProfileAsync(displayName: "Jane User", ct: Cancellation);
+        var token = App.CreateAccessToken(profile.UserIdentityId);
+
+        var (rsp, _) = await UpdateCurrentProfileAsync(token, new() { DisplayName = "Jane Updated" }, Cancellation);
+
+        rsp.StatusCode.ShouldBe(HttpStatusCode.OK, AuthHeader(rsp));
+
+        var published = (await App.Services
+                                  .GetTestEventReceiver<UserProfileDisplayNameUpdatedEvent>()
+                                  .WaitForMatchAsync(e => e.UserIdentityId == profile.UserIdentityId, ct: Cancellation))
+            .Single();
+
+        published.UserProfileId.ShouldBe(profile.ID);
+        published.UserIdentityId.ShouldBe(profile.UserIdentityId);
+        published.DisplayName.ShouldBe("Jane Updated");
+        published.UpdatedAt.ShouldBeGreaterThan(DateTime.UtcNow.AddMinutes(-1));
     }
 
     static string AuthHeader(HttpResponseMessage rsp)

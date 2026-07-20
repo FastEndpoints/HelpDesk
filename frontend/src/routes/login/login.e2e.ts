@@ -16,6 +16,7 @@ test('renders the login form under the shared shell', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
 	await expect(page.getByLabel('Email')).toBeVisible();
 	await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Forgot password?' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Create one' })).toBeVisible();
 });

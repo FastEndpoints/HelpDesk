@@ -140,9 +140,7 @@ describe('root layout load', () => {
 
 	it.each([401, 403, 404])('clears session and returns null user on %s', async (status) => {
 		readSessionTokenMock.mockReturnValue('bad-token');
-		get.mockRejectedValue(
-			new ApiError(status, { status, title: 'Denied', detail: 'nope' })
-		);
+		get.mockRejectedValue(new ApiError(status, { status, title: 'Denied', detail: 'nope' }));
 
 		const data = await load({ cookies } as never);
 

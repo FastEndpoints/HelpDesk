@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/identities/forgot-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["IdentitiesForgotPasswordEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/identities/login": {
         parameters: {
             query?: never;
@@ -46,6 +62,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["IdentitiesResendVerificationEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/identities/reset-password/{resetCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["IdentitiesResetPasswordEndpoint"];
         delete?: never;
         options?: never;
         head?: never;
@@ -121,6 +153,10 @@ export interface components {
             /** @default https://www.rfc-editor.org/rfc/rfc7231#section-6.5.1 */
             type: null | string;
         };
+        IdentitiesForgotPasswordRequest: {
+            /** Format: email */
+            email: string;
+        };
         IdentitiesRegisterRequest: {
             /** Format: email */
             email: string;
@@ -129,6 +165,9 @@ export interface components {
         IdentitiesResendVerificationRequest: {
             /** Format: email */
             email: string;
+        };
+        IdentitiesResetPasswordRequest: {
+            password: string;
         };
     };
     responses: never;
@@ -139,6 +178,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    IdentitiesForgotPasswordEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentitiesForgotPasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["FastEndpointsProblemDetails"];
+                };
+            };
+        };
+    };
     EndpointsIdentitiesLoginEndpoint: {
         parameters: {
             query?: never;
@@ -215,6 +287,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["IdentitiesResendVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["FastEndpointsProblemDetails"];
+                };
+            };
+        };
+    };
+    IdentitiesResetPasswordEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resetCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentitiesResetPasswordRequest"];
             };
         };
         responses: {

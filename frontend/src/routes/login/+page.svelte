@@ -19,9 +19,7 @@
 	let nowMs = $state(Date.now());
 
 	const needsVerification = $derived(Boolean(form?.needsVerification));
-	const remainingMs = $derived(
-		cooldownEndsAt == null ? 0 : Math.max(0, cooldownEndsAt - nowMs)
-	);
+	const remainingMs = $derived(cooldownEndsAt == null ? 0 : Math.max(0, cooldownEndsAt - nowMs));
 	const showResendCountdown = $derived(shouldShowResendCountdown({ remainingMs }));
 	const resendDisabled = $derived(
 		isResendButtonDisabled({
@@ -92,16 +90,15 @@
 				return async ({ result, update }) => {
 					await update({ reset: false });
 					pending = false;
-					if (
-						result.type === 'failure' &&
-						result.data?.needsVerification &&
-						result.data.resendAvailableInSeconds != null
-					) {
-						startResendCooldown(
-							resendCooldownDurationMs({
-								resendAvailableInSeconds: result.data.resendAvailableInSeconds
-							})
-						);
+					if (result.type === 'failure' && result.data?.needsVerification) {
+						const seconds = result.data.resendAvailableInSeconds;
+						if (typeof seconds === 'number') {
+							startResendCooldown(
+								resendCooldownDurationMs({
+									resendAvailableInSeconds: seconds
+								})
+							);
+						}
 					}
 				};
 			}}
@@ -147,7 +144,15 @@
 			</div>
 
 			<div class="space-y-2">
-				<label for="password" class="block text-sm font-medium text-fe-heading">Password</label>
+				<div class="flex items-center justify-between gap-3">
+					<label for="password" class="block text-sm font-medium text-fe-heading">Password</label>
+					<a
+						href={resolve('/forgot-password')}
+						class="text-sm font-medium text-fe-text-muted transition-colors hover:text-fe-light-500"
+					>
+						Forgot password?
+					</a>
+				</div>
 				<input
 					id="password"
 					name="password"
@@ -200,9 +205,7 @@
 							await update({ reset: false });
 							resendPending = false;
 							if (result.type === 'success' && result.data?.resendSuccess) {
-								startResendCooldown(
-									resendCooldownDurationMs({ resendSuccess: true })
-								);
+								startResendCooldown(resendCooldownDurationMs({ resendSuccess: true }));
 							}
 						};
 					}}

@@ -2,14 +2,18 @@ using Contracts.UserIdentity;
 
 namespace Subscriptions.UserIdentity.VerificationIssued;
 
-public sealed class UserIdentityVerificationIssuedEventHandler
+sealed class UserIdentityVerificationIssuedEventHandler(IDisplayNameStore displayNames)
     : IEventHandler<UserIdentityVerificationIssuedEvent>
 {
-    public Task HandleAsync(UserIdentityVerificationIssuedEvent eventModel, CancellationToken ct)
+    public async Task HandleAsync(UserIdentityVerificationIssuedEvent eventModel, CancellationToken ct)
     {
-        var displayName = GetDefaultDisplayName(eventModel.Email);
+        var displayName = await DisplayName.ResolveAsync(
+            displayNames,
+            eventModel.UserIdentityId,
+            eventModel.Email,
+            ct);
 
-        return new SendEmailCommand
+        await new SendEmailCommand
         {
             IdempotencyKey = JobIdempotencyKey(eventModel.UserIdentityId, eventModel.VerificationCode),
             Message = new()
@@ -33,16 +37,6 @@ public sealed class UserIdentityVerificationIssuedEventHandler
     /// </summary>
     internal static string JobIdempotencyKey(string userIdentityId, string verificationCode)
         => $"user-identity-verification:{userIdentityId}:{verificationCode}";
-
-    static string GetDefaultDisplayName(string email)
-    {
-        var trimmedEmail = email.Trim();
-        var atIndex = trimmedEmail.IndexOf('@');
-
-        return atIndex > 0
-                   ? trimmedEmail[..atIndex]
-                   : trimmedEmail;
-    }
 
     static string GetVerificationLink(string baseUrl, string verificationCode)
         => $"{baseUrl.TrimEnd('/')}/verify/{Uri.EscapeDataString(verificationCode)}";

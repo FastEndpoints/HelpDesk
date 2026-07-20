@@ -37,21 +37,15 @@ export const actions: Actions = {
 
 			return {
 				success: true,
-				message:
-					typeof data === 'string' && data.length > 0 ? data : 'Account verified.'
+				message: typeof data === 'string' && data.length > 0 ? data : 'Account verified.'
 			} satisfies VerifyFormState;
 		} catch (error) {
 			if (error instanceof ApiError) {
-				return fail(
-					error.status >= 400 && error.status < 600 ? error.status : 400,
-					{
-						success: false,
-						error:
-							error.problem.detail ??
-							error.problem.title ??
-							'Verification failed. Please try again.'
-					} satisfies VerifyFormState
-				);
+				return fail(error.status >= 400 && error.status < 600 ? error.status : 400, {
+					success: false,
+					error:
+						error.problem.detail ?? error.problem.title ?? 'Verification failed. Please try again.'
+				} satisfies VerifyFormState);
 			}
 
 			return fail(500, {

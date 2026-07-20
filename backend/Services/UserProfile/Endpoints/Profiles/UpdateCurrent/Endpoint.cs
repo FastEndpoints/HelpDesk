@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Common.Tools;
+using Contracts.UserProfile;
 using ProfilePictures;
 
 namespace Endpoints.Profiles.UpdateCurrent;
@@ -40,7 +41,11 @@ sealed class Endpoint(IUserProfileStore profiles, IProfilePictureStorage picture
         }
 
         var displayName = r.DisplayName.Trim();
+        var updatedAt = DateTime.UtcNow;
         await profiles.UpdateDisplayNameAsync(userIdentityId, displayName, ct);
+
+        new UserProfileDisplayNameUpdatedEvent(profile.ID, userIdentityId, displayName, updatedAt)
+            .Broadcast();
 
         await Send.OkAsync(
             new()
