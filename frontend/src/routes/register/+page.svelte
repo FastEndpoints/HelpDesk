@@ -36,7 +36,7 @@
 		nowMs = Date.now();
 	}
 
-	// Register issues verification immediately — start client cooldown with the success card.
+	// Register issues verification immediately, start client cooldown with the success card.
 	// Also covers full-page POST hydration when resend already succeeded.
 	$effect(() => {
 		if (
@@ -203,7 +203,7 @@
 							{form.errors.password[0]}
 						</p>
 					{:else}
-						<p id="password-hint" class="text-xs text-fe-text-muted">12–128 characters.</p>
+						<p id="password-hint" class="text-xs text-fe-text-muted">12-128 characters.</p>
 					{/if}
 				</div>
 
