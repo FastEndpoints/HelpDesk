@@ -14,7 +14,7 @@ Brokerless microservice mesh:
 
 - **Contracts** = public event language
 - **Common** = reusable infrastructure/helpers only
-- **Services** = isolated deployable FastEndpoints hosts
+- **Services** = isolated FastEndpoints service processes; current Production co-locates them in one deployment unit
 - **Mesh** = FastEndpoints.Messaging.Remote event queues between nodes
 - **AppHost** = development orchestration, not a business service
 - **Broker** = none; **business RPC** = none
@@ -25,7 +25,7 @@ Service messaging remains host-local and hardcoded in startup: `ListenInterProce
 
 `backend/AppHost/Program.cs` is the sole supported local full-stack orchestrator. Aspire 13.4.6 starts an ephemeral authenticated standalone MongoDB resource, then Identity, Profile, Notifications, and Vite. Dependencies enforce MongoDB-before-services and Identity/Profile-before-frontend ordering.
 
-Aspire assigns application HTTP ports dynamically. It injects the MongoDB connection into each service and the Identity/Profile HTTP endpoints into Vite as private `IDENTITY_API_BASE_URL` / `PROFILE_API_BASE_URL` values. The AppHost is local tooling; backend services remain independently deployable.
+Aspire assigns application HTTP ports dynamically. It injects the MongoDB connection into each service and the Identity/Profile HTTP endpoints into Vite as private `IDENTITY_API_BASE_URL` / `PROFILE_API_BASE_URL` values. The AppHost is local tooling; service project and process boundaries remain separate even though the included Production topology has one backend deployment unit.
 
 ## Monorepo and external-client boundary
 
@@ -78,10 +78,12 @@ Cross-service business flow is events only. A service may expose REST for extern
 ## Communication and persistence
 
 - Publisher: persist locally → `event.Broadcast()`; hubs registered through `MapHandlers` + `RegisterEventHub<TEvent>(subscriberIds)`.
+- `Broadcast()` starts background enqueue work and cannot be awaited. The business write and event enqueue are not atomic, so a crash in that gap can lose the event. Persisted event records expire after four hours by default.
+- Event types use independent hubs; there is no cross-type ordering guarantee. Handlers must tolerate reordering and duplicate delivery.
 - Subscriber: `MapRemote(publisherServiceName, …)` with stable service-name subscriber IDs.
-- Durable event records: `Common.StorageProvider.EventRecord` + `EventStorageProvider` (MongoDB.Entities).
+- Persisted queue records: `Common.StorageProvider.EventRecord` + `EventStorageProvider` (MongoDB.Entities).
 - Notifications internal work: FastEndpoints job queue for `SendEmailCommand`.
-- Each service owns its MongoDB database; no shared domain collections.
+- Each service owns a separate logical MongoDB database with no shared domain collections. The included topologies give all services the same MongoDB credentials, so ownership is conventional rather than credential-isolated.
 
 ## Security / auth boundaries
 
@@ -102,8 +104,8 @@ Cross-service business flow is events only. A service may expose REST for extern
 
 ## Sources
 
-- `README.md`
 - `backend/AppHost/Program.cs`
 - `backend/Services/*/Program.cs`
 - `backend/Contracts/*/`
 - `backend/Common/StorageProvider/`
+- `../FastEndpoints/Src/Messaging/Messaging.Remote/Server/Events/`

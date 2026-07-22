@@ -10,7 +10,9 @@ resource: README.md
 
 ## Purpose
 
-HelpDesk implements a brokerless, event-driven microservice mesh with .NET and FastEndpoints. Independently deployable service nodes communicate through public contract events (no central message broker and no cross-service RPC for business workflows). A SvelteKit BFF is the external-client boundary.
+HelpDesk implements a brokerless, event-driven microservice mesh with .NET and FastEndpoints. Separate service processes communicate through public contract events (no central message broker and no cross-service RPC for business workflows). Messaging is currently host-local IPC, and the production backend processes share one deployment unit. A SvelteKit BFF is the external-client boundary.
+
+Root `README.md` is the public architecture introduction: it positions the mesh between modular monolith and brokered microservices, documents invariants, and keeps bootstrap/run commands. Prefer README for onboarding readers; prefer this file and [architecture.md](architecture.md) for compact agent context.
 
 ## Scope
 

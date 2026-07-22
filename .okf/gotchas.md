@@ -19,7 +19,8 @@ tags: [gotcha]
 - Frontend has registration (`/register`), verification (`/verify/[code]`), login (`/login`), forgot password (`/forgot-password`), reset password (`/reset-password/[code]`), logout (`POST /logout` clears `helpdesk_session` → `/`), and profile (`/settings/profile`) via BFF form actions; register success + login “Account not verified.” offer resend (`?/resend` → Identity `POST /identities/resend-verification`); login **Forgot password?** → `/forgot-password`; signed-in shell loads Profile `GET /profiles/me` and opens an account menu (Edit Profile / Log Out).
 - Verification emails use `UserIdentity:FrontendBaseUrl` + `/verify/{code}`. Password-reset emails use the same base + `/reset-password/{code}`. Aspire injects the local Vite endpoint; production Compose sets the public origin. Production profile URLs use the BFF `/profile-pictures/**` proxy and persist files in a named volume.
 - **Never** reference `backend/Services/*` from another service, only projects under `backend/Contracts/*` or `backend/Common/*`. Cross-service workflow = events only, not REST callbacks. The AppHost may reference service host projects solely for orchestration.
-- Events are facts after commit, not commands. Publish only after local persistence succeeds.
+- Events are facts after commit, not commands. Publish only after local persistence succeeds. This is not an outbox: `Broadcast()` starts unawaited background enqueue work, so the business write and event enqueue are non-atomic and a crash in that gap can lose the event. Persisted event records expire after four hours by default.
+- Event types use independent hubs, so there is no cross-type ordering guarantee. In the current onboarding flow, `UserIdentityVerifiedEvent` can theoretically reach Profile before `UserIdentityRegisteredEvent`; activation then no-ops and later registration creates a deactivated profile. Production hardening must reconcile this race rather than relying on happy-path timing.
 - Keep `backend/Contracts/*/EventSubscribers` arrays aligned with real consumer `Service.Name` values.
 - Contracts must stay free of entities, stores, endpoints, handlers, and SMTP.
 - Tests need MongoDB; start `pnpm stack:dev` first so the Aspire-managed instance is available on `localhost:27017`. Testing database names end with `_TESTING`; fixtures drop collections. Do not point tests at shared production data.
@@ -30,7 +31,7 @@ tags: [gotcha]
 - Password reset tokens are a dedicated `PasswordResetTokens` collection with a real Mongo TTL on `ExpireAt` (`ExpireAfter = 0`). That is different from `EventRecord`/`JobRecord` `ExpireOn` query indexes. App still rejects expired tokens because TTL lag is eventual (~60s). Store only the SHA-256 hash; raw code lives in the event and email only. Do not put reset codes on `UserIdentities` (unlike verification). Forgot-password is Active-only; Deactivated users use resend-verification. Successful reset does not revoke JWTs.
 - Caddy needs `DOMAIN` to resolve publicly and port 80 or 443 to reach the VPS for certificate validation. The simple path uses direct DNS; a CDN proxy needs strict origin TLS, source-restricted firewall rules, and verified renewal.
 - Compose `restart: unless-stopped` is not a full Podman reboot story. On Podman-only hosts install `scripts/install-host-service.sh` after deploy; do not fold host-unit install into `deploy-init.sh`. Rootless units need linger and must be able to bind 80/443. The unit runs `compose up -d` / `stop` only. Release rebuilds still use `scripts/deploy.sh`. Docker hosts should enable `docker.service` instead of this Podman unit.
-- Production Compose derives MongoDB's connection string from raw root credentials, so manual values must contain only URI-unreserved characters and avoid Compose-special `$`; `deploy-init.sh` generates safe hexadecimal values. Mongo initialization credentials apply only to a new data volume; changing `.env` later does not rotate the database user.
+- Production Compose derives MongoDB's connection string from raw root credentials, so manual values must contain only URI-unreserved characters and avoid Compose-special `$`; `deploy-init.sh` generates safe hexadecimal values. Mongo initialization credentials apply only to a new data volume; changing `.env` later does not rotate the database user. All backend service processes receive the same root connection, so separate service databases express ownership but are not a credential-enforced isolation boundary.
 - Docker-published ports can bypass plain UFW INPUT rules. Enforce public-port policy at the provider firewall and, when needed, Docker's `DOCKER-USER`/Docker-aware nftables layer.
 - Email lookup always uses `NormalizeForLookup` (trim + uppercase). Duplicate checks depend on normalized unique indexes.
 - Profile activation on `UserIdentityVerifiedEvent` correlates by `UserIdentityId`, not email. Email on the profile is denormalized for display/unique lookup only.
@@ -46,10 +47,8 @@ tags: [gotcha]
 
 ## Sources
 
-- `README.md`
 - `backend/AppHost/Program.cs`
-- `backend/AppHost/HelpDesk.AppHost.csproj`
-- `frontend/scripts/openapi.mjs`
 - `backend/Services/*/Program.cs`
-- `backend/Services/*/Tests/Sut.cs`
+- `backend/Services/*/Endpoints/`
 - `backend/Contracts/*/EventSubscribers.cs`
+- `../FastEndpoints/Src/Messaging/Messaging.Remote/Server/Events/`
